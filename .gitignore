@@ -1,0 +1,6 @@
+venv\
+.idea\
+__pycache__\
+docker-compose.yaml
+manual.py
+postgres_data\
