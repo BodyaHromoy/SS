@@ -1,6 +1,6 @@
-from django.contrib import admin
 from django.urls import path
+import ss_main.views as views
 
 urlpatterns = [
-    path('main', admin.site.urls),
+    path('', views.main, name='main'),
 ]
