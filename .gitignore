@@ -1,6 +1,6 @@
 venv\
 .idea\
 __pycache__\
-docker-compose.yaml
+docker-compose.yml
 manual.py
 postgres_data\

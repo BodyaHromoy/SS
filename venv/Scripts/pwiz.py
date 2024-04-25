@@ -1,4 +1,4 @@
-#!C:\dev\SS\venv\Scripts\python.exe
+#!C:\dev\SosokSpectator\SosokSpectator\venv\Scripts\python.exe
 
 import datetime
 import os

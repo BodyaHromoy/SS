@@ -1,10 +1,13 @@
-from app.database.models.cities import *
+from app.database.database_connect import *
 
 
-class Cabinet(BaseModel):
-    city = ForeignKeyField(City, backref='cabinets', on_delete='CASCADE')
-    location = TextField(null=False)
-    readable_name = TextField(null=False)
+class Ss_main_cabinet(BaseModel):
+    city = CharField(null=False)
+    shkaf_id = CharField(unique=True)
+    zone = CharField()
+    location = CharField()
+    street = CharField()
+    extra_inf = CharField()
 
 
-db.create_tables([Cabinet])
+db.create_tables([Ss_main_cabinet])
