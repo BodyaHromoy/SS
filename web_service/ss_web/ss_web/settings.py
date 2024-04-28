@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',
     'ss_web',
     'ss_main'
 ]
@@ -70,6 +71,7 @@ TEMPLATES = [
     },
 ]
 
+ASGI_APPLICATION = 'ss_web.asgi.application'
 WSGI_APPLICATION = 'ss_web.wsgi.application'
 
 
