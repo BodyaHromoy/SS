@@ -3,64 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSWS</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            background-color: #f7f7f7;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            width: 90%;
-            margin: 20px auto;
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            float: right; /* Добавлено для выравнивания таблицы вправо */
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        tr:hover {
-            background-color: #ddd;
-        }
-        @media only screen and (max-width: 600px) {
-            .container {
-                width: 100%;
-                padding: 0 10px;
-            }
-            table {
-                font-size: 12px;
-            }
-            th, td {
-                padding: 8px;
-            }
-        }
-    </style>
+    <title>Your Django App</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 </head>
 <body>
-    <div class="container">
-        <a href="/">Главная страница</a>
-        {% block content %}
-        {% endblock %}
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+                <div class="sidebar-sticky">
+                    <ul class="nav flex-column">
+                        <li class="nav-item"><a class="nav-link" href="#">Шкафы</a></li>
+                        <!-- Добавьте дополнительные ссылки при необходимости -->
+                    </ul>
+                </div>
+            </nav>
+            <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+                <div id="dataDisplay">Здесь будут отображаться данные.</div>
+            </main>
+        </div>
     </div>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script>
+        const socket = new WebSocket('ws://' + window.location.host + '/ws/ss_main/');
+        console.log("hi!");
+
+        socket.onmessage = function(event) {
+            const response = JSON.parse(event.data);
+            updateContent(response);  // Передаем весь объект ответа, а не только его часть
+        };
+
+        function updateContent(response) {
+            const type = response.type;
+            const answer_data = response.data;
+            let tableHtml = '<table class="table table-striped">';
+
+            if (type === 'cabinets') {
+                tableHtml += `
+                    <thead>
+                        <tr>
+                            <th>Город</th>
+                            <th>ID Шкафа</th>
+                            <th>Зона</th>
+                            <th>Расположение</th>
+                            <th>Улица</th>
+                            <th>Дополнительная информация</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                answer_data.forEach(item => {
+                    tableHtml += `<tr>
+                                      <td>${item.city}</td>
+                                      <td>${item.shkaf_id}</td>
+                                      <td>${item.zone}</td>
+                                      <td>${item.location}</td>
+                                      <td>${item.street}</td>
+                                      <td>${item.extra_inf}</td>
+                                      <td><button class="btn btn-primary" onclick="loadCells(${item.shkaf_id})">Посмотреть ячейки</button></td>
+                                  </tr>`;
+                });
+            } else if (type === 'cells') {
+                tableHtml += `
+                    <thead>
+                        <tr>
+                            <th>Имя ячейки</th>
+                            <th>Емкость</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                answer_data.forEach(item => {
+                    tableHtml += `<tr>
+                                      <td>${item.name}</td>
+                                      <td>${item.capacity}</td>
+                                      <td><button class="btn btn-secondary" onclick="loadCell(${item.id})">Подробности</button></td>
+                                  </tr>`;
+                });
+            } else if (type === 'cell') {
+                tableHtml += `
+                    <thead>
+                        <tr>
+                            <th>Имя ячейки</th>
+                            <th>Детали</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                tableHtml += `<tr>
+                                  <td>${answer_data.name}</td>
+                                  <td>${answer_data.details}</td>
+                              </tr>`;
+            }
+
+            tableHtml += '</tbody></table>';
+            document.getElementById('dataDisplay').innerHTML = tableHtml;
+        }
+
+        function loadCells(cabinetId) {
+            socket.send(JSON.stringify({'action': 'load_cells', 'cabinet_id': cabinetId}));
+        }
+
+        document.querySelectorAll('.nav-link').forEach(item => {
+            item.addEventListener('click', function(e) {
+                socket.send(JSON.stringify({'action': 'load_cabinets'}));
+            });
+        });
+    </script>
 </body>
 </html>

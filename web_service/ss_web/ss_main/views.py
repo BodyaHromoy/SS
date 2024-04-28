@@ -1,5 +1,5 @@
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 
 
 def main(request):
-    return redirect('main')
+    return render(request, 'ss_main/base.html', {})
