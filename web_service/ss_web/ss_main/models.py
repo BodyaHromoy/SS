@@ -2,18 +2,17 @@ from django.db import models
 
 
 class Cabinet(models.Model):
-    city = models.TextField(null=False)
-    shkaf_id = models.TextField(null=False)
-    zone = models.TextField()
+    city = models.CharField(null=False)
+    shkaf_id = models.IntegerField(null=False)
+    zone = models.CharField(max_length=255)
     location = models.TextField()
-    street = models.TextField()
+    street = models.CharField(max_length=255)
     extra_inf = models.TextField()
 
 
 class Cell(models.Model):
     endpointid = models.IntegerField(verbose_name='EndpointID')
-    cabinet = models.ForeignKey('Cabinet', related_name='cells', on_delete=models.CASCADE)
-    stationid = models.IntegerField(verbose_name='StationID')
+    cabinet_id = models.ForeignKey(to=Cabinet, on_delete=models.CASCADE, null=False)
     balance_status = models.CharField(max_length=255, null=True, verbose_name='BALANCE_STATUS')
     capacity = models.CharField(max_length=255, null=True, verbose_name='CAPACITY')
     cap_coulo = models.CharField(max_length=255, null=True, verbose_name='CAP_COULO')
@@ -41,10 +40,10 @@ class Cell(models.Model):
     total_capacity = models.CharField(max_length=255, null=True, verbose_name='TOTAL_CAPACITY')
     vid = models.CharField(max_length=255, null=True, verbose_name='VID')
     voltage_cur = models.CharField(max_length=255, null=True, verbose_name='VOLTAGE_CUR')
-    session_start = models.CharField(max_length=255, null=True, verbose_name='SESSION_START')
-    session_end = models.CharField(max_length=255, null=True, verbose_name='SESSION_END')
+    session_start = models.DateTimeField(null=True, verbose_name='SESSION_START')
+    session_end = models.DateTimeField(null=True, verbose_name='SESSION_END')
     status = models.CharField(max_length=255, null=True, verbose_name='STATUS')
-    time = models.CharField(max_length=255, null=True, verbose_name='time')
+    time = models.DateTimeField(null=True, verbose_name='time')
 
 
 class Report(models.Model):
@@ -77,6 +76,6 @@ class Report(models.Model):
     total_capacity = models.CharField(max_length=255, null=True)
     vid = models.CharField(max_length=255, null=True)
     voltage_cur = models.CharField(max_length=255, null=True)
-    session_start = models.CharField(max_length=255, null=True)
-    time = models.CharField(max_length=255, null=True)
+    session_start = models.DateTimeField(null=True, verbose_name='SESSION_START')
+    time = models.DateTimeField(null=True, verbose_name='time')
     reason = models.CharField(max_length=255, null=True)

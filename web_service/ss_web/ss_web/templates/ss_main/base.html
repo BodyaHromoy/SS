@@ -3,111 +3,299 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Django App</title>
+    <title>SSWS</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        body,
+        h1,
+        .nav-link,
+        .modal-title,
+        .form-control,
+        .btn {
+            font-family: "Comic Sans MS", cursive, sans-serif;
+        }
+
+        body {
+            background-color: #6495ED;
+            color: black;
+            padding: 10px;
+        }
+
+        h1 {
+            color: black;
+            text-align: center;
+        }
+
+        .container-fluid {
+            border-radius: 10px;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            color: #345;
+            width: 100%;
+        }
+
+        th {
+            background-color: #fff;
+            color: #345;
+            padding: 0.3em;
+            text-align: left;
+        }
+
+        td {
+            padding: 0.3em;
+            text-align: left;
+        }
+
+        tbody {
+            background-color: #fff;
+            color: #345;
+        }
+
+        tr:nth-child(odd) {
+            background-color: #eee;
+        }
+    </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="row">
-            <nav class="col-md-2 d-none d-md-block bg-light sidebar">
-                <div class="sidebar-sticky">
-                    <ul class="nav flex-column">
-                        <li class="nav-item"><a class="nav-link" href="#">Шкафы</a></li>
-                        <!-- Добавьте дополнительные ссылки при необходимости -->
-                    </ul>
-                </div>
-            </nav>
-            <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
-                <div id="dataDisplay">Здесь будут отображаться данные.</div>
-            </main>
+<h1>Sosok Spectator Web Service</h1>
+<div class="container-fluid">
+    <div class="row">
+        <nav class="col-12 bg-light">
+            <button class="btn btn-primary mt-2" data-toggle="modal" data-target="#loginModal">Авторизация</button>
+            <ul class="nav flex-column">
+                <li class="nav-item"><a class="nav-link" href="#">Шкафы</a></li>
+                <!-- Add more links if needed -->
+            </ul>
+        </nav>
+        <main role="main" class="col-12">
+            <input type="text" id="searchInput" oninput="searchTable()" placeholder="Введите текст для поиска...">
+            <button class="btn btn-secondary mt-2" onclick="goBack()">Назад</button>
+            <br>
+            <div id="breadcrumb" class="breadcrumb"></div>
+            <div id="dataDisplay">Здесь будут отображаться данные.</div>
+        </main>
+    </div>
+</div>
+
+<!-- Модальное окно для авторизации -->
+<div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="loginModalLabel">Авторизация</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label for="username">Логин</label>
+                        <input type="text" class="form-control" id="username" placeholder="Введите логин">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Пароль</label>
+                        <input type="password" class="form-control" id="password" placeholder="Введите пароль">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+                <button type="button" class="btn btn-primary">Войти</button>
+            </div>
         </div>
     </div>
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-    <script>
-        const socket = new WebSocket('ws://' + window.location.host + '/ws/ss_main/');
-        console.log("hi!");
+</div>
 
-        socket.onmessage = function(event) {
-            const response = JSON.parse(event.data);
-            updateContent(response);  // Передаем весь объект ответа, а не только его часть
-        };
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script>
+    const socket = new WebSocket('ws://' + window.location.host + '/ws/ss_main/');
+    console.log("hi!");
+    let historyStack = [];
+    let typeStack = [];
 
-        function updateContent(response) {
-            const type = response.type;
-            const answer_data = response.data;
-            let tableHtml = '<table class="table table-striped">';
 
-            if (type === 'cabinets') {
-                tableHtml += `
-                    <thead>
-                        <tr>
-                            <th>Город</th>
-                            <th>ID Шкафа</th>
-                            <th>Зона</th>
-                            <th>Расположение</th>
-                            <th>Улица</th>
-                            <th>Дополнительная информация</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-                answer_data.forEach(item => {
-                    tableHtml += `<tr>
-                                      <td>${item.city}</td>
-                                      <td>${item.shkaf_id}</td>
-                                      <td>${item.zone}</td>
-                                      <td>${item.location}</td>
-                                      <td>${item.street}</td>
-                                      <td>${item.extra_inf}</td>
-                                      <td><button class="btn btn-primary" onclick="loadCells(${item.shkaf_id})">Посмотреть ячейки</button></td>
-                                  </tr>`;
-                });
-            } else if (type === 'cells') {
-                tableHtml += `
-                    <thead>
-                        <tr>
-                            <th>Имя ячейки</th>
-                            <th>Емкость</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-                answer_data.forEach(item => {
-                    tableHtml += `<tr>
-                                      <td>${item.name}</td>
-                                      <td>${item.capacity}</td>
-                                      <td><button class="btn btn-secondary" onclick="loadCell(${item.id})">Подробности</button></td>
-                                  </tr>`;
-                });
-            } else if (type === 'cell') {
-                tableHtml += `
-                    <thead>
-                        <tr>
-                            <th>Имя ячейки</th>
-                            <th>Детали</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
+    socket.onmessage = function(event) {
+        const response = JSON.parse(event.data);
+        updateContent(response);  // Передаем весь объект ответа, а не только его часть
+    };
+
+    function updateContent(response) {
+        const type = response.type;
+        const answer_data = response.data;
+        let breadcrumbHtml;
+        let tableHtml = '<table class="table table-striped" id="dataTable">';
+
+        updateBreadcrumb(type);
+        typeStack.push(type);  // Проверьте, что type не undefined
+
+        const currentContent = document.getElementById('dataDisplay').innerHTML;
+        if (currentContent) {
+            // Если стек достиг максимального размера, удаляем самое старое состояние
+            if (historyStack.length >= 7) {
+                historyStack.shift(); // Удаляет первый элемент из массива, который является самым старым состоянием
+            }
+            historyStack.push(currentContent);
+        }
+
+        if (type === 'cabinets') {
+            breadcrumbHtml += ' > Шкафы';
+            tableHtml += `
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)">Город &#9650;</th>
+                        <th onclick="sortTable(1)">ID Шкафа &#9650;</th>
+                        <th onclick="sortTable(2)">Зона &#9650;</th>
+                        <th onclick="sortTable(3)">Расположение &#9650;</th>
+                        <th onclick="sortTable(4)">Улица &#9650;</th>
+                        <th>Дополнительная информация</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+            answer_data.forEach(item => {
                 tableHtml += `<tr>
-                                  <td>${answer_data.name}</td>
-                                  <td>${answer_data.details}</td>
+                                  <td>${item.city}</td>
+                                  <td>${item.shkaf_id}</td>
+                                  <td>${item.zone}</td>
+                                  <td>${item.location}</td>
+                                  <td>${item.street}</td>
+                                  <td>${item.extra_inf}</td>
+                                  <td><button class="btn btn-primary" onclick="loadCells(${item.shkaf_id})">Посмотреть ячейки</button></td>
                               </tr>`;
+            });
+        } else if (type === 'cells') {
+            breadcrumbHtml += ' > Шкафы > Ячейки';
+            tableHtml += `
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)">ID ячейки &#9650;</th>
+                        <th onclick="sortTable(1)">Шкаф &#9650;</th>
+                        <th onclick="sortTable(1)">Состояние &#9650;</th>
+                        <th onclick="sortTable(2)">Емкость &#9650;</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+            answer_data.forEach(item => {
+                tableHtml += `<tr>
+                                  <td>${item.id}</td>
+                                  <td>${item.station_id}</td>
+                                  <td>${item.status}</td>
+                                  <td>${item.charge}</td>
+                                  <td><button class="btn btn-primary" onclick="loadCell(${item.id})">Подробности</button></td>
+                              </tr>`;
+            });
+        } else if (type === 'cell') {
+            breadcrumbHtml += ' > Шкафы > Ячейки > Детали ячейки';
+            tableHtml += `
+                <thead>
+                    <tr>
+                        <th>Имя ячейки</th>
+                        <th>Детали</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+            tableHtml += `<tr>
+                              <td>${answer_data.name}</td>
+                              <td>${answer_data.vid}, ${answer_data.sn}, ${answer_data.sw_ver}</td>
+                          </tr>`;
+        }
+
+        tableHtml += '</tbody></table>';
+        document.getElementById('breadcrumb').innerHTML = breadcrumbHtml;
+        document.getElementById('dataDisplay').innerHTML = tableHtml;
+    }
+
+    function loadCells(cabinetId) {
+        socket.send(JSON.stringify({'action': 'load_cells', 'cabinet_id': cabinetId}));
+    }
+
+    function loadCell(cellId) {
+        socket.send(JSON.stringify({'action': 'load_cell', 'cell_id': cellId}));
+    }
+
+    document.querySelectorAll('.nav-link').forEach(item => {
+        item.addEventListener('click', function(e) {
+            socket.send(JSON.stringify({'action': 'load_cabinets'}));
+        });
+    });
+
+    function updateBreadcrumb(type) {
+        let breadcrumb = 'Главная > ';
+
+        switch(type) {
+            case 'cabinets':
+                breadcrumb += 'Шкафы';
+                break;
+            case 'cells':
+                breadcrumb += 'Шкафы > Ячейки';
+                break;
+            case 'cell':
+                breadcrumb += 'Шкафы > Ячейки > Детали ячейки';
+                break;
+        }
+
+        document.getElementById('breadcrumb').textContent = breadcrumb;
+    }
+
+    function goBack() {
+        if (historyStack.length > 0) {
+            const lastState = historyStack.pop();
+            const lastType = typeStack.pop();  // Убедитесь, что lastType определён
+
+            document.getElementById('dataDisplay').innerHTML = lastState;
+            updateBreadcrumb(lastType);  // Убедитесь, что updateBreadcrumb обрабатывает lastType корректно
+        } else {
+            alert("Нет предыдущих состояний для отображения!");
+            // Если стек пуст, установите начальное состояние для хлебных крошек
+            updateBreadcrumb('home');
+        }
+    }
+
+    function sortTable(colIndex) {
+        const table = document.getElementById("dataTable");
+        const rows = Array.from(table.getElementsByTagName("tr"));
+
+        const sortedRows = rows.slice(1).sort((a, b) => {
+            const aText = a.getElementsByTagName("td")[colIndex].innerText;
+            const bText = b.getElementsByTagName("td")[colIndex].innerText;
+            return isNaN(aText) ? aText.localeCompare(bText) : aText - bText;
+        });
+
+        table.removeChild(rows[0]); // Remove the header row from the sorting
+        sortedRows.forEach(row => table.appendChild(row));
+    }
+
+    function searchTable() {
+        const input = document.getElementById("searchInput").value.toLowerCase();
+        const table = document.getElementById("dataTable");
+        const rows = table.getElementsByTagName("tr");
+
+        for (let i = 1; i < rows.length; i++) { // Начинаем с 1, чтобы пропустить заголовок таблицы
+            const rowData = rows[i].getElementsByTagName("td");
+            let found = false;
+
+            for (let j = 0; j < rowData.length; j++) {
+                const cellData = rowData[j].innerText.toLowerCase();
+                if (cellData.includes(input)) {
+                    found = true;
+                    break;
+                }
             }
 
-            tableHtml += '</tbody></table>';
-            document.getElementById('dataDisplay').innerHTML = tableHtml;
+            if (found) {
+                rows[i].style.display = "";
+            } else {
+                rows[i].style.display = "none";
+            }
         }
-
-        function loadCells(cabinetId) {
-            socket.send(JSON.stringify({'action': 'load_cells', 'cabinet_id': cabinetId}));
-        }
-
-        document.querySelectorAll('.nav-link').forEach(item => {
-            item.addEventListener('click', function(e) {
-                socket.send(JSON.stringify({'action': 'load_cabinets'}));
-            });
-        });
-    </script>
+    }
+</script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 </body>
 </html>

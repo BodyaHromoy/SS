@@ -37,22 +37,24 @@ class MyConsumer(AsyncWebsocketConsumer):
         return {"type": 'cabinets', 'data': cabinets_data}
 
     @database_sync_to_async
-    def load_cells(self, cabinet_id):
+    def load_cells(self, cabinet):
         from .models import Cell
-        cells = Cell.objects.filter(cabinet_id=cabinet_id)
+        cells = Cell.objects.filter(cabinet_id=cabinet).all()
         cells_data = [
-            {"id": cell.id, "name": cell.name, "capacity": cell.capacity}
+            {"id": cell.endpointid, "station_id": cell.cabinet_id.shkaf_id, "status": cell.status, "charge": cell.cap_percent}
             for cell in cells
         ]
-        return {'data': cells_data}
+
+        return {"type": 'cells', 'data': cells_data}
 
     @database_sync_to_async
     def load_cell(self, cell_id):
         from .models import Cell
         cell = Cell.objects.get(id=cell_id)
         cell_data = {
-            "id": cell.id,
-            "name": cell.name,
-            "capacity": cell.capacity
+            "name": cell.endpointid,
+            "vid": cell.vid,
+            "sn": cell.sn,
+            "sw_ver": cell.sw_ver
         }
-        return {'data': cell_data}
+        return {"type": 'cell', 'data': cell_data}

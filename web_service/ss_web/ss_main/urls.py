@@ -5,6 +5,6 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 
 urlpatterns = [
-    # path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls),
     path('', main, name='main'),
 ]
