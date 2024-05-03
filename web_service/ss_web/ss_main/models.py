@@ -3,7 +3,7 @@ from django.db import models
 
 class Cabinet(models.Model):
     city = models.CharField(null=False)
-    shkaf_id = models.IntegerField(null=False)
+    shkaf_id = models.IntegerField(null=False, unique=True)
     zone = models.CharField(max_length=255)
     location = models.TextField()
     street = models.CharField(max_length=255)
@@ -12,7 +12,7 @@ class Cabinet(models.Model):
 
 class Cell(models.Model):
     endpointid = models.IntegerField(verbose_name='EndpointID')
-    cabinet_id = models.ForeignKey(to=Cabinet, on_delete=models.CASCADE, null=False)
+    cabinet_id = models.ForeignKey(to=Cabinet, on_delete=models.CASCADE, null=False, to_field='shkaf_id')
     balance_status = models.CharField(max_length=255, null=True, verbose_name='BALANCE_STATUS')
     capacity = models.CharField(max_length=255, null=True, verbose_name='CAPACITY')
     cap_coulo = models.CharField(max_length=255, null=True, verbose_name='CAP_COULO')
@@ -44,6 +44,7 @@ class Cell(models.Model):
     session_end = models.DateTimeField(null=True, verbose_name='SESSION_END')
     status = models.CharField(max_length=255, null=True, verbose_name='STATUS')
     time = models.DateTimeField(null=True, verbose_name='time')
+    vir_sn_eid = models.TextField(null=True, verbose_name='VIR_SN_EID')
 
 
 class Report(models.Model):

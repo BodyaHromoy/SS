@@ -3,18 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSWS</title>
+    <title>CMS</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <style>
-        body,
-        h1,
-        .nav-link,
-        .modal-title,
-        .form-control,
-        .btn {
-            font-family: "Comic Sans MS", cursive, sans-serif;
-        }
-
         body {
             background-color: #6495ED;
             color: black;
@@ -22,7 +13,7 @@
         }
 
         h1 {
-            color: black;
+            color: white;
             text-align: center;
         }
 
@@ -58,25 +49,113 @@
         tr:nth-child(odd) {
             background-color: #eee;
         }
+
+        .charge-circle {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .green {
+            background-color: green;
+        }
+
+        .yellow {
+            background-color: yellow;
+        }
+
+        .red {
+            background-color: red;
+        }
+
+        .blue {
+            background-color: blue;
+        }
+
+        .status-icon {
+            display: inline-block;
+            width: 15px;
+            height: 40px;
+            margin-right: 7px;
+        }
+
+        .charging-icon:before {
+            content: "\26AF";
+            color: green;
+        }
+
+        .not-charging-icon:before {
+            content: "\26AF";
+            color: gray;
+        }
+
+        .empty-icon:before {
+            content: "\25CB";
+            color: gray;
+        }
+
+        .inactive-icon:before {
+            content: "\26D4";
+            color: red;
+        }
+
+        /* Новый стиль для поиска */
+        #searchContainer {
+            display: none; /* Скрываем поиск по умолчанию */
+            margin-top: 10px;
+        }
+
+        #searchContainer input[type="text"] {
+            width: calc(100% - 120px); /* Ширина поля ввода */
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
-<h1>Sosok Spectator Web Service</h1>
+<h1>Charge Monitoring Service</h1>
 <div class="container-fluid">
     <div class="row">
-        <nav class="col-12 bg-light">
-            <button class="btn btn-primary mt-2" data-toggle="modal" data-target="#loginModal">Авторизация</button>
+        <nav class="col-lg-2 col-md-3 col-sm-4 col-xs-12 bg-light">
+            <button class="btn btn-primary mt-2" data-toggle="modal" data-target="#loginModal">Login</button>
             <ul class="nav flex-column">
-                <li class="nav-item"><a class="nav-link" href="#">Шкафы</a></li>
+                <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="#">Box list</a></li>
                 <!-- Add more links if needed -->
             </ul>
         </nav>
-        <main role="main" class="col-12">
-            <input type="text" id="searchInput" oninput="searchTable()" placeholder="Введите текст для поиска...">
-            <button class="btn btn-secondary mt-2" onclick="goBack()">Назад</button>
+        <main role="main" class="col-lg-10 col-md-9 col-sm-8 col-xs-12">
+            <button class="btn btn-primary mt-2" onclick="toggleFilters()">Filter</button>
+            <div id="filters" style="display: none;">
+                <label for="cityFilter">City filter:</label>
+                <select id="cityFilter" onchange="applyFilters()">
+                    <option value="">All</option>
+                    <option value="Almaty">Almaty</option>
+                    <option value="Astana">Astana</option>
+                    <option value="Toronto">Toronto</option>
+                    <option value="Capetown">Capetown</option>
+                </select>
+                <label for="zoneFilter">Zone filter:</label>
+                <select id="zoneFilter" onchange="applyFilters()">
+                    <option value="">All</option>
+                    <option value="1">Zone 1</option>
+                    <option value="2">Zone 2</option>
+                    <option value="3">Zone 3</option>
+                    <option value="4">Zone 4</option>
+                </select>
+            </div>
+            <!-- Кнопка появления поля поиска -->
+            <button class="btn btn-primary mt-2" onclick="toggleSearch()">Search</button>
+            <!-- Поле поиска -->
+            <div id="searchContainer">
+                <input type="text" id="searchInput" placeholder="Search" onkeyup="filterTable()">
+                <button class="btn btn-secondary" onclick="clearSearch()">Clear</button>
+            </div>
+            <!-- Кнопка возврата назад -->
+            <button class="btn btn-secondary mt-2" onclick="goBack()">RETURN</button>
             <br>
             <div id="breadcrumb" class="breadcrumb"></div>
-            <div id="dataDisplay">Здесь будут отображаться данные.</div>
+            <div id="dataDisplay">Press "Box list"</div>
         </main>
     </div>
 </div>
@@ -111,7 +190,6 @@
     </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script>
     const socket = new WebSocket('ws://' + window.location.host + '/ws/ss_main/');
     console.log("hi!");
@@ -121,7 +199,7 @@
 
     socket.onmessage = function(event) {
         const response = JSON.parse(event.data);
-        updateContent(response);  // Передаем весь объект ответа, а не только его часть
+        updateContent(response);
     };
 
     function updateContent(response) {
@@ -131,13 +209,12 @@
         let tableHtml = '<table class="table table-striped" id="dataTable">';
 
         updateBreadcrumb(type);
-        typeStack.push(type);  // Проверьте, что type не undefined
+        typeStack.push(type);
 
         const currentContent = document.getElementById('dataDisplay').innerHTML;
         if (currentContent) {
-            // Если стек достиг максимального размера, удаляем самое старое состояние
             if (historyStack.length >= 7) {
-                historyStack.shift(); // Удаляет первый элемент из массива, который является самым старым состоянием
+                historyStack.shift();
             }
             historyStack.push(currentContent);
         }
@@ -147,25 +224,25 @@
             tableHtml += `
                 <thead>
                     <tr>
-                        <th onclick="sortTable(0)">Город &#9650;</th>
-                        <th onclick="sortTable(1)">ID Шкафа &#9650;</th>
-                        <th onclick="sortTable(2)">Зона &#9650;</th>
-                        <th onclick="sortTable(3)">Расположение &#9650;</th>
-                        <th onclick="sortTable(4)">Улица &#9650;</th>
-                        <th>Дополнительная информация</th>
-                        <th>Действия</th>
+                        <th>City &#9650;</th>
+                        <th>Zone &#9650;</th>
+                        <th>Box ID &#9650;</th>
+                        <th>Address &#9650;</th>
+                        <th>Locker ID &#9650;</th>
+                        <th>Additional info</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>`;
             answer_data.forEach(item => {
                 tableHtml += `<tr>
                                   <td>${item.city}</td>
-                                  <td>${item.shkaf_id}</td>
                                   <td>${item.zone}</td>
+                                  <td>${item.shkaf_id}</td>
                                   <td>${item.location}</td>
                                   <td>${item.street}</td>
                                   <td>${item.extra_inf}</td>
-                                  <td><button class="btn btn-primary" onclick="loadCells(${item.shkaf_id})">Посмотреть ячейки</button></td>
+                                  <td><button class="btn btn-primary" onclick="loadCells(${item.shkaf_id})">Check slots</button></td>
                               </tr>`;
             });
         } else if (type === 'cells') {
@@ -173,37 +250,53 @@
             tableHtml += `
                 <thead>
                     <tr>
-                        <th onclick="sortTable(0)">ID ячейки &#9650;</th>
-                        <th onclick="sortTable(1)">Шкаф &#9650;</th>
-                        <th onclick="sortTable(1)">Состояние &#9650;</th>
-                        <th onclick="sortTable(2)">Емкость &#9650;</th>
-                        <th>Действия</th>
+                        <th>Box &#9650;</th>
+                        <th>Slot ID &#9650;</th>
+                        <th>Status &#9650;</th>
+                        <th>Charge in % &#9650;</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>`;
             answer_data.forEach(item => {
+                let chargeColor = '';
+                if (item.charge >= 91) {
+                    chargeColor = 'green';
+                } else if (item.charge >= 50) {
+                    chargeColor = 'blue';
+                } else if (item.charge >= 30) {
+                    chargeColor = 'yellow';
+                } else {
+                    chargeColor = 'red';
+                }
+
+                let statusIcon = '';
+                switch (item.status) {
+                    case 'charging':
+                        statusIcon = '<span class="status-icon charging-icon"></span>';
+                        break;
+                    case 'not_charging':
+                        statusIcon = '<span class="status-icon not-charging-icon"></span>';
+                        break;
+                    case 'empty':
+                        statusIcon = '<span class="status-icon empty-icon"></span>';
+                        break;
+                    case 'inactive':
+                        statusIcon = '<span class="status-icon inactive-icon"></span>';
+                        break;
+                    default:
+                        statusIcon = '';
+                        break;
+                }
+
                 tableHtml += `<tr>
-                                  <td>${item.id}</td>
                                   <td>${item.station_id}</td>
-                                  <td>${item.status}</td>
-                                  <td>${item.charge}</td>
-                                  <td><button class="btn btn-primary" onclick="loadCell(${item.id})">Подробности</button></td>
+                                  <td>${item.id}</td>
+                                  <td>${statusIcon}${item.status}</td>
+                                  <td><span class="charge-circle ${chargeColor}"></span>${item.charge}</td>
+                                  <td><button class="btn btn-primary" onclick="loadCell(${item.id}, '${item.shkaf_id}')">MARKET INFO</button></td>
                               </tr>`;
             });
-        } else if (type === 'cell') {
-            breadcrumbHtml += ' > Шкафы > Ячейки > Детали ячейки';
-            tableHtml += `
-                <thead>
-                    <tr>
-                        <th>Имя ячейки</th>
-                        <th>Детали</th>
-                    </tr>
-                </thead>
-                <tbody>`;
-            tableHtml += `<tr>
-                              <td>${answer_data.name}</td>
-                              <td>${answer_data.vid}, ${answer_data.sn}, ${answer_data.sw_ver}</td>
-                          </tr>`;
         }
 
         tableHtml += '</tbody></table>';
@@ -246,56 +339,80 @@
     function goBack() {
         if (historyStack.length > 0) {
             const lastState = historyStack.pop();
-            const lastType = typeStack.pop();  // Убедитесь, что lastType определён
+            const lastType = typeStack.pop();
 
             document.getElementById('dataDisplay').innerHTML = lastState;
-            updateBreadcrumb(lastType);  // Убедитесь, что updateBreadcrumb обрабатывает lastType корректно
+            updateBreadcrumb(lastType);
         } else {
             alert("Нет предыдущих состояний для отображения!");
-            // Если стек пуст, установите начальное состояние для хлебных крошек
             updateBreadcrumb('home');
         }
     }
 
-    function sortTable(colIndex) {
-        const table = document.getElementById("dataTable");
-        const rows = Array.from(table.getElementsByTagName("tr"));
-
-        const sortedRows = rows.slice(1).sort((a, b) => {
-            const aText = a.getElementsByTagName("td")[colIndex].innerText;
-            const bText = b.getElementsByTagName("td")[colIndex].innerText;
-            return isNaN(aText) ? aText.localeCompare(bText) : aText - bText;
-        });
-
-        table.removeChild(rows[0]); // Remove the header row from the sorting
-        sortedRows.forEach(row => table.appendChild(row));
+    function toggleFilters() {
+        const filters = document.getElementById("filters");
+        if (filters.style.display === "none") {
+            filters.style.display = "block";
+        } else {
+            filters.style.display = "none";
+        }
     }
 
-    function searchTable() {
+    function applyFilters() {
+        const cityFilter = document.getElementById("cityFilter").value;
+        const zoneFilter = document.getElementById("zoneFilter").value;
+
+        const table = document.getElementById("dataTable");
+        const rows = table.getElementsByTagName("tr");
+
+        for (let i = 1; i < rows.length; i++) {
+            const rowData = rows[i].getElementsByTagName("td");
+            const city = rowData[0].innerText;
+            const zone = rowData[1].innerText;
+            const cityMatch = cityFilter === "" || city === cityFilter;
+            const zoneMatch = zoneFilter === "" || zone === zoneFilter;
+            rows[i].style.display = cityMatch && zoneMatch ? "" : "none";
+        }
+    }
+
+    function filterTable() {
         const input = document.getElementById("searchInput").value.toLowerCase();
         const table = document.getElementById("dataTable");
         const rows = table.getElementsByTagName("tr");
 
-        for (let i = 1; i < rows.length; i++) { // Начинаем с 1, чтобы пропустить заголовок таблицы
+        for (let i = 1; i < rows.length; i++) {
             const rowData = rows[i].getElementsByTagName("td");
             let found = false;
 
             for (let j = 0; j < rowData.length; j++) {
-                const cellData = rowData[j].innerText.toLowerCase();
-                if (cellData.includes(input)) {
+                const cellData = rowData[j].textContent.toLowerCase();
+                if (cellData.indexOf(input) > -1) {
                     found = true;
                     break;
                 }
             }
 
-            if (found) {
-                rows[i].style.display = "";
-            } else {
-                rows[i].style.display = "none";
-            }
+            rows[i].style.display = found ? "" : "none";
         }
     }
+
+    // Функция переключения видимости поля поиска
+    function toggleSearch() {
+        const searchContainer = document.getElementById("searchContainer");
+        if (searchContainer.style.display === "none") {
+            searchContainer.style.display = "block";
+        } else {
+            searchContainer.style.display = "none";
+        }
+    }
+
+    // Функция очистки поля поиска
+    function clearSearch() {
+        document.getElementById("searchInput").value = "";
+        filterTable();
+    }
 </script>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 </body>
 </html>

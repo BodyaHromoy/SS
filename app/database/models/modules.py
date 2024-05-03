@@ -4,8 +4,7 @@ from app.database.models.cabinets import Ss_main_cabinet
 
 class ss_main_cell(BaseModel):
     endpointid = IntegerField(column_name='endpointid')
-    cabinet = ForeignKeyField(Ss_main_cabinet, field=Ss_main_cabinet.shkaf_id, related_name='cells', on_delete='CASCADE')
-    stationid = IntegerField(null=True, column_name='stationid')
+    cabinet_id_id = ForeignKeyField(Ss_main_cabinet, field=Ss_main_cabinet.shkaf_id, related_name='shkaf_id', on_delete='CASCADE')
     balance_status = CharField(null=True, column_name='balance_status')
     capacity = CharField(null=True, column_name='capacity')
     cap_coulo = CharField(null=True, column_name='cap_coulo')
@@ -37,6 +36,7 @@ class ss_main_cell(BaseModel):
     session_end = CharField(null=True, verbose_name='session_end')
     status = CharField(null=True, verbose_name='status')
     time = CharField(null=True, column_name='time')
+    vir_sn_eid = TextField(null=True, verbose_name='VIR_SN_EID')
 
 
 # Создание таблицы

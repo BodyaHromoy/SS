@@ -22,6 +22,9 @@ class MyConsumer(AsyncWebsocketConsumer):
         elif action == 'load_cell':
             cell_id = text_data_json['cell_id']
             response = await self.load_cell(cell_id)
+        else:
+            # Если action не соответствует ни одному из ожидаемых значений
+            response = {"error": "Unknown action"}
 
         await self.send(text_data=json.dumps(response))
 
@@ -37,9 +40,9 @@ class MyConsumer(AsyncWebsocketConsumer):
         return {"type": 'cabinets', 'data': cabinets_data}
 
     @database_sync_to_async
-    def load_cells(self, cabinet):
+    def load_cells(self, cabinet_id):
         from .models import Cell
-        cells = Cell.objects.filter(cabinet_id=cabinet).all()
+        cells = Cell.objects.filter(cabinet_id=cabinet_id).all()
         cells_data = [
             {"id": cell.endpointid, "station_id": cell.cabinet_id.shkaf_id, "status": cell.status, "charge": cell.cap_percent}
             for cell in cells
@@ -50,7 +53,7 @@ class MyConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def load_cell(self, cell_id):
         from .models import Cell
-        cell = Cell.objects.get(id=cell_id)
+        cell = Cell.objects.get(endpointid=cell_id)
         cell_data = {
             "name": cell.endpointid,
             "vid": cell.vid,

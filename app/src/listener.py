@@ -1,6 +1,6 @@
 import asyncio
+import datetime
 import json
-from datetime import datetime, timedelta
 
 import paho.mqtt.client as mqtt
 
@@ -8,13 +8,14 @@ from app.database.models.modules import ss_main_cell
 from app.database.models.report import Ss_main_report
 
 # Словарь для отслеживания активных sn и их последнего обновления
-active_cell = {}
+active_v_sn = {}
 
 
 # Функция обновления существующей записи
 def update_entry(existing_entry, stat_id, status_data):
-    existing_entry.cabinet = stat_id
-    existing_entry.stationid = stat_id
+    current_time = datetime.datetime.utcnow()  # Получаем текущее время
+
+    existing_entry.cabinet_id_id = stat_id
     existing_entry.balance_status = status_data.get("BALANCE_STATUS")
     existing_entry.capacity = status_data.get("CAPACITY")
     existing_entry.cap_coulo = status_data.get("CAP_COULO")
@@ -41,28 +42,29 @@ def update_entry(existing_entry, stat_id, status_data):
     existing_entry.total_capacity = status_data.get("TOTAL_CAPACITY")
     existing_entry.vid = status_data.get("VID")
     existing_entry.voltage_cur = status_data.get("VOLTAGE_CUR")
-    existing_entry.time = status_data.get("time")
+    existing_entry.time = current_time  # Используем текущее время
+
     existing_entry.sn = status_data.get("SN")
 
     # Проверка, пуст ли столбец session_start
     if not existing_entry.session_start:
-        existing_entry.session_start = status_data.get("time")
+        existing_entry.session_start = current_time  # Используем текущее время
 
     existing_entry.status = "charging" if "4" in str(status_data.get("FUN_BOOLEAN")) else "not_charging"
 
     # Проверка, нужно ли обновлять session_end
     if existing_entry.status != "not_charging":
-        existing_entry.session_end = status_data.get("time")
+        existing_entry.session_end = current_time  # Используем текущее время
 
     existing_entry.save()
-    print(f"Информация для соска {existing_entry.endpointid} {existing_entry.cabinet} обновлена.")
+    print(f"Информация для {existing_entry.vir_sn_eid} обновлена.")
 
 
 # Функция перемещения записи в отчет
 def move_to_report(existing_entry, reason):
     report_entry = Ss_main_report.create(
         endpointid=existing_entry.endpointid,
-        stationid=existing_entry.stationid,
+        stationid=existing_entry.vir_sn_eid,
         balance_status=existing_entry.balance_status,
         capacity=existing_entry.capacity,
         cap_coulo=existing_entry.cap_coulo,
@@ -99,10 +101,11 @@ def move_to_report(existing_entry, reason):
 
 
 # Функция создания новой записи
-def create_new_entry(end_id, stat_id, sn=None, status_data=None, status="empty"):
+def create_new_entry(end_id, stat_id, sn=None, status_data=None, status="empty", vir_sn_eid="empty"):
+    current_time = datetime.datetime.utcnow()  # Получаем текущее время
+
     # Проверяем, существует ли запись с таким же EndpointID и StationID и SN
-    if ss_main_cell.select().where(ss_main_cell.endpointid == end_id, ss_main_cell.stationid == stat_id,
-                                   ss_main_cell.sn == sn).exists():
+    if ss_main_cell.select().where(ss_main_cell.vir_sn_eid == vir_sn_eid ).exists():
         # Если запись уже существует, не создаем новую запись
         print(f"Запись с Endpoint ID {end_id} и Station ID {stat_id} уже существует.")
         return
@@ -111,8 +114,7 @@ def create_new_entry(end_id, stat_id, sn=None, status_data=None, status="empty")
         fun_boolean = status_data.get("FUN_BOOLEAN") if status_data else None
         cell_entry = ss_main_cell.create(
             endpointid=end_id,
-            cabinet=stat_id,
-            stationid=stat_id,
+            cabinet_id_id=stat_id,
             sn=sn,
             balance_status=status_data.get("BALANCE_STATUS") if status_data else None,
             capacity=status_data.get("CAPACITY") if status_data else None,
@@ -140,12 +142,12 @@ def create_new_entry(end_id, stat_id, sn=None, status_data=None, status="empty")
             total_capacity=status_data.get("TOTAL_CAPACITY") if status_data else None,
             vid=status_data.get("VID") if status_data else None,
             voltage_cur=status_data.get("VOLTAGE_CUR") if status_data else None,
-            session_start=status_data.get("time") if status_data else None,
-            session_end=status_data.get("time") if status_data else None,
+            session_start=current_time,  # Устанавливаем время начала сессии
+            session_end=current_time,  # Устанавливаем время окончания сессии
             status=status,
-            time=status_data.get("time") if status_data else None
+            vir_sn_eid=vir_sn_eid
         )
-        print(f"Создана запись для нового соска с Endpoint ID {end_id}.")
+        print(f"Создана запись для {vir_sn_eid}.")
 
 
 # Функция для обработки статуса и пинга
@@ -156,15 +158,19 @@ async def sort(msg):
 
     if message_type == 'Ping':
         # Для сообщения типа "Ping" обновляем время последнего пинга
+
+        v_end_id = data.get("EndpointID")
+        v_stat_id = data.get("StationID")
         end_id = data.get("EndpointID")
         stat_id = data.get("StationID")
+        delimiter = "-"
+        vir_sn = str(v_stat_id) + str(delimiter) + str(v_end_id)
 
-        active_cell[end_id, stat_id] = datetime.now()
-        print("Получен пинг от Endpoint ID", end_id)
+        active_v_sn[vir_sn] = datetime.datetime.now()
+        print("Получен пинг от ", vir_sn)
 
         # Ищем запись в базе данных по endpointid и stationid
-        existing_entry = ss_main_cell.select().where(ss_main_cell.endpointid == end_id,
-                                                     ss_main_cell.stationid == stat_id).first()
+        existing_entry = ss_main_cell.select().where(ss_main_cell.vir_sn_eid == vir_sn).first()
 
         if existing_entry:
             # Если запись найдена, копируем её в отчет
@@ -210,30 +216,32 @@ async def sort(msg):
                 print("SN в записи пуст. Ничего не копируем в отчет.")
         else:
             # Если запись не найдена, создаем новую запись со статусом "empty"
-            create_new_entry(end_id, stat_id, status="empty")
-            print("Создана новая запись со статусом 'empty'.")
-
+            create_new_entry(end_id, stat_id, status="empty", vir_sn_eid=vir_sn)
         return
 
     if message_type == 'Status':
         # Для сообщения типа "Status" проверяем наличие записи в базе данных по endpointid и stationid
+
+        v_end_id = data.get("EndpointID")
+        v_stat_id = data.get("StationID")
         end_id = data.get("EndpointID")
         stat_id = data.get("StationID")
-        sn = data.get("Status", {}).get("SN")  # Получаем SN из поля "Status"
+        delimiter = "-"
+        vir_sn = str(v_stat_id) + str(delimiter) + str(v_end_id)
 
-        existing_entry = ss_main_cell.select().where(ss_main_cell.endpointid == end_id,
-                                                     ss_main_cell.cabinet == stat_id).first()
+        sn = data.get("Status", {}).get("SN")  # Получаем SN из поля "Status"
+        existing_entry = ss_main_cell.select().where(ss_main_cell.vir_sn_eid == vir_sn).first()
 
         if existing_entry:
             # Если запись найдена, обновляем её
             update_entry(existing_entry, stat_id, data["Status"])
         else:
             # Если запись не найдена, создаем новую запись
-            create_new_entry(end_id, stat_id, sn, data["Status"])
-            print(f"Создана новая запись для Endpoint ID {end_id} и Station ID {stat_id}.")
+            create_new_entry(end_id, stat_id, sn, data["Status"], vir_sn_eid=vir_sn)
+            print(f"Создана новая запись для {vir_sn}")
 
         # Обновляем время последнего обновления для данного endpoint_id
-        active_cell[end_id, stat_id] = datetime.now()
+        active_v_sn[vir_sn] = datetime.datetime.now()
 
         return
 
@@ -272,15 +280,14 @@ async def check_inactive_endpoints():
     while True:
         await asyncio.sleep(10)  # Проверка каждые 10 секунд
 
-        current_time = datetime.now()
+        current_time = datetime.datetime.now()
         # Копируем ключи для безопасной итерации
-        active_endpoints_keys = list(active_cell.keys())
-        for end_id, stat_id in active_endpoints_keys:
-            last_updated_time = active_cell[end_id, stat_id]
-            if current_time - last_updated_time > timedelta(seconds=10):
+        active_endpoints_keys = list(active_v_sn.keys())
+        for vir_sn in active_endpoints_keys:
+            last_updated_time = active_v_sn[vir_sn]
+            if current_time - last_updated_time > datetime.timedelta(seconds=10):
                 # Получение всех записей с неактивным SN
-                inactive_entries = ss_main_cell.select().where(ss_main_cell.endpointid == end_id,
-                                                               ss_main_cell.cabinet == stat_id)
+                inactive_entries = ss_main_cell.select().where(ss_main_cell.vir_sn_eid == vir_sn)
 
                 # Перемещение записей в отчет и удаление из основной базы данных
                 for entry in inactive_entries:
@@ -320,7 +327,7 @@ async def check_inactive_endpoints():
                     entry.save()
 
                 # Удаление из активных, так как он считается неактивным
-                del active_cell[end_id, stat_id]
+                del active_v_sn[vir_sn]
 
 
 if __name__ == '__main__':
