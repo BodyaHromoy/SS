@@ -1,4 +1,32 @@
+from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
+
+
+class UserRoles(models.Model):
+    role = models.CharField(max_length=255)
+    is_admin = models.BooleanField(default=False)
+
+
+class User(AbstractUser):
+    role = models.ForeignKey(UserRoles, on_delete=models.CASCADE, related_name="users")
+    info = models.TextField(null=True)
+
+    groups = models.ManyToManyField(
+        Group,
+        verbose_name='groups',
+        blank=True,
+        help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
+        related_name="custom_user_set",  # Измененный related_name
+        related_query_name="user",
+    )
+    user_permissions = models.ManyToManyField(
+        Permission,
+        verbose_name='user permissions',
+        blank=True,
+        help_text='Specific permissions for this user.',
+        related_name="custom_user_permission_set",  # Измененный related_name
+        related_query_name="user",
+    )
 
 
 class Cabinet(models.Model):

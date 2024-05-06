@@ -121,6 +121,12 @@
             <button class="btn btn-primary mt-2" data-toggle="modal" data-target="#loginModal">Login</button>
             <ul class="nav flex-column">
                 <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="#">Box list</a></li>
+                <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="#">Reports</a></li>
+
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-link btn btn-primary mt-2">Выход</button>
+                </form>
                 <!-- Add more links if needed -->
             </ul>
         </nav>
@@ -192,6 +198,8 @@
 
 <script>
     const socket = new WebSocket('ws://' + window.location.host + '/ws/ss_main/');
+    const socket_reports = new WebSocket('ws://' + window.location.host + '/ws/ss_main/reports');
+
     console.log("hi!");
     let historyStack = [];
     let typeStack = [];
@@ -201,6 +209,15 @@
         const response = JSON.parse(event.data);
         updateContent(response);
     };
+
+    socket_reports.onmessage = function(event) {
+        const response = JSON.parse(event.data);
+        updateReports(response);
+    };
+
+    function updateContent(response) {
+        console.log("Репорты!")
+    }
 
     function updateContent(response) {
         const type = response.type;
@@ -294,7 +311,7 @@
                                   <td>${item.id}</td>
                                   <td>${statusIcon}${item.status}</td>
                                   <td><span class="charge-circle ${chargeColor}"></span>${item.charge}</td>
-                                  <td><button class="btn btn-primary" onclick="loadCell(${item.id}, '${item.shkaf_id}')">MARKET INFO</button></td>
+                                  <td><button class="btn btn-primary" onclick="loadCell(${item.vir_sn_eid}, '${item.shkaf_id}')">MARKET INFO</button></td>
                               </tr>`;
             });
         }
@@ -308,8 +325,8 @@
         socket.send(JSON.stringify({'action': 'load_cells', 'cabinet_id': cabinetId}));
     }
 
-    function loadCell(cellId) {
-        socket.send(JSON.stringify({'action': 'load_cell', 'cell_id': cellId}));
+    function loadCell(virSnEid) {
+        socket.send(JSON.stringify({'action': 'load_cell', 'vir_sn_eid': virSnEid}));
     }
 
     document.querySelectorAll('.nav-link').forEach(item => {
