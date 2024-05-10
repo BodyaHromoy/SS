@@ -31,7 +31,7 @@ class User(AbstractUser):
 
 class Cabinet(models.Model):
     city = models.CharField(null=False)
-    shkaf_id = models.IntegerField(null=False, unique=True)
+    shkaf_id = models.CharField(null=False, unique=True)
     zone = models.CharField(max_length=255)
     location = models.TextField()
     street = models.CharField(max_length=255)
@@ -76,8 +76,7 @@ class Cell(models.Model):
 
 
 class Report(models.Model):
-    endpointid = models.IntegerField(null=True)
-    stationid = models.IntegerField(null=True)
+    stationid = models.CharField(null=True)
     balance_status = models.CharField(max_length=255, null=True)
     capacity = models.CharField(max_length=255, null=True)
     cap_coulo = models.CharField(max_length=255, null=True)

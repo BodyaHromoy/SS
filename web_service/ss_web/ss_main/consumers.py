@@ -13,20 +13,22 @@ class MyConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
-        print(text_data_json)
         action = text_data_json['action']
 
         if action == 'load_cabinets':
             response = await self.load_cabinets()
         elif action == 'load_cells':
-            cabinet_id = text_data_json['cabinet_id']
+            cabinet_id = text_data_json.get('cabinet_id')
             response = await self.load_cells(cabinet_id)
         elif action == 'load_cell':
-            vir_sn_eid = text_data_json['vir_sn_eid']
-            response = await self.load_cell(vir_sn_eid)
+            vir_sn_eid = text_data_json.get('vir_sn_eid')
+            if vir_sn_eid is None:
+                # Обрабатываем случай, когда 'vir_sn_eid' отсутствует
+                response = {"error": "vir_sn_eid отсутствует"}
+            else:
+                response = await self.load_cell(vir_sn_eid)
         else:
-            # Если action не соответствует ни одному из ожидаемых значений
-            response = {"error": "Unknown action"}
+            response = {"error": "Неизвестное действие"}
 
         await self.send(text_data=json.dumps(response))
 
@@ -47,23 +49,26 @@ class MyConsumer(AsyncWebsocketConsumer):
         cells = Cell.objects.filter(cabinet_id=cabinet_id).all()
         cells_data = [
             {"id": cell.endpointid, "station_id": cell.cabinet_id.shkaf_id, "status": cell.status,
-             "charge": cell.cap_percent}
+             "charge": cell.cap_percent, "vir_sn_eid": cell.vir_sn_eid, "vid": cell.vid}
             for cell in cells
         ]
-
+        # Добавляем vir_sn_eid к ответу
         return {"type": 'cells', 'data': cells_data}
 
     @database_sync_to_async
     def load_cell(self, vir_sn_eid):
         from .models import Cell
-        cell = Cell.objects.get(vir_sn_eid=vir_sn_eid)
-        cell_data = {
-            "name": cell.endpointid,
-            "vid": cell.vid,
-            "sn": cell.sn,
-            "sw_ver": cell.sw_ver
-        }
-        return {"type": 'cell', 'data': cell_data}
+        try:
+            cell = Cell.objects.filter(vir_sn_eid=vir_sn_eid).first()
+            cell_data = {
+                "name": cell.endpointid,
+                "vid": cell.vid,
+                "sn": cell.sn,
+                "sw_ver": cell.sw_ver
+            }
+            return {"type": 'cell', 'data': cell_data}
+        except Cell.DoesNotExist:
+            return {"error": "Ячейка не найдена"}
 
 
 class MyReports(AsyncWebsocketConsumer):

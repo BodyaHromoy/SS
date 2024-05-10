@@ -3,8 +3,7 @@ from app.database.database_connect import *
 
 
 class Ss_main_report(BaseModel):
-    endpointid = IntegerField(primary_key=True, column_name='endpointid')
-    stationid = IntegerField(null=True, column_name='stationid')
+    stationid = CharField(null=True, column_name='stationid')
     balance_status = CharField(null=True, column_name='balance_status')
     capacity = CharField(null=True, column_name='capacity')
     cap_coulo = CharField(null=True, column_name='cap_coulo')

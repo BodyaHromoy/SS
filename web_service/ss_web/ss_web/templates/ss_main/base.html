@@ -59,7 +59,7 @@
         }
 
         .green {
-            background-color: green;
+            background-color: #00ff00;
         }
 
         .yellow {
@@ -101,6 +101,11 @@
             color: red;
         }
 
+        .ready-icon:before {
+            content: "\2705";
+            color: #00ff00;
+        }
+
         /* Новый стиль для поиска */
         #searchContainer {
             display: none; /* Скрываем поиск по умолчанию */
@@ -118,14 +123,14 @@
 <div class="container-fluid">
     <div class="row">
         <nav class="col-lg-2 col-md-3 col-sm-4 col-xs-12 bg-light">
-            <button class="btn btn-primary mt-2" data-toggle="modal" data-target="#loginModal">Login</button>
             <ul class="nav flex-column">
+
                 <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="#">Box list</a></li>
-                <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="#">Reports</a></li>
+                <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="{% url 'report' %}">Reports</a></li>
 
                 <form method="post" action="{% url 'logout' %}">
                     {% csrf_token %}
-                    <button type="submit" class="nav-link btn btn-primary mt-2">Выход</button>
+                    <button type="submit" class="nav-link btn btn-primary mt-2">Logout</button>
                 </form>
                 <!-- Add more links if needed -->
             </ul>
@@ -167,7 +172,8 @@
 </div>
 
 <!-- Модальное окно для авторизации -->
-<div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel" aria-hidden="true">
+<div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel"
+     aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -271,6 +277,7 @@
                         <th>Slot ID &#9650;</th>
                         <th>Status &#9650;</th>
                         <th>Charge in % &#9650;</th>
+                        <th>Vendor &#9650;</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -301,6 +308,12 @@
                     case 'inactive':
                         statusIcon = '<span class="status-icon inactive-icon"></span>';
                         break;
+                    case 'ready':
+                        statusIcon = '<span class="status-icon ready-icon"></span>';
+                        break;
+                    case 'full':
+                        statusIcon = '<span class="status-icon ready-icon"></span>';
+                        break;
                     default:
                         statusIcon = '';
                         break;
@@ -311,22 +324,39 @@
                                   <td>${item.id}</td>
                                   <td>${statusIcon}${item.status}</td>
                                   <td><span class="charge-circle ${chargeColor}"></span>${item.charge}</td>
-                                  <td><button class="btn btn-primary" onclick="loadCell(${item.vir_sn_eid}, '${item.shkaf_id}')">MARKET INFO</button></td>
-                              </tr>`;
+                                  <td>${item.vid}</td>
+                                  <td><button class="btn btn-primary" onclick="loadCell('${item.vir_sn_eid}')">MARKET INFO</button></td>
+                               </tr>`;
             });
-        }
 
-        tableHtml += '</tbody></table>';
+        } else if (type === 'cell') {
+                tableHtml += `
+                    <thead>
+                        <tr>
+                            <th>SLOT ID</th>
+                            <th>SERIAL №</th>
+                            <th>SW_VER</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                tableHtml += `<tr>
+                                  <td>${answer_data.name}</td>
+                                  <td>${answer_data.sn}</td>
+                                  <td>${answer_data.sw_ver}</td>
+                              </tr>`;
+            }
+
+            tableHtml += '</tbody></table>';
         document.getElementById('breadcrumb').innerHTML = breadcrumbHtml;
         document.getElementById('dataDisplay').innerHTML = tableHtml;
     }
 
-    function loadCells(cabinetId) {
-        socket.send(JSON.stringify({'action': 'load_cells', 'cabinet_id': cabinetId}));
+    function loadCells(cabinetId, vir_sn_eid) {
+        socket.send(JSON.stringify({'action': 'load_cells', 'cabinet_id': cabinetId, 'vir_sn_eid': vir_sn_eid}));
     }
 
-    function loadCell(virSnEid) {
-        socket.send(JSON.stringify({'action': 'load_cell', 'vir_sn_eid': virSnEid}));
+    function loadCell(vir_sn_eid) {
+    socket.send(JSON.stringify({'action': 'load_cell', 'vir_sn_eid': vir_sn_eid}));
     }
 
     document.querySelectorAll('.nav-link').forEach(item => {
