@@ -1,8 +1,9 @@
 import asyncio
 import datetime
 import json
-import pytz
+
 import paho.mqtt.client as mqtt
+import pytz
 
 from app.database.models.modules import ss_main_cell
 from app.database.models.report import Ss_main_report
@@ -82,11 +83,8 @@ def update_entry(existing_entry, stat_id, status_data):
     else:
         existing_entry.status = "not_charging"
 
-
-
     existing_entry.save()
     print(f"Информация для {existing_entry.vir_sn_eid} обновлена.")
-
 
 
 # Функция перемещения записи в отчет
@@ -170,8 +168,8 @@ def create_new_entry(end_id, stat_id, sn=None, status_data=None, status="empty",
             total_capacity=status_data.get("TOTAL_CAPACITY") if status_data else None,
             vid=status_data.get("VID") if status_data else None,
             voltage_cur=status_data.get("VOLTAGE_CUR") if status_data else None,
-            #session_start=current_time,  # Устанавливаем время начала сессии
-            #session_end=current_time,  # Устанавливаем время окончания сессии
+            # session_start=current_time,  # Устанавливаем время начала сессии
+            # session_end=current_time,  # Устанавливаем время окончания сессии
             status=status,
             vir_sn_eid=vir_sn_eid
         )

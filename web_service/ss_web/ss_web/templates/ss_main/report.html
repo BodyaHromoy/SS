@@ -36,6 +36,7 @@
         {% csrf_token %}
         <div class="form-group">
             <label for="station_id">Choose boxes:</label>
+            <a href="{% url 'main' %}" class="btn btn-secondary">Home</a>
             <select name="station_id" id="station_id" class="form-control" multiple>
                 {% for station_id in station_ids %}
                     <option value="{{ station_id }}">{{ station_id }}</option>
