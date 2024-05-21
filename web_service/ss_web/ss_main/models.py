@@ -107,3 +107,5 @@ class Report(models.Model):
     session_start = models.DateTimeField(null=True, verbose_name='SESSION_START')
     time = models.DateTimeField(null=True, verbose_name='time')
     reason = models.CharField(max_length=255, null=True)
+    city = models.CharField(max_length=255, null=True)
+    zone = models.CharField(max_length=255, null=True)

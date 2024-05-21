@@ -12,43 +12,51 @@ from .models import Report
 def main(request):
     return render(request, 'ss_main/base.html', {})
 
+
 @staff_required
 def report(request):
     if request.method == 'POST':
-        station_id = request.POST.get('station_id')
+        station_ids = request.POST.getlist('station_id')
         select_all = request.POST.get('select_all')
+        cities = request.POST.getlist('city')
+        zones = request.POST.getlist('zone')
 
-        if not station_id and not select_all:
-            return HttpResponse("Пожалуйста, выберите зарядную станцию или отметьте 'Выбрать все'.")
+        reports = Report.objects.all()
+
+        if not station_ids and not select_all and not cities and not zones:
+            return HttpResponse("Пожалуйста, выберите зарядную станцию, город или зону, либо отметьте 'Выбрать все'.")
 
         if select_all:
-            # Установлен флажок "Выбрать все", игнорируем выбор станции
             reports = Report.objects.all()
-        elif station_id:
-            # Выбрана конкретная станция
-            reports = Report.objects.filter(stationid__contains=station_id)
+        else:
+            if station_ids:
+                reports = reports.filter(
+                    stationid__in=[
+                        report.stationid for report in Report.objects.all()
+                        if any(report.stationid.startswith(prefix) for prefix in station_ids)
+                    ]
+                )
+            if cities:
+                reports = reports.filter(city__in=cities)
+            if zones:
+                reports = reports.filter(zone__in=zones)
 
         if reports.exists():
-            # Создаем объект HttpResponse для возврата файла Excel
-            response = HttpResponse(
-                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            response['Content-Disposition'] = f'attachment; filename="reports_{station_id}.xlsx"'
+            response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response['Content-Disposition'] = f'attachment; filename="reports.xlsx"'
 
-            # Создаем новую книгу Excel и добавляем в нее лист
             workbook = openpyxl.Workbook()
             worksheet = workbook.active
 
-            # Записываем заголовки столбцов
             headers = ['stationid', 'balance_status', 'capacity', 'cap_coulo', 'cap_percent',
                        'cap_vol', 'charge_cap_h', 'charge_cap_l', 'charge_times', 'core_volt',
                        'current_cur', 'cycle_times', 'design_voltage', 'fun_boolean', 'healthy',
                        'ochg_state', 'odis_state', 'over_discharge_times', 'pcb_ver',
                        'remaining_cap', 'remaining_cap_percent', 'sn', 'sw_ver', 'temp_cur1',
                        'temp_cur2', 'total_capacity', 'vid', 'voltage_cur', 'session_start',
-                       'session_end', 'reason']
+                       'session_end', 'reason', 'city', 'zone']
             worksheet.append(headers)
 
-            # Записываем данные отчетов в файл Excel
             for report in reports:
                 row = [report.stationid, report.balance_status, report.capacity, report.cap_coulo,
                        report.cap_percent, report.cap_vol, report.charge_cap_h, report.charge_cap_l,
@@ -58,23 +66,25 @@ def report(request):
                        report.remaining_cap_percent, report.sn, report.sw_ver, report.temp_cur1,
                        report.temp_cur2, report.total_capacity, report.vid, report.voltage_cur,
                        report.session_start.replace(tzinfo=None) if report.session_start else None,
-                       report.time.replace(tzinfo=None) if report.time else None, report.reason]
+                       report.time.replace(tzinfo=None) if report.time else None, report.reason, report.city,
+                       report.zone]
                 worksheet.append(row)
 
-            # Сохраняем книгу Excel и отправляем пользователю
             workbook.save(response)
             return response
         else:
-            return HttpResponse("Для выбранной зарядной станции отчеты отсутствуют.")
+            return HttpResponse("Для выбранной зарядной станции, города или зоны отчеты отсутствуют.")
     else:
-        # Получаем уникальные префиксы stationid из базы данных
+        # Extract unique prefixes for stationid
         prefixes = set()
         for report in Report.objects.all():
             prefix = report.stationid.split('-')[0]
             prefixes.add(prefix)
 
-        # Отображаем только уникальные префиксы в фильтре
-        return render(request, 'ss_main/report.html', {'station_ids': prefixes})
+        cities = Report.objects.values_list('city', flat=True).distinct()
+        zones = Report.objects.values_list('zone', flat=True).distinct()
+
+        return render(request, 'ss_main/report.html', {'station_ids': prefixes, 'cities': cities, 'zones': zones})
 
 
 def reset_selection(request):

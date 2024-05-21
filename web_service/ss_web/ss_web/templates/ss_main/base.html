@@ -124,10 +124,8 @@
     <div class="row">
         <nav class="col-lg-2 col-md-3 col-sm-4 col-xs-12 bg-light">
             <ul class="nav flex-column">
-
                 <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="#">Box list</a></li>
                 <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="{% url 'report' %}">Reports</a></li>
-
                 <form method="post" action="{% url 'logout' %}">
                     {% csrf_token %}
                     <button type="submit" class="nav-link btn btn-primary mt-2">Logout</button>
@@ -164,44 +162,13 @@
             </div>
             <!-- Кнопка возврата назад -->
             <button class="btn btn-secondary mt-2" onclick="goBack()">RETURN</button>
+            <button class="btn btn-primary mt-2" onclick="refreshData()">Обновить данные</button>
             <br>
             <div id="breadcrumb" class="breadcrumb"></div>
             <div id="dataDisplay">Press "Box list"</div>
         </main>
     </div>
 </div>
-
-<!-- Модальное окно для авторизации -->
-<div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel"
-     aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="loginModalLabel">Авторизация</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form>
-                    <div class="form-group">
-                        <label for="username">Логин</label>
-                        <input type="text" class="form-control" id="username" placeholder="Введите логин">
-                    </div>
-                    <div class="form-group">
-                        <label for="password">Пароль</label>
-                        <input type="password" class="form-control" id="password" placeholder="Введите пароль">
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
-                <button type="button" class="btn btn-primary">Войти</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
     const socket = new WebSocket('ws://' + window.location.host + '/ws/ss_main/');
     const socket_reports = new WebSocket('ws://' + window.location.host + '/ws/ss_main/reports');
@@ -209,7 +176,6 @@
     console.log("hi!");
     let historyStack = [];
     let typeStack = [];
-
 
     socket.onmessage = function(event) {
         const response = JSON.parse(event.data);
@@ -222,13 +188,9 @@
     };
 
     function updateContent(response) {
-        console.log("Репорты!")
-    }
-
-    function updateContent(response) {
         const type = response.type;
         const answer_data = response.data;
-        let breadcrumbHtml;
+        let breadcrumbHtml = '';
         let tableHtml = '<table class="table table-striped" id="dataTable">';
 
         updateBreadcrumb(type);
@@ -243,7 +205,6 @@
         }
 
         if (type === 'cabinets') {
-            breadcrumbHtml += ' > Шкафы';
             tableHtml += `
                 <thead>
                     <tr>
@@ -269,7 +230,6 @@
                               </tr>`;
             });
         } else if (type === 'cells') {
-            breadcrumbHtml += ' > Шкафы > Ячейки';
             tableHtml += `
                 <thead>
                     <tr>
@@ -328,25 +288,24 @@
                                   <td><button class="btn btn-primary" onclick="loadCell('${item.vir_sn_eid}')">MARKET INFO</button></td>
                                </tr>`;
             });
-
         } else if (type === 'cell') {
-                tableHtml += `
-                    <thead>
-                        <tr>
-                            <th>SLOT ID</th>
-                            <th>SERIAL №</th>
-                            <th>SW_VER</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-                tableHtml += `<tr>
-                                  <td>${answer_data.name}</td>
-                                  <td>${answer_data.sn}</td>
-                                  <td>${answer_data.sw_ver}</td>
-                              </tr>`;
-            }
+            tableHtml += `
+                <thead>
+                    <tr>
+                        <th>SLOT ID</th>
+                        <th>SERIAL №</th>
+                        <th>SW_VER</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+            tableHtml += `<tr>
+                              <td>${answer_data.name}</td>
+                              <td>${answer_data.sn}</td>
+                              <td>${answer_data.sw_ver}</td>
+                          </tr>`;
+        }
 
-            tableHtml += '</tbody></table>';
+        tableHtml += '</tbody></table>';
         document.getElementById('breadcrumb').innerHTML = breadcrumbHtml;
         document.getElementById('dataDisplay').innerHTML = tableHtml;
     }
@@ -356,7 +315,7 @@
     }
 
     function loadCell(vir_sn_eid) {
-    socket.send(JSON.stringify({'action': 'load_cell', 'vir_sn_eid': vir_sn_eid}));
+        socket.send(JSON.stringify({'action': 'load_cell', 'vir_sn_eid': vir_sn_eid}));
     }
 
     document.querySelectorAll('.nav-link').forEach(item => {
@@ -458,6 +417,8 @@
         document.getElementById("searchInput").value = "";
         filterTable();
     }
+
+
 </script>
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>

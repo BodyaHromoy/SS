@@ -34,6 +34,8 @@ class Ss_main_report(BaseModel):
     session_start = CharField(null=True, column_name='session_start')
     time = CharField(null=True, column_name='time')
     reason = CharField(null=True, column_name='reason')
+    city = CharField(max_length=255, null=True)
+    zone = CharField(max_length=255, null=True)
 
 
 # Создание таблицы

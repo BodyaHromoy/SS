@@ -2,11 +2,13 @@ import asyncio
 import datetime
 import json
 
-import paho.mqtt.client as mqtt
+from paho.mqtt.client import Client
 import pytz
+
 
 from app.database.models.modules import ss_main_cell
 from app.database.models.report import Ss_main_report
+from app.database.models.cabinets import Ss_main_cabinet
 
 # Словарь для отслеживания активных sn и их последнего обновления
 active_v_sn = {}
@@ -121,9 +123,33 @@ def move_to_report(existing_entry, reason):
         session_start=existing_entry.session_start,
         session_end=existing_entry.session_end,
         time=existing_entry.time,
-        reason=reason
+        reason=reason,
+        city=find_city_name(existing_entry.cabinet_id_id.city),
+        zone=find_zone_name(existing_entry.cabinet_id_id.zone)
     )
     print(f"Перемещена строка с Endpoint ID {existing_entry.vir_sn_eid}в отчет из-за {reason}.")
+
+
+def find_city_name(city_name):
+    try:
+        # Получение объекта шкафа по названию города
+        cabinet = Ss_main_cabinet.get(Ss_main_cabinet.city == city_name)
+
+        return cabinet.city
+    except Ss_main_cabinet.DoesNotExist:
+        print(f"Не удалось найти шкаф для города {city_name}")
+        return None
+
+
+def find_zone_name(zone_name):
+    try:
+        # Получение объекта шкафа по идентификатору
+        cabinet = Ss_main_cabinet.get(Ss_main_cabinet.zone == zone_name)
+
+        return cabinet.zone
+    except Ss_main_cabinet.DoesNotExist:
+        print(f"{zone_name} не найден.")
+        return None
 
 
 # Функция создания новой записи
@@ -293,7 +319,7 @@ def on_publish(mosq, obj, mid):
 
 # Функция запуска асинхронного цикла
 async def start_mqtt_client():
-    client = mqtt.Client()
+    client = Client()
     client.on_message = on_message
     client.on_publish = on_publish
     client.connect("192.168.1.15", 1883, 60)
