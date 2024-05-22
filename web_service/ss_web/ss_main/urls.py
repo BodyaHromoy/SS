@@ -7,7 +7,8 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from django.urls import path
 from .views import report
-
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -21,3 +22,6 @@ urlpatterns = [
 
     path('reset_selection/', views.reset_selection, name='reset_selection'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

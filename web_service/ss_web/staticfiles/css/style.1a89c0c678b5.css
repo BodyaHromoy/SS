@@ -1,0 +1,110 @@
+body {
+    background-color: #6495ED;
+    color: black;
+    padding: 10px;
+}
+
+h1 {
+    color: white;
+    text-align: center;
+}
+
+.container-fluid {
+    border-radius: 10px;
+    background-color: #fff;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+table {
+    color: #345;
+    width: 100%;
+}
+
+th {
+    background-color: #fff;
+    color: #345;
+    padding: 0.3em;
+    text-align: left;
+}
+
+td {
+    padding: 0.3em;
+    text-align: left;
+}
+
+tbody {
+    background-color: #fff;
+    color: #345;
+}
+
+tr:nth-child(odd) {
+    background-color: #eee;
+}
+
+.charge-circle {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.green {
+    background-color: #00ff00;
+}
+
+.yellow {
+    background-color: yellow;
+}
+
+.red {
+    background-color: red;
+}
+
+.blue {
+    background-color: blue;
+}
+
+.status-icon {
+    display: inline-block;
+    width: 15px;
+    height: 40px;
+    margin-right: 7px;
+}
+
+.charging-icon:before {
+    content: "\26AF";
+    color: green;
+}
+
+.not-charging-icon:before {
+    content: "\26AF";
+    color: gray;
+}
+
+.empty-icon:before {
+    content: "\25CB";
+    color: gray;
+}
+
+.inactive-icon:before {
+    content: "\26D4";
+    color: red;
+}
+
+.ready-icon:before {
+    content: "\2705";
+    color: #00ff00;
+}
+
+/* Новый стиль для поиска */
+#searchContainer {
+    display: none; /* Скрываем поиск по умолчанию */
+    margin-top: 10px;
+}
+
+#searchContainer input[type="text"] {
+    width: calc(100% - 120px); /* Ширина поля ввода */
+    margin-right: 10px;
+}

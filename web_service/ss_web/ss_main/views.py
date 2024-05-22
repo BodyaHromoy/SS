@@ -5,12 +5,13 @@ from django.shortcuts import render, redirect
 
 from .decorators.auth_decorators import staff_required
 from .forms.auth_form import CustomAuthenticationForm
-from .models import Report
+from .models import Report, Cabinet
 
 
 @staff_required
 def main(request):
-    return render(request, 'ss_main/base.html', {})
+    cities = Cabinet.objects.values_list('city', flat=True).distinct()
+    return render(request, 'ss_main/index.html', {'cities': cities})
 
 
 @staff_required
@@ -48,17 +49,19 @@ def report(request):
             workbook = openpyxl.Workbook()
             worksheet = workbook.active
 
-            headers = ['stationid', 'balance_status', 'capacity', 'cap_coulo', 'cap_percent',
+            headers = ['city', 'zone', 'stationid', 'reason', 'balance_status', 'capacity', 'cap_coulo', 'cap_percent',
                        'cap_vol', 'charge_cap_h', 'charge_cap_l', 'charge_times', 'core_volt',
                        'current_cur', 'cycle_times', 'design_voltage', 'fun_boolean', 'healthy',
                        'ochg_state', 'odis_state', 'over_discharge_times', 'pcb_ver',
                        'remaining_cap', 'remaining_cap_percent', 'sn', 'sw_ver', 'temp_cur1',
                        'temp_cur2', 'total_capacity', 'vid', 'voltage_cur', 'session_start',
-                       'session_end', 'reason', 'city', 'zone']
+                       'session_end']
             worksheet.append(headers)
 
             for report in reports:
-                row = [report.stationid, report.balance_status, report.capacity, report.cap_coulo,
+                row = [report.city, report.zone, report.stationid, report.reason, report.balance_status,
+                       report.capacity,
+                       report.cap_coulo,
                        report.cap_percent, report.cap_vol, report.charge_cap_h, report.charge_cap_l,
                        report.charge_times, report.core_volt, report.current_cur, report.cycle_times,
                        report.design_voltage, report.fun_boolean, report.healthy, report.ochg_state,
@@ -66,8 +69,8 @@ def report(request):
                        report.remaining_cap_percent, report.sn, report.sw_ver, report.temp_cur1,
                        report.temp_cur2, report.total_capacity, report.vid, report.voltage_cur,
                        report.session_start.replace(tzinfo=None) if report.session_start else None,
-                       report.time.replace(tzinfo=None) if report.time else None, report.reason, report.city,
-                       report.zone]
+                       report.time.replace(tzinfo=None) if report.time else None
+                       ]
                 worksheet.append(row)
 
             workbook.save(response)
