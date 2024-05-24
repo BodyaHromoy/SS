@@ -36,7 +36,7 @@ def zones(request):
     suggestions = list(data.values_list('zone', flat=True).distinct())
     return JsonResponse(suggestions, safe=False)
 
-
+@staff_required
 def report(request):
     if request.method == 'POST':
         form = ReportFilterForm(request.POST)
