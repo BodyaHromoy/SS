@@ -17,7 +17,9 @@ urlpatterns = [
     path('logout/', CustomLogoutView.as_view(), name='logout'),
 
     path('', main, name='main'),
-
+    path('api/station_ids', views.station_ids),
+    path('api/cities', views.cities),
+    path('api/zones', views.zones),
     path('reports/', report, name='report'),
 
     path('reset_selection/', views.reset_selection, name='reset_selection'),

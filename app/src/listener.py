@@ -152,17 +152,14 @@ def find_zone_name(zone_name):
         return None
 
 
-# Функция создания новой записи
+
 def create_new_entry(end_id, stat_id, sn=None, status_data=None, status="empty", vir_sn_eid="empty"):
     current_time = datetime.datetime.utcnow()  # Получаем текущее время
 
-    # Проверяем, существует ли запись с таким же EndpointID и StationID и SN
     if ss_main_cell.select().where(ss_main_cell.vir_sn_eid == vir_sn_eid).exists():
-        # Если запись уже существует, не создаем новую запись
         print(f"Запись с Endpoint ID {end_id} и Station ID {stat_id} уже существует.")
         return
     else:
-        # Создаем новую запись
         fun_boolean = status_data.get("FUN_BOOLEAN") if status_data else None
         cell_entry = ss_main_cell.create(
             endpointid=end_id,
@@ -194,22 +191,19 @@ def create_new_entry(end_id, stat_id, sn=None, status_data=None, status="empty",
             total_capacity=status_data.get("TOTAL_CAPACITY") if status_data else None,
             vid=status_data.get("VID") if status_data else None,
             voltage_cur=status_data.get("VOLTAGE_CUR") if status_data else None,
-            # session_start=current_time,  # Устанавливаем время начала сессии
-            # session_end=current_time,  # Устанавливаем время окончания сессии
+            # session_start=current_time,
+            # session_end=current_time,
             status=status,
             vir_sn_eid=vir_sn_eid
         )
         print(f"Создана запись для {vir_sn_eid}.")
 
 
-# Функция для обработки статуса и пинга
 async def sort(msg):
-    # Определение типа сообщения
     data = json.loads(msg.payload.decode('utf-8'))
     message_type = data.get('Type')
 
     if message_type == 'Ping':
-        # Для сообщения типа "Ping" обновляем время последнего пинга
 
         v_end_id = data.get("EndpointID")
         v_stat_id = data.get("StationID")
@@ -220,9 +214,8 @@ async def sort(msg):
         print(vir_sn)
 
         active_v_sn[vir_sn] = datetime.datetime.now()
-        print("Получен пинг от ", vir_sn)
 
-        # Ищем запись в базе данных по endpointid и stationid
+        print("Получен пинг от ", vir_sn)
         existing_entry = ss_main_cell.select().where(ss_main_cell.vir_sn_eid == vir_sn).first()
 
         if existing_entry:
@@ -230,8 +223,6 @@ async def sort(msg):
             if existing_entry.sn:
                 move_to_report(existing_entry, reason="Ping")
                 print("Скопирована существующая запись в отчет.")
-
-                # Обнуляем поля существующей записи
                 existing_entry.sn = None
                 existing_entry.balance_status = None
                 existing_entry.capacity = None
@@ -273,8 +264,6 @@ async def sort(msg):
         return
 
     if message_type == 'Status':
-        # Для сообщения типа "Status" проверяем наличие записи в базе данных по endpointid и stationid
-
         v_end_id = data.get("EndpointID")
         v_stat_id = data.get("StationID")
         end_id = data.get("EndpointID")
