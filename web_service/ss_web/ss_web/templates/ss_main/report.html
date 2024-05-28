@@ -104,39 +104,38 @@
 <h1>Charge monitoring reports:</h1>
 <div class="container-fluid">
     <form method="post">
-        {% csrf_token %}
-        {{ form.non_field_errors }}
-       <div class="form-group">
-            <label for="station_id">Station ID:</label>
-            <input type="text" id="station_id" name="station_id">
-            <div id="station_id_list" class="autocomplete-items"></div>
-        </div>
-        <div class="form-group">
-            <label for="city">City:</label>
-            <input type="text" id="city" name="city">
-            <div id="city_list" class="autocomplete-items"></div>
-        </div>
-        <div class="form-group">
-            <label for="zone">Zone:</label>
-            <input type="text" id="zone" name="zone">
-            <div id="zone_list" class="autocomplete-items"></div>
-        </div>
-
-        <div class="form-group">
-            {{ form.time_from.label_tag }}
-            {{ form.time_from }}
-        </div>
-        <div class="form-group">
-            {{ form.time_to.label_tag }}
-            {{ form.time_to }}
-        </div>
-        <div class="form-group form-check">
-            {{ form.select_all }}
-            {{ form.select_all.label_tag }}
-        </div>
-        <button type="submit" class="btn btn-primary">Download report</button>
-        <a href="{% url 'reset_selection' %}" class="btn btn-secondary">Reset selection</a>
-    </form>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="form-group">
+        <label for="city">City:</label>
+        <input type="text" id="city" name="city">
+        <div id="city_list" class="autocomplete-items"></div>
+    </div>
+    <div class="form-group">
+        <label for="zone">Zone:</label>
+        <input type="text" id="zone" name="zone">
+        <div id="zone_list" class="autocomplete-items"></div>
+    </div>
+    <div class="form-group">
+        <label for="station_id">Station ID:</label>
+        <input type="text" id="station_id" name="station_id">
+        <div id="station_id_list" class="autocomplete-items"></div>
+    </div>
+    <div class="form-group">
+        {{ form.time_from.label_tag }}
+        {{ form.time_from }}
+    </div>
+    <div class="form-group">
+        {{ form.time_to.label_tag }}
+        {{ form.time_to }}
+    </div>
+    <div class="form-group form-check">
+        {{ form.select_all }}
+        {{ form.select_all.label_tag }}
+    </div>
+    <button type="submit" class="btn btn-primary">Download report</button>
+    <a href="{% url 'reset_selection' %}" class="btn btn-secondary">Reset selection</a>
+</form>
 </div>
 
 <script>

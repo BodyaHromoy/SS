@@ -4,9 +4,6 @@ let reconnectAttempts = 0;
 const maxReconnectAttempts = 10;
 const reconnectInterval = 2000; // 2 seconds
 
-let historyStack = [];
-let typeStack = [];
-
 function connectSocket() {
     socket = new WebSocket('ws://' + window.location.host + '/ws/ss_main/');
     socket_reports = new WebSocket('ws://' + window.location.host + '/ws/ss_main/reports');
@@ -277,31 +274,26 @@ function filterTable() {
     const rows = table.getElementsByTagName("tr");
 
     for (let i = 1; i < rows.length; i++) {
-        const rowData = rows[i].getElementsByTagName("td");
-        let found = false;
+        const row = rows[i];
+        const cells = row.getElementsByTagName("td");
+        let match = false;
 
-        for (let j = 0; j < rowData.length; j++) {
-            const cellData = rowData[j].textContent.toLowerCase();
-            if (cellData.indexOf(input) > -1) {
-                found = true;
-                break;
+        for (let j = 0; j < cells.length; j++) {
+            const cell = cells[j];
+            if (cell) {
+                const cellText = cell.innerText.toLowerCase();
+                if (cellText.includes(input)) {
+                    match = true;
+                    break;
+                }
             }
         }
-
-        rows[i].style.display = found ? "" : "none";
+        row.style.display = match ? "" : "none";
     }
 }
 
-function toggleSearch() {
-    const searchContainer = document.getElementById("searchContainer");
-    if (searchContainer.style.display === "none") {
-        searchContainer.style.display = "block";
-    } else {
-        searchContainer.style.display = "none";
-    }
-}
-
-function clearSearch() {
-    document.getElementById("searchInput").value = "";
-    filterTable();
-}
+document.getElementById("searchInput").addEventListener("input", filterTable);
+document.getElementById("filterForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+    applyFilters();
+});

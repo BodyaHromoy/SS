@@ -1,9 +1,11 @@
+from datetime import timedelta
+
 import openpyxl
 from django.contrib.auth.views import LoginView, LogoutView
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
-from datetime import timedelta
+
 from .decorators.auth_decorators import staff_required
 from .forms.auth_form import CustomAuthenticationForm
 from .forms.forms import ReportFilterForm
