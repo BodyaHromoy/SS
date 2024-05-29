@@ -38,37 +38,33 @@ def zones(request):
     suggestions = list(data.values_list('zone', flat=True).distinct())
     return JsonResponse(suggestions, safe=False)
 
+
 @staff_required
 def report(request):
     if request.method == 'POST':
         form = ReportFilterForm(request.POST)
         if form.is_valid():
-            select_all = form.cleaned_data.get('select_all')
+            station_id = form.cleaned_data.get('station_id')
+            city = form.cleaned_data.get('city')
+            zone = form.cleaned_data.get('zone')
+            time_from = form.cleaned_data.get('time_from')
+            time_to = form.cleaned_data.get('time_to')
 
-            if select_all:
-                reports = Report.objects.all()
-            else:
-                station_id = form.cleaned_data.get('station_id')
-                city = form.cleaned_data.get('city')
-                zone = form.cleaned_data.get('zone')
-                time_from = form.cleaned_data.get('time_from')
-                time_to = form.cleaned_data.get('time_to')
+            # Проверяем, выбраны ли все фильтры
+            if not all([station_id, city, zone, time_from, time_to]):
+                return HttpResponse("Пожалуйста, выберите все фильтры.")
 
-                # Проверяем, выбран ли хотя бы один фильтр
-                if not any([station_id, city, zone, time_from, time_to]):
-                    return HttpResponse("Пожалуйста, выберите хотя бы один фильтр.")
+            reports = Report.objects.all()
 
-                reports = Report.objects.all()
-
-                if station_id:
-                    reports = reports.filter(stationid__startswith=station_id)
-                if city:
-                    reports = reports.filter(city=city)
-                if zone:
-                    reports = reports.filter(zone=zone)
-                if time_from and time_to:
-                    time_to += timedelta(days=1)  # Добавляем один день к конечной дате
-                    reports = reports.filter(time__range=[time_from, time_to])
+            if station_id:
+                reports = reports.filter(stationid__startswith=station_id)
+            if city:
+                reports = reports.filter(city=city)
+            if zone:
+                reports = reports.filter(zone=zone)
+            if time_from and time_to:
+                time_to += timedelta(days=1)  # Добавляем один день к конечной дате
+                reports = reports.filter(time__range=[time_from, time_to])
 
             if reports:
                 response = HttpResponse(
