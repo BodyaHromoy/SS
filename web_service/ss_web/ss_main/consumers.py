@@ -23,7 +23,6 @@ class MyConsumer(AsyncWebsocketConsumer):
         elif action == 'load_cell':
             vir_sn_eid = text_data_json.get('vir_sn_eid')
             if vir_sn_eid is None:
-                # Обрабатываем случай, когда 'vir_sn_eid' отсутствует
                 response = {"error": "vir_sn_eid отсутствует"}
             else:
                 response = await self.load_cell(vir_sn_eid)
@@ -37,8 +36,14 @@ class MyConsumer(AsyncWebsocketConsumer):
         from .models import Cabinet
         cabinets = Cabinet.objects.all()
         cabinets_data = [
-            {"city": cabinet.city, "shkaf_id": cabinet.shkaf_id, "zone": cabinet.zone,
-             "location": cabinet.location, "street": cabinet.street, "extra_inf": cabinet.extra_inf}
+            {
+                "city": cabinet.city.city_name if cabinet.city else None,
+                "shkaf_id": cabinet.shkaf_id,
+                "zone": cabinet.zone.zone_name if cabinet.zone else None,
+                "location": cabinet.location,
+                "street": cabinet.street,
+                "extra_inf": cabinet.extra_inf
+            }
             for cabinet in cabinets
         ]
         return {"type": 'cabinets', 'data': cabinets_data}
@@ -48,11 +53,16 @@ class MyConsumer(AsyncWebsocketConsumer):
         from .models import Cell
         cells = Cell.objects.filter(cabinet_id=cabinet_id).all()
         cells_data = [
-            {"id": cell.endpointid, "station_id": cell.cabinet_id.shkaf_id, "status": cell.status,
-             "charge": cell.cap_percent, "vir_sn_eid": cell.vir_sn_eid, "vid": cell.vid}
+            {
+                "id": cell.endpointid,
+                "station_id": cell.cabinet_id.shkaf_id,
+                "status": cell.status,
+                "charge": cell.cap_percent,
+                "vir_sn_eid": cell.vir_sn_eid,
+                "vid": cell.vid
+            }
             for cell in cells
         ]
-        # Добавляем vir_sn_eid к ответу
         return {"type": 'cells', 'data': cells_data}
 
     @database_sync_to_async
@@ -60,13 +70,16 @@ class MyConsumer(AsyncWebsocketConsumer):
         from .models import Cell
         try:
             cell = Cell.objects.filter(vir_sn_eid=vir_sn_eid).first()
-            cell_data = {
-                "name": cell.endpointid,
-                "vid": cell.vid,
-                "sn": cell.sn,
-                "sw_ver": cell.sw_ver
-            }
-            return {"type": 'cell', 'data': cell_data}
+            if cell:
+                cell_data = {
+                    "name": cell.endpointid,
+                    "vid": cell.vid,
+                    "sn": cell.sn,
+                    "sw_ver": cell.sw_ver
+                }
+                return {"type": 'cell', 'data': cell_data}
+            else:
+                return {"error": "Ячейка не найдена"}
         except Cell.DoesNotExist:
             return {"error": "Ячейка не найдена"}
 

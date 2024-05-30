@@ -29,13 +29,31 @@ class User(AbstractUser):
     )
 
 
+class Vendor(models.Model):
+    vendor_name = models.CharField(max_length=255, unique=True, null=False)
+
+
+class City(models.Model):
+    city_name = models.TextField(max_length=255, unique=True, null=False)
+    country = models.CharField(max_length=255, null=False)
+    vendor = models.ForeignKey(to=Vendor, on_delete=models.CASCADE, null=False, to_field='vendor_name')
+
+
+class Zone(models.Model):
+    zone_name = models.CharField(max_length=255, unique=True, null=False)
+    city = models.ForeignKey(to=City, on_delete=models.CASCADE, null=False, to_field='city_name')
+    vendor = models.ForeignKey(to=Vendor, on_delete=models.CASCADE, null=False, to_field='vendor_name')
+
+
 class Cabinet(models.Model):
-    city = models.CharField(null=False)
+    city = models.ForeignKey(to=City, on_delete=models.CASCADE, null=False, to_field='city_name')
     shkaf_id = models.CharField(null=False, unique=True)
-    zone = models.CharField(max_length=255)
+    zone = models.ForeignKey(to=Zone, on_delete=models.CASCADE, null=False, to_field='zone_name')
     location = models.TextField()
-    street = models.CharField(max_length=255)
+    street = models.TextField()
     extra_inf = models.TextField()
+    vendor = models.ForeignKey(to=Vendor, on_delete=models.CASCADE, null=False, to_field='vendor_name')
+
 
 
 class Cell(models.Model):
