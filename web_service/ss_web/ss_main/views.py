@@ -5,17 +5,84 @@ from django.contrib.auth.views import LoginView, LogoutView
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
-
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from .decorators.auth_decorators import staff_required
 from .forms.auth_form import CustomAuthenticationForm
 from .forms.forms import ReportFilterForm
-from .models import Report, Cabinet
+from .models import *
 
 
 @staff_required
 def main(request):
     cities = Cabinet.objects.values_list('city', flat=True).distinct()
     return render(request, 'ss_main/index.html', {'cities': cities})
+
+
+def cabinet_details_api(request, shkaf_id):
+    cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
+    cells = Cell.objects.filter(cabinet_id=cabinet)
+
+    cabinet_data = {
+        'shkaf_id': cabinet.shkaf_id,
+        'city': {'city_name': cabinet.city.city_name},
+        'zone': {'zone_name': cabinet.zone.zone_name},
+
+        'street': cabinet.street,
+        'location': cabinet.location,
+        'extra_inf': cabinet.extra_inf,
+        'cells': [
+            {'endpointid': cell.endpointid, 'cap_percent': cell.cap_percent, 'vid': cell.vid}
+            for cell in cells
+        ]
+    }
+
+    return JsonResponse(cabinet_data)
+
+
+@login_required
+def user_cabinets(request):
+    # Получаем текущего пользователя
+    user = request.user
+    # Получаем все зоны, доступные пользователю
+    zones = user.zones.all()
+    # Получаем все шкафы, относящиеся к этим зонам
+    cabinets = Cabinet.objects.filter(zone__in=zones)
+
+    # Список для хранения информации о статусах в каждом шкафе
+    cabinet_statuses = []
+    # Проходимся по каждому шкафу
+    for cabinet in cabinets:
+        # Получаем все ячейки в текущем шкафе
+        cells = cabinet.cell_set.all()
+        # Считаем количество ячеек с каждым из статусов
+        ready_count = cells.filter(status='ready').count()
+        charging_count = cells.filter(status='charging').count()
+        empty_count = cells.filter(status='empty').count()
+        # Добавляем информацию о статусах в текущем шкафе в список
+        cabinet_statuses.append({
+            'cabinet': cabinet,
+            'ready_count': ready_count,
+            'charging_count': charging_count,
+            'empty_count': empty_count,
+        })
+
+    context = {
+        'cabinet_statuses': cabinet_statuses,
+        'user': user,
+        'zones': zones,
+    }
+    return render(request, 'ss_main/user_cabinets.html', context)
+
+
+def cabinet_details(request, shkaf_id):
+    cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
+    cells = Cell.objects.filter(cabinet_id=cabinet)
+    context = {
+        'cabinet': cabinet,
+        'cells': cells,
+    }
+    return render(request, 'ss_main/cabinet_details.html', context)
 
 
 def station_ids(request):

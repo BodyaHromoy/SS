@@ -1,7 +1,7 @@
 from peewee import *
 
 try:
-    db = PostgresqlDatabase('modul_db', user='postgres', password='О1azSd*', host='localhost', port=5432)
+    db = PostgresqlDatabase('testik3', user='bogdanafter', password='bogdanafter', host='192.168.1.206', port=5432)
     print(":)")
 except:
     print(":(")

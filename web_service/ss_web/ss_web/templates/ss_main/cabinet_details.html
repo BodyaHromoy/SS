@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Детали шкафа {{ cabinet.shkaf_id }}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa; /* Светло-серый фон */
+            color: #343a40; /* Темный серый цвет текста */
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .info-header {
+            background-color: #343a40; /* Темный фон */
+            color: white; /* Белый текст */
+            padding: 10px;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+        }
+        .info-header p {
+            margin: 0;
+        }
+        .main-content {
+    flex: 1;
+    padding-top: 140px; /* Отступ для фиксированного хедера */
+    padding-bottom: 60px; /* Отступ для фиксированного футера */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 120px; /* Высота .info-header + небольшой отступ */
+}
+        }
+        h2 {
+            margin: 20px 0;
+            text-align: center;
+            color: #007bff; /* Синий цвет для заголовка */
+            text-transform: uppercase; /* Преобразование заголовка в верхний регистр */
+        }
+        .table-responsive {
+            margin-top: 20px;
+            width: 80%;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: center;
+            padding: 12px;
+        }
+        th {
+            background-color: #343a40; /* Темный фон для заголовков таблицы */
+            color: #ffffff; /* Белый цвет текста в заголовках */
+            text-transform: uppercase; /* Преобразование заголовков в верхний регистр */
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2; /* Светло-серый фон для четных строк */
+        }
+        tr:nth-child(odd) {
+            background-color: #e9ecef; /* Еще светлее серый фон для нечетных строк */
+        }
+        .footer {
+            background-color: #343a40; /* Темный фон */
+            color: white; /* Белый текст */
+            padding: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn {
+            flex: 1;
+            max-width: 100px;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="info-header">
+        <p><strong>Номер шкафа:</strong> <span id="cabinet-name">{{ cabinet.shkaf_id|default:"-" }}</span></p>
+        <p><strong>Город:</strong> <span id="city-name">{{ cabinet.city.city_name|default:"-" }}</span></p>
+        <p><strong>Зона:</strong> <span id="zone-name">{{ cabinet.zone.zone_name|default:"-" }}</span></p>
+        <p><strong>Локация:</strong> <span id="location">{{ cabinet.location|default:"-" }}</span></p>
+        <p><strong>Улица:</strong> <span id="street">{{ cabinet.street|default:"-" }}</span></p>
+        <p><strong>Дополнительная информация:</strong> <span id="extra-info">{{ cabinet.extra_inf|default:"-" }}</span></p>
+    </div>
+
+    <div class="main-content">
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered table-hover">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Slot N</th>
+                        <th>% Cap</th>
+                        <th>Vendor</th>
+                    </tr>
+                </thead>
+                <tbody id="cells-table-body">
+                    {% for cell in cells|dictsort:"endpointid" %}
+                    <tr>
+                        <td>{{ cell.endpointid|default:"-" }}</td>
+                        <td>{{ cell.cap_percent|default:"-" }}</td>
+                        <td>{{ cell.vid|default:"-" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="footer">
+        <button class="btn btn-secondary" onclick="goBack()">Назад</button>
+        <button class="btn btn-primary" onclick="updateData()">Обновить данные</button>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function goBack() {
+            window.history.back();
+        }
+
+        async function updateData() {
+            try {
+                const response = await fetch('/api/cabinet/{{ cabinet.shkaf_id }}/details/');
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const data = await response.json();
+
+                // Сортируем ячейки по номеру слота (endpointid) по возрастанию
+                data.cells.sort((a, b) => a.endpointid - b.endpointid);
+
+                // Обновляем таблицу ячеек
+                const cellsTableBody = document.getElementById('cells-table-body');
+                cellsTableBody.innerHTML = ''; // Очищаем текущее содержимое таблицы
+                data.cells.forEach(cell => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${cell.endpointid || '-'}</td>
+                        <td>${cell.cap_percent || '-'}</td>
+                        <td>${cell.vid || '-'}</td>
+                    `;
+                    cellsTableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error updating data:', error);
+            }
+        }
+    </script>
+</body>
+</html>

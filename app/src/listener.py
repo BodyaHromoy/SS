@@ -76,9 +76,7 @@ def update_entry(existing_entry, stat_id, status_data):
     existing_entry.session_end = current_time
 
     # Определение статуса на основе значения cap_percent
-    if cap_percent == 100:
-        existing_entry.status = "full"
-    elif cap_percent >= 91:
+    if cap_percent >= 91:
         existing_entry.status = "ready"
     elif "4" in str(status_data.get("FUN_BOOLEAN")):
         existing_entry.status = "charging"

@@ -1,59 +1,39 @@
-from django.contrib.auth.models import AbstractUser, Group, Permission
+from django.contrib.auth.models import User
 from django.db import models
 
-
-class UserRoles(models.Model):
-    role = models.CharField(max_length=255)
-    is_admin = models.BooleanField(default=False)
-
-
-class User(AbstractUser):
-    role = models.ForeignKey(UserRoles, on_delete=models.CASCADE, related_name="users")
-    info = models.TextField(null=True)
-
-    groups = models.ManyToManyField(
-        Group,
-        verbose_name='groups',
-        blank=True,
-        help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
-        related_name="custom_user_set",  # Измененный related_name
-        related_query_name="user",
-    )
-    user_permissions = models.ManyToManyField(
-        Permission,
-        verbose_name='user permissions',
-        blank=True,
-        help_text='Specific permissions for this user.',
-        related_name="custom_user_permission_set",  # Измененный related_name
-        related_query_name="user",
-    )
 
 
 class Vendor(models.Model):
     vendor_name = models.CharField(max_length=255, unique=True, null=False)
 
+    def __str__(self):
+        return self.vendor_name
 
 class City(models.Model):
-    city_name = models.TextField(max_length=255, unique=True, null=False)
+    city_name = models.CharField(max_length=255, unique=True, null=False)
     country = models.CharField(max_length=255, null=False)
     vendor = models.ForeignKey(to=Vendor, on_delete=models.CASCADE, null=False, to_field='vendor_name')
 
+    def __str__(self):
+        return self.city_name
 
 class Zone(models.Model):
     zone_name = models.CharField(max_length=255, unique=True, null=False)
     city = models.ForeignKey(to=City, on_delete=models.CASCADE, null=False, to_field='city_name')
     vendor = models.ForeignKey(to=Vendor, on_delete=models.CASCADE, null=False, to_field='vendor_name')
-
+    users = models.ManyToManyField(User, related_name='zones')
 
 class Cabinet(models.Model):
     city = models.ForeignKey(to=City, on_delete=models.CASCADE, null=False, to_field='city_name')
-    shkaf_id = models.CharField(null=False, unique=True)
+    shkaf_id = models.CharField(null=False, unique=True, max_length=255)
     zone = models.ForeignKey(to=Zone, on_delete=models.CASCADE, null=False, to_field='zone_name')
     location = models.TextField()
     street = models.TextField()
     extra_inf = models.TextField()
     vendor = models.ForeignKey(to=Vendor, on_delete=models.CASCADE, null=False, to_field='vendor_name')
 
+    def __str__(self):
+        return self.shkaf_id
 
 
 class Cell(models.Model):
@@ -91,6 +71,9 @@ class Cell(models.Model):
     status = models.CharField(max_length=255, null=True, verbose_name='STATUS')
     time = models.DateTimeField(null=True, verbose_name='time')
     vir_sn_eid = models.TextField(null=True, verbose_name='VIR_SN_EID')
+
+    def __str__(self):
+        return self.vir_sn_eid
 
 
 class Report(models.Model):
