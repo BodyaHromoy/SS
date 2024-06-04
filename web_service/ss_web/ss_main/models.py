@@ -9,6 +9,7 @@ class Vendor(models.Model):
     def __str__(self):
         return self.vendor_name
 
+
 class City(models.Model):
     city_name = models.CharField(max_length=255, unique=True, null=False)
     country = models.CharField(max_length=255, null=False)
@@ -17,11 +18,16 @@ class City(models.Model):
     def __str__(self):
         return self.city_name
 
+
 class Zone(models.Model):
     zone_name = models.CharField(max_length=255, unique=True, null=False)
     city = models.ForeignKey(to=City, on_delete=models.CASCADE, null=False, to_field='city_name')
     vendor = models.ForeignKey(to=Vendor, on_delete=models.CASCADE, null=False, to_field='vendor_name')
     users = models.ManyToManyField(User, related_name='zones')
+
+    def __str__(self):
+        return self.zone_name
+
 
 class Cabinet(models.Model):
     city = models.ForeignKey(to=City, on_delete=models.CASCADE, null=False, to_field='city_name')
