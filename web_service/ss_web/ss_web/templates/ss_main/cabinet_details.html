@@ -35,14 +35,13 @@
             margin: 0;
         }
         .main-content {
-    flex: 1;
-    padding-top: 80px; /* Отступ для фиксированного хедера */
-    padding-bottom: 80px; /* Отступ для фиксированного футера */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 120px; /* Высота .info-header + небольшой отступ */
-}
+            flex: 1;
+            padding-top: 80px; /* Отступ для фиксированного хедера */
+            padding-bottom: 80px; /* Отступ для фиксированного футера */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 120px; /* Высота .info-header + небольшой отступ */
         }
         h2 {
             margin: 20px 0;
@@ -91,6 +90,27 @@
             max-width: 100px;
             margin: 0 10px;
         }
+
+        /* Стили для индикатора загрузки */
+        .loader {
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 16px solid #3498db;
+            width: 120px;
+            height: 120px;
+            animation: spin 2s linear infinite;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+            display: none; /* Скрыто по умолчанию */
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -131,6 +151,9 @@
         <button class="btn btn-primary" onclick="updateData()">Обновить данные</button>
     </div>
 
+    <!-- Индикатор загрузки -->
+    <div id="loader" class="loader"></div>
+
     <!-- Bootstrap JS and dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -140,6 +163,8 @@
         }
 
         async function updateData() {
+            const loader = document.getElementById('loader');
+            loader.style.display = 'block'; // Показать индикатор загрузки
             try {
                 const response = await fetch('/api/cabinet/{{ cabinet.shkaf_id }}/details/');
                 if (!response.ok) {
@@ -164,6 +189,8 @@
                 });
             } catch (error) {
                 console.error('Error updating data:', error);
+            } finally {
+                loader.style.display = 'none'; // Скрыть индикатор загрузки
             }
         }
     </script>

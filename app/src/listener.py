@@ -122,10 +122,10 @@ def move_to_report(existing_entry, reason):
         session_end=existing_entry.session_end,
         time=existing_entry.time,
         reason=reason,
-        city=find_city_name(existing_entry.cabinet_id_id.city),
-        zone=find_zone_name(existing_entry.cabinet_id_id.zone)
+        city=find_city_name(existing_entry.cabinet_id_id.city.city_name),
+        zone=find_zone_name(existing_entry.cabinet_id_id.zone.zone_name)
     )
-    print(f"Перемещена строка с Endpoint ID {existing_entry.vir_sn_eid}в отчет из-за {reason}.")
+    print(f"Перемещена строка с Endpoint ID {existing_entry.vir_sn_eid} в отчет из-за {reason}.")
 
 
 def find_city_name(city_name):
@@ -133,7 +133,7 @@ def find_city_name(city_name):
         # Получение объекта шкафа по названию города
         cabinet = Ss_main_cabinet.get(Ss_main_cabinet.city == city_name)
 
-        return cabinet.city
+        return cabinet.city.city_name
     except Ss_main_cabinet.DoesNotExist:
         print(f"Не удалось найти шкаф для города {city_name}")
         return None
@@ -144,11 +144,10 @@ def find_zone_name(zone_name):
         # Получение объекта шкафа по идентификатору
         cabinet = Ss_main_cabinet.get(Ss_main_cabinet.zone == zone_name)
 
-        return cabinet.zone
+        return cabinet.zone.zone_name
     except Ss_main_cabinet.DoesNotExist:
         print(f"{zone_name} не найден.")
         return None
-
 
 
 def create_new_entry(end_id, stat_id, sn=None, status_data=None, status="empty", vir_sn_eid="empty"):
