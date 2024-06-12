@@ -1,22 +1,120 @@
 from datetime import timedelta
-
+from django.http import HttpResponseForbidden
 import openpyxl
 from django.contrib.auth.views import LoginView, LogoutView
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.shortcuts import render, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from .decorators.auth_decorators import staff_required
 from .forms.auth_form import CustomAuthenticationForm
-from .forms.forms import ReportFilterForm
+from .forms.forms import ReportFilterForm, CourierCreationForm
 from .models import *
+from django.contrib import messages
+
+def is_logistician(user):
+    return user.is_authenticated and user.role == 'logistician'
 
 
 @staff_required
 def main(request):
     cities = Cabinet.objects.values_list('city', flat=True).distinct()
     return render(request, 'ss_main/index.html', {'cities': cities})
+
+
+@login_required
+@user_passes_test(is_logistician)
+def create_courier(request):
+    if not request.user.role == 'logistician':
+        return HttpResponseForbidden()
+
+    if request.method == 'POST':
+        form = CourierCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.set_password(form.cleaned_data['password'])
+            user.save()
+            return redirect('courier_list')
+    else:
+        form = CourierCreationForm()
+
+    return render(request, 'ss_main/create_courier.html', {'form': form})
+
+
+@login_required
+@user_passes_test(lambda u: u.role == 'logistician')
+def assign_zone_to_courier(request):
+    if request.method == 'POST':
+        courier_id = request.POST.get('courier_id')
+        zone_id = request.POST.get('zone_id')
+
+        try:
+            courier = get_object_or_404(CustomUser, pk=courier_id)
+            zone = get_object_or_404(Zone, pk=zone_id)
+
+            # Убедимся, что назначаем только одну зону
+            courier.zones.clear()
+            courier.zones.add(zone)
+            messages.success(request, f"Zone '{zone.zone_name}' successfully assigned to courier '{courier.username}'.")
+        except Exception as e:
+            messages.error(request, f"An error occurred: {str(e)}")
+            return redirect('assign_zone_to_courier')
+
+    couriers = CustomUser.objects.filter(role='courier')
+    zones = Zone.objects.all()
+    return render(request, 'ss_main/assign_zone.html', {'couriers': couriers, 'zones': zones})
+
+
+@login_required
+@user_passes_test(is_logistician)
+def zone_list(request):
+    zones = Zone.objects.all()
+    zone_data = []
+
+    for zone in zones:
+        cabinets = Cabinet.objects.filter(zone=zone)
+        status_counts = {
+            'ready': 0,
+            'charging': 0,
+            'empty': 0,
+            'Inactive': 0
+        }
+
+        for cabinet in cabinets:
+            cells = Cell.objects.filter(cabinet_id=cabinet)
+            for cell in cells:
+                if cell.status == 'ready':
+                    status_counts['ready'] += 1
+                elif cell.status == 'charging':
+                    status_counts['charging'] += 1
+                elif cell.status == 'empty':
+                    status_counts['empty'] += 1
+                elif cell.status == 'Inactive':
+                    status_counts['Inactive'] += 1
+
+        zone_data.append({
+            'zone': zone,
+            'status_counts': status_counts
+        })
+
+    return render(request, 'ss_main/zone_list.html', {'zone_data': zone_data})
+
+
+@login_required
+@user_passes_test(is_logistician)
+def zone_detail(request, zone_id):
+    zone = get_object_or_404(Zone, id=zone_id)
+    couriers = CustomUser.objects.filter(zones=zone, role='courier')
+    return render(request, 'ss_main/zone_detail.html', {'zone': zone, 'couriers': couriers})
+
+
+@login_required
+@user_passes_test(is_logistician)
+def cabinet_list(request, zone_id):
+    zone = get_object_or_404(Zone, pk=zone_id)
+    cabinets = Cabinet.objects.filter(zone=zone)
+    return render(request, 'ss_main/cabinet_list.html', {'zone': zone, 'cabinets': cabinets})
 
 
 def cabinet_details_api(request, shkaf_id):

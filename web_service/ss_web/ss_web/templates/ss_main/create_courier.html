@@ -1,0 +1,15 @@
+<!-- templates/create_courier.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Courier</title>
+</head>
+<body>
+    <h2>Create Courier</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Create Courier</button>
+    </form>
+</body>
+</html>

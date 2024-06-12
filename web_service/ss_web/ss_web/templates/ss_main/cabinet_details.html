@@ -116,7 +116,6 @@
 <body>
     <div class="info-header">
         <p><strong>Номер шкафа:</strong> <span id="cabinet-name">{{ cabinet.shkaf_id|default:"-" }}</span></p>
-        <p><strong>Город:</strong> <span id="city-name">{{ cabinet.city.city_name|default:"-" }}</span></p>
         <p><strong>Зона:</strong> <span id="zone-name">{{ cabinet.zone.zone_name|default:"-" }}</span></p>
         <p><strong>Локация:</strong> <span id="location">{{ cabinet.location|default:"-" }}</span></p>
         <p><strong>Улица:</strong> <span id="street">{{ cabinet.street|default:"-" }}</span></p>
@@ -136,8 +135,8 @@
                 <tbody id="cells-table-body">
                     {% for cell in cells|dictsort:"endpointid" %}
                     <tr>
-                        <td>{{ cell.endpointid|default:"-" }}</td>
-                        <td>{{ cell.cap_percent|default:"-" }}</td>
+                        <td>●{{ cell.endpointid|default:"-" }}</td>
+                        <td>{{ cell.cap_percent|default:"-" }}%</td>
                         <td>{{ cell.vid|default:"-" }}</td>
                     </tr>
                     {% endfor %}
@@ -181,8 +180,8 @@
                 data.cells.forEach(cell => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${cell.endpointid || '-'}</td>
-                        <td>${cell.cap_percent || '-'}</td>
+                        <td>●${cell.endpointid || '-'}</td>
+                        <td>${cell.cap_percent || '-'}%</td>
                         <td>${cell.vid || '-'}</td>
                     `;
                     cellsTableBody.appendChild(row);

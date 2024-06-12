@@ -1,7 +1,32 @@
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser, Group, Permission
+from django.conf import settings
 from django.db import models
 
 
+class CustomUser(AbstractUser):
+    ROLE_CHOICES = (
+        ('courier', 'Courier'),
+        ('logistician', 'Logistician'),
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='courier')
+
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='customuser_set',
+        blank=True,
+        help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
+        related_query_name='user',
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='customuser_set',
+        blank=True,
+        help_text='Specific permissions for this user.',
+        related_query_name='user',
+    )
+
+    def __str__(self):
+        return f'{self.username} - {self.role}'
 
 class Vendor(models.Model):
     vendor_name = models.CharField(max_length=255, unique=True, null=False)
@@ -23,10 +48,18 @@ class Zone(models.Model):
     zone_name = models.CharField(max_length=255, unique=True, null=False)
     city = models.ForeignKey(to=City, on_delete=models.CASCADE, null=False, to_field='city_name')
     vendor = models.ForeignKey(to=Vendor, on_delete=models.CASCADE, null=False, to_field='vendor_name')
-    users = models.ManyToManyField(User, related_name='zones')
+    users = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='zones')
 
     def __str__(self):
         return self.zone_name
+
+    def cell_status_counts(self):
+        cabinets = Cabinet.objects.filter(zone=self)
+        ready = Cell.objects.filter(cabinet_id__in=cabinets, status='ready').count()
+        charging = Cell.objects.filter(cabinet_id__in=cabinets, status='charging').count()
+        empty = Cell.objects.filter(cabinet_id__in=cabinets, status='empty').count()
+        Inactive = Cell.objects.filter(cabinet_id__in=cabinets, status='Inactive').count()
+        return {'ready': ready, 'charging': charging, 'empty': empty, 'Inactive': Inactive}
 
 
 class Cabinet(models.Model):

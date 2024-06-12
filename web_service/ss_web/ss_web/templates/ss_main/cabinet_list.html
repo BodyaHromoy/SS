@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ zone.zone_name }} - Cabinets</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: #fff;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<h1>Cabinets in {{ zone.zone_name }}</h1>
+<table>
+    <thead>
+    <tr>
+        <th>Номер шкафа</th>
+        <th>Локация</th>
+        <th>Улица</th>
+        <th>Действия</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for cabinet in cabinets %}
+    <tr>
+        <td>{{ cabinet.shkaf_id }}</td>
+        <td>{{ cabinet.location }}</td>
+        <td>{{ cabinet.street }}</td>
+        <td><a href=" {% url 'cabinet_details' cabinet.shkaf_id %} " class="btn btn-primary btn-sm">Детали</a></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<a href="{% url 'zone_list' %}">Back to Zone List</a>
+</body>
+</html>

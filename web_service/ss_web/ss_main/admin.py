@@ -1,5 +1,5 @@
 from django.contrib import admin
-
+from django.contrib.auth.admin import UserAdmin
 from .models import *
 
 admin.site.register(Cell)
@@ -9,6 +9,15 @@ admin.site.register(City)
 admin.site.register(Vendor)
 
 
+class CustomUserAdmin(UserAdmin):
+    fieldsets = UserAdmin.fieldsets + (
+        (None, {'fields': ('role',)}),
+    )
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        (None, {'fields': ('role',)}),
+    )
+
+
 class ZoneAdmin(admin.ModelAdmin):
     list_display = ('zone_name', 'city', 'vendor')
     search_fields = ('zone_name', 'city__city_name', 'vendor__vendor_name')
@@ -16,3 +25,4 @@ class ZoneAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Zone, ZoneAdmin)
+admin.site.register(CustomUser, CustomUserAdmin)

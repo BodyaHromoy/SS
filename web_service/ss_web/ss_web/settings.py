@@ -26,7 +26,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
-# AUTH_USER_MODEL = 'ss_main.User'
+AUTH_USER_MODEL = 'ss_main.CustomUser'
 
 # Application definition
 
@@ -91,7 +91,7 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'testik3',
+        'NAME': 'testik6',
         'USER': 'bogdanafter',
         'PASSWORD': 'bogdanafter',
         'HOST': '192.168.1.206',
