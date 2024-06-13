@@ -23,6 +23,7 @@ urlpatterns = [
     path('api/station_ids', views.station_ids),
     path('api/cities', views.cities),
     path('api/zones', views.zones),
+    path('api/my-cabinets/', views.user_cabinets_api, name='user_cabinets_api'),
 
     path('reports/', report, name='report'),
     path('reset_selection/', views.reset_selection, name='reset_selection'),

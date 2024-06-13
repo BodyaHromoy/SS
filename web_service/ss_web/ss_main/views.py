@@ -13,6 +13,7 @@ from .forms.forms import ReportFilterForm, CourierCreationForm
 from .models import *
 from django.contrib import messages
 
+
 def is_logistician(user):
     return user.is_authenticated and user.role == 'logistician'
 
@@ -181,6 +182,28 @@ def cabinet_details(request, shkaf_id):
         'cells': cells,
     }
     return render(request, 'ss_main/cabinet_details.html', context)
+
+
+@login_required
+def user_cabinets_api(request):
+    user = request.user
+    zones = user.zones.all()
+    cabinets = Cabinet.objects.filter(zone__in=zones)
+
+    cabinet_statuses = []
+    for cabinet in cabinets:
+        cells = cabinet.cell_set.all()
+        ready_count = cells.filter(status='ready').count()
+        charging_count = cells.filter(status='charging').count()
+        empty_count = cells.filter(status='empty').count()
+        cabinet_statuses.append({
+            'shkaf_id': cabinet.shkaf_id,
+            'ready_count': ready_count,
+            'charging_count': charging_count,
+            'empty_count': empty_count,
+        })
+
+    return JsonResponse(cabinet_statuses, safe=False)
 
 
 def station_ids(request):
