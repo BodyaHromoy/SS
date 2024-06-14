@@ -54,7 +54,7 @@ def create_courier(request):
 
 # Назначение зоны курьеру
 @login_required
-@user_passes_test(lambda u: u.role == 'logistician')
+@user_passes_test(is_logistician)
 def assign_zone_to_courier(request):
     if request.method == 'POST':
         courier_id = request.POST.get('courier_id')
