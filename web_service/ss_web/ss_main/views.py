@@ -1,29 +1,38 @@
 from datetime import timedelta
-from django.http import HttpResponseForbidden
+
 import openpyxl
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView, LogoutView
 from django.http import HttpResponse
+from django.http import HttpResponseForbidden
 from django.http import JsonResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import redirect
 from django.shortcuts import render, get_object_or_404
-from django.contrib.auth.decorators import login_required, user_passes_test
+
 from .decorators.auth_decorators import staff_required
 from .forms.auth_form import CustomAuthenticationForm
 from .forms.forms import ReportFilterForm, CourierCreationForm
 from .models import *
-from django.contrib import messages
 
 
+# Проверка на то является ли пользователь логистом
 def is_logistician(user):
     return user.is_authenticated and user.role == 'logistician'
 
 
+def is_regional_manager(user):
+    return user.is_authenticated and user.role == 'regional_manager'
+
+
+# Главная страница(инженерная)
 @staff_required
 def main(request):
     cities = Cabinet.objects.values_list('city', flat=True).distinct()
     return render(request, 'ss_main/index.html', {'cities': cities})
 
 
+# Регистрация нового курьера
 @login_required
 @user_passes_test(is_logistician)
 def create_courier(request):
@@ -43,6 +52,7 @@ def create_courier(request):
     return render(request, 'ss_main/create_courier.html', {'form': form})
 
 
+# Назначение зоны курьеру
 @login_required
 @user_passes_test(lambda u: u.role == 'logistician')
 def assign_zone_to_courier(request):
@@ -67,9 +77,11 @@ def assign_zone_to_courier(request):
     return render(request, 'ss_main/assign_zone.html', {'couriers': couriers, 'zones': zones})
 
 
+# Список зон (основная страница логиста)
 @login_required
 @user_passes_test(is_logistician)
 def zone_list(request):
+    user = request.user
     zones = Zone.objects.all()
     zone_data = []
 
@@ -96,12 +108,14 @@ def zone_list(request):
 
         zone_data.append({
             'zone': zone,
-            'status_counts': status_counts
+            'status_counts': status_counts,
+            'user': user
         })
 
     return render(request, 'ss_main/zone_list.html', {'zone_data': zone_data})
 
 
+# Список курьеров в зоне(у логиста)
 @login_required
 @user_passes_test(is_logistician)
 def zone_detail(request, zone_id):
@@ -110,6 +124,7 @@ def zone_detail(request, zone_id):
     return render(request, 'ss_main/zone_detail.html', {'zone': zone, 'couriers': couriers})
 
 
+# Список шкафов в зоне(у логиста)
 @login_required
 @user_passes_test(is_logistician)
 def cabinet_list(request, zone_id):
@@ -118,6 +133,7 @@ def cabinet_list(request, zone_id):
     return render(request, 'ss_main/cabinet_list.html', {'zone': zone, 'cabinets': cabinets})
 
 
+# Обновление деталий шкафа
 def cabinet_details_api(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
     cells = Cell.objects.filter(cabinet_id=cabinet)
@@ -139,6 +155,23 @@ def cabinet_details_api(request, shkaf_id):
     return JsonResponse(cabinet_data)
 
 
+# Основная страница регионального менеджера
+@user_passes_test(is_regional_manager)
+def main_region(request):
+    cities = City.objects.all()
+    city_data = []
+    for city in cities:
+        zones_count = Zone.objects.filter(city=city).count()
+        cabinets_count = Cabinet.objects.filter(city=city).count()
+        city_data.append({
+            'city': city,
+            'zones_count': zones_count,
+            'cabinets_count': cabinets_count,
+        })
+    return render(request, 'ss_main/main_region.html', {'city_data': city_data, 'cities': cities})
+
+
+# Основная страница курьера
 @login_required
 def user_cabinets(request):
     # Получаем текущего пользователя
@@ -174,6 +207,7 @@ def user_cabinets(request):
     return render(request, 'ss_main/user_cabinets.html', context)
 
 
+# Детали шкафа
 def cabinet_details(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
     cells = Cell.objects.filter(cabinet_id=cabinet)
@@ -184,6 +218,7 @@ def cabinet_details(request, shkaf_id):
     return render(request, 'ss_main/cabinet_details.html', context)
 
 
+# API для получения информации о статусах ячеек в шкафах
 @login_required
 def user_cabinets_api(request):
     user = request.user
@@ -206,6 +241,7 @@ def user_cabinets_api(request):
     return JsonResponse(cabinet_statuses, safe=False)
 
 
+# API для получения информации о статусах ячеек в шкафе
 def station_ids(request):
     query = request.GET.get('query', '')
     data = Report.objects.filter(stationid__icontains=query)
@@ -213,6 +249,7 @@ def station_ids(request):
     return JsonResponse(suggestions, safe=False)
 
 
+# API для получения информации о городах
 def cities(request):
     query = request.GET.get('query', '')
     data = Report.objects.filter(city__icontains=query)
@@ -220,6 +257,7 @@ def cities(request):
     return JsonResponse(suggestions, safe=False)
 
 
+# API для получения информации о зонах
 def zones(request):
     query = request.GET.get('query', '')
     data = Report.objects.filter(zone__icontains=query)
@@ -227,6 +265,7 @@ def zones(request):
     return JsonResponse(suggestions, safe=False)
 
 
+# Генерация отчета(моя гордость)
 @staff_required
 def report(request):
     if request.method == 'POST':

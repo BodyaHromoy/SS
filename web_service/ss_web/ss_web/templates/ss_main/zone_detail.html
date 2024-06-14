@@ -83,7 +83,7 @@
                     <tr>
                         <th>Имя пользователя</th>
                         <th>Полное имя</th>
-                        <th>Email</th>
+                        <th>Последний раз в сети</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -91,7 +91,7 @@
                     <tr>
                         <td>{{ courier.username }}</td>
                         <td>{{ courier.get_full_name }}</td>
-                        <td>{{ courier.email }}</td>
+                        <td>{{ courier.last_login }}</td>
                     </tr>
                     {% endfor %}
                 <a href="{% url 'zone_list' %}">Back to Zone List</a>

@@ -4,56 +4,58 @@
     <title>Assign Zone to Couriers</title>
 </head>
 <body>
-    <h2>Assign Zone to Couriers</h2>
+<h2>Assign Zone to Couriers</h2>
 
-    {% if messages %}
-        <ul class="messages">
-            {% for message in messages %}
-                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li
+            {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
 
-    <table>
-        <thead>
-            <tr>
-                <th>Courier</th>
-                <th>Current Zone</th>
-                <th>New Zone</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for courier in couriers %}
-                <tr>
-                    <td>{{ courier.username }}</td>
-                    <td>
-                        {% for zone in courier.zones.all %}
-                            {{ zone.zone_name }}
-                        {% empty %}
-                            No Zone Assigned
-                        {% endfor %}
-                    </td>
-                    <td>
-                        <form id="form_{{ courier.id }}" method="post" action="{% url 'assign_zone_to_courier' %}">
-                            {% csrf_token %}
-                            <input type="hidden" name="courier_id" value="{{ courier.id }}">
-                            <select name="zone_id">
-                                {% for zone in zones %}
-                                    <option value="{{ zone.id }}" {% if zone in courier.zones.all %}selected{% endif %}>
-                                        {{ zone.zone_name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                    </td>
-                    <td>
-                            <button type="submit">Assign</button>
-                        </form>
-                    </td>
-                </tr>
+<table>
+    <thead>
+    <tr>
+        <th>Courier</th>
+        <th>Current Zone</th>
+        <th>New Zone</th>
+        <th>Action</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for courier in couriers %}
+    <tr>
+        <td>{{ courier.username }}</td>
+        <td>
+            {% for zone in courier.zones.all %}
+            {{ zone.zone_name }}
+            {% empty %}
+            No Zone Assigned
             {% endfor %}
-        </tbody>
-    </table>
+        </td>
+        <td>
+            <form id="form_{{ courier.id }}" method="post" action="{% url 'assign_zone_to_courier' %}">
+                {% csrf_token %}
+                <input type="hidden" name="courier_id" value="{{ courier.id }}">
+                <select name="zone_id">
+                    {% for zone in zones %}
+                    <option value="{{ zone.id }}" {% if zone in courier.zones.all %}selected{% endif %}>
+                        {{ zone.zone_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+        </td>
+        <td>
+            <button type="submit">Assign</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
 <a href="{% url 'zone_list' %}">Back to Zone List</a>
 </body>
 </html>

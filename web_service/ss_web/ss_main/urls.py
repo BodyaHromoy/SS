@@ -18,6 +18,9 @@ urlpatterns = [
     path('zones/<int:zone_id>/', zone_detail, name='zone_detail'),
     path('zones/<int:zone_id>/cabinets/', cabinet_list, name='cabinet_list'),
 
+    path('region/', main_region, name='main_region'),
+
+
     path('', main, name='main'),
 
     path('api/station_ids', views.station_ids),

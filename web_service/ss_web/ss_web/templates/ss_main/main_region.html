@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Города</title>
+</head>
+<body>
+    <p>Логин: {{ user.username }}</p>
+
+    <label for="city-filter">Выберите город:</label>
+    <select id="city-filter">
+        {% for city in cities %}
+        <option value="{{ city.city_name }}">{{ city.city_name }}</option>
+        {% endfor %}
+    </select>
+
+    <table>
+        <tr>
+            <th>Город</th>
+            <th>Зоны</th>
+            <th>Шкафы</th>
+            <th></th>
+
+        </tr>
+        {% for data in city_data %}
+        <tr>
+            <td>{{ data.city.city_name }}</td>
+            <td>{{ data.zones_count }}</td>
+            <td>{{ data.cabinets_count }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
