@@ -12,17 +12,24 @@ from django.shortcuts import render, get_object_or_404
 
 from .decorators.auth_decorators import staff_required
 from .forms.auth_form import CustomAuthenticationForm
-from .forms.forms import ReportFilterForm, CourierCreationForm
+from .forms.forms import ReportFilterForm, CourierCreationForm, LogicCreationForm
 from .models import *
 
 
-# Проверка на то является ли пользователь логистом
 def is_logistician(user):
     return user.is_authenticated and user.role == 'logistician'
 
 
+def is_engineer(user):
+    return user.is_authenticated and user.role == 'engineer'
+
+
 def is_regional_manager(user):
     return user.is_authenticated and user.role == 'regional_manager'
+
+
+def is_role(user, roles):
+    return user.is_authenticated and user.role in roles
 
 
 # Главная страница(инженерная)
@@ -52,6 +59,24 @@ def create_courier(request):
     return render(request, 'ss_main/create_courier.html', {'form': form})
 
 
+# Создание нового логиста
+@user_passes_test(is_regional_manager)
+def create_logic(request):
+    if not request.user.role == 'regional_manager':
+        return HttpResponseForbidden()
+
+    if request.method == 'POST':
+        form = LogicCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.set_password(form.cleaned_data['password'])
+            user.save()
+    else:
+        form = LogicCreationForm()
+
+    return render(request, 'ss_main/create_logic.html', {'form': form})
+
+
 # Назначение зоны курьеру
 @login_required
 @user_passes_test(is_logistician)
@@ -75,6 +100,31 @@ def assign_zone_to_courier(request):
     couriers = CustomUser.objects.filter(role='courier')
     zones = Zone.objects.all()
     return render(request, 'ss_main/assign_zone.html', {'couriers': couriers, 'zones': zones})
+
+
+# Назначение зоны зоны логисту
+@login_required
+@user_passes_test(is_regional_manager)
+def assign_zone_to_logic(request):
+    if request.method == 'POST':
+        logistician_id = request.POST.get('logistician_id')
+        zone_id = request.POST.get('zone_id')
+
+        try:
+            logistician = get_object_or_404(CustomUser, pk=logistician_id)
+            zone = get_object_or_404(Zone, pk=zone_id)
+
+            # Убедимся, что назначаем только одну зону
+            logistician.zones.clear()
+            logistician.zones.add(zone)
+            messages.success(request, f"Zone '{zone.zone_name}' successfully assigned to logistician '{logistician.username}'.")
+        except Exception as e:
+            messages.error(request, f"An error occurred: {str(e)}")
+            return redirect('assign_zone_to_logic')
+
+    logisticians = CustomUser.objects.filter(role='courier')
+    zones = Zone.objects.all()
+    return render(request, 'ss_main/assign_logic.html', {'logisticians': logisticians, 'zones': zones})
 
 
 # Список зон (основная страница логиста)
@@ -171,27 +221,55 @@ def main_region(request):
     return render(request, 'ss_main/main_region.html', {'city_data': city_data, 'cities': cities})
 
 
+# Список зон в городе(региональный менеджер)
+@user_passes_test(is_regional_manager)
+def region_zones(request, city_id):
+    city = get_object_or_404(City, id=city_id)
+    zones = Zone.objects.filter(city=city)
+    zone_data = []
+    total_cells = 0
+    total_cabinets = 0  # Добавляем счетчик для шкафов
+    for zone in zones:
+        status_counts = zone.cell_status_counts()
+        total_cells += sum(status_counts.values())
+        cabinets_count = Cabinet.objects.filter(zone=zone).count()  # Считаем количество шкафов в зоне
+        total_cabinets += cabinets_count  # Увеличиваем общее количество шкафов
+        zone_data.append({
+            'zone': zone,
+            'status_counts': status_counts,
+            'cabinets_count': cabinets_count  # Добавляем количество шкафов в данные зоны
+        })
+    return render(request, 'ss_main/region_zones.html', {'zone_data': zone_data, 'city': city,
+                                                         'total_zones': len(zone_data), 'total_cells': total_cells,
+                                                         'total_cabinets': total_cabinets})
+
+
+# Логисты зоны(региональный менеджер)
+@user_passes_test(is_regional_manager)
+def region_logic(request, zone_id):
+    zone = get_object_or_404(Zone, id=zone_id)
+    logisticians = CustomUser.objects.filter(zones=zone, role='logistician').values('username', 'last_login',
+                                                                                    'first_name', 'last_name')
+    cabinets = Cabinet.objects.filter(zone=zone)
+    cells = Cell.objects.filter(cabinet_id__in=cabinets)
+    return render(request, 'ss_main/region_logic.html',
+                  {'zone': zone, 'logisticians': logisticians, 'cabinets_count': cabinets.count(),
+                   'cells_count': cells.count()})
+
+
 # Основная страница курьера
 @login_required
 def user_cabinets(request):
-    # Получаем текущего пользователя
     user = request.user
-    # Получаем все зоны, доступные пользователю
     zones = user.zones.all()
-    # Получаем все шкафы, относящиеся к этим зонам
     cabinets = Cabinet.objects.filter(zone__in=zones)
 
-    # Список для хранения информации о статусах в каждом шкафе
     cabinet_statuses = []
-    # Проходимся по каждому шкафу
     for cabinet in cabinets:
-        # Получаем все ячейки в текущем шкафе
         cells = cabinet.cell_set.all()
-        # Считаем количество ячеек с каждым из статусов
         ready_count = cells.filter(status='ready').count()
         charging_count = cells.filter(status='charging').count()
         empty_count = cells.filter(status='empty').count()
-        # Добавляем информацию о статусах в текущем шкафе в список
         cabinet_statuses.append({
             'cabinet': cabinet,
             'ready_count': ready_count,

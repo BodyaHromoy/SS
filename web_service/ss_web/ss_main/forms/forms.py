@@ -19,3 +19,12 @@ class CourierCreationForm(forms.ModelForm):
     class Meta:
         model = CustomUser
         fields = ['username', 'password', 'first_name', 'last_name', 'email', 'role']
+
+
+class LogicCreationForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput())
+    role = forms.CharField(initial='logistician', disabled=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ['username', 'password', 'first_name', 'last_name', 'email', 'role']

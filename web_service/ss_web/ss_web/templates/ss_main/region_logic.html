@@ -2,9 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Logisticians in {{ zone.zone_name }}</title>
 </head>
 <body>
-
+    <h1>Logisticians in {{ zone.zone_name }}</h1>
+    <p>Шкафы: {{ cabinets_count }}</p>
+    <p>Слоты: {{ cells_count }}</p>
+    <table>
+        <tr>
+            <th>Логин</th>
+            <th>Полное имя</th>
+            <th>Последний логин</th>
+        </tr>
+        {% for logistician in logisticians %}
+        <tr>
+            <td>{{ logistician.username }}</td>
+            <td>{{ logistician.first_name }} {{ logistician.last_name }}</td>
+            <td>{{ logistician.last_login }}</td>
+        </tr>
+        {% endfor %}
+    </table>
 </body>
 </html>

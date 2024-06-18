@@ -13,13 +13,17 @@ urlpatterns = [
     path('cabinet/<str:shkaf_id>/', views.cabinet_details, name='cabinet_details'),
 
     path('create_courier/', create_courier, name='create_courier'),
+
     path('assign_zone/', assign_zone_to_courier, name='assign_zone_to_courier'),
     path('zones/', zone_list, name='zone_list'),
     path('zones/<int:zone_id>/', zone_detail, name='zone_detail'),
     path('zones/<int:zone_id>/cabinets/', cabinet_list, name='cabinet_list'),
 
     path('region/', main_region, name='main_region'),
-
+    path('region_zones/<int:city_id>/', views.region_zones, name='region_zones'),
+    path('region_logic/<int:zone_id>/', views.region_logic, name='region_logic'),
+    path('create_logic/', create_logic, name='create_logic'),
+    path('assign_logic/', assign_zone_to_logic, name='assign_zone_to_logic'),
 
     path('', main, name='main'),
 

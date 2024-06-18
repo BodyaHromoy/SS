@@ -30,6 +30,7 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return f'{self.username} - {self.role}'
 
+
 class Vendor(models.Model):
     vendor_name = models.CharField(max_length=255, unique=True, null=False)
 
