@@ -2,16 +2,130 @@
 <html>
 <head>
     <title>Assign Zone to Couriers</title>
+    <style>
+        body {
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            padding: 1em;
+            margin: 0;
+            font-size: 18px;
+        }
+        h2 {
+            color: #333;
+            text-align: center;
+            font-size: 2em;
+            margin-bottom: 1em;
+        }
+        .messages {
+            margin: 0 auto;
+            width: 100%;
+            max-width: 600px;
+            padding: 1em;
+            border: 1px solid #CCC;
+            border-radius: 1em;
+            background: #fff;
+            list-style: none;
+        }
+        .messages li {
+            padding: 0.5em 0;
+        }
+        table {
+            margin: 0 auto;
+            width: 100%;
+            max-width: 800px;
+            border-collapse: collapse;
+            background: #fff;
+            border: 1px solid #CCC;
+            border-radius: 1em;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 1em;
+            text-align: left;
+            border-bottom: 1px solid #CCC;
+        }
+        th {
+            background-color: #f9f9f9;
+        }
+        form {
+            margin: 0;
+        }
+        select, button {
+            width: 100%;
+            padding: 0.75em;
+            border: 1px solid #CCC;
+            border-radius: 0.3em;
+            font-size: 1em;
+        }
+        button {
+            background: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 0.5em;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        a {
+            display: block;
+            width: 100%;
+            max-width: 800px;
+            margin: 1em auto;
+            text-align: center;
+            padding: 1em;
+            border: 1px solid #007BFF;
+            border-radius: 0.3em;
+            color: #007BFF;
+            text-decoration: none;
+            font-size: 1em;
+        }
+        a:hover {
+            background: #007BFF;
+            color: white;
+        }
+        @media (min-width: 600px) {
+            table {
+                width: 80%;
+            }
+            .messages, a {
+                width: 80%;
+            }
+        }
+        @media (min-width: 768px) {
+            table {
+                width: 60%;
+            }
+            .messages, a {
+                width: 60%;
+            }
+        }
+        @media (min-width: 992px) {
+            table {
+                width: 50%;
+            }
+            .messages, a {
+                width: 50%;
+            }
+        }
+        @media (min-width: 1200px) {
+            table {
+                width: 40%;
+            }
+            .messages, a {
+                width: 40%;
+            }
+        }
+    </style>
 </head>
 <body>
-<h2>Assign Zone to Couriers</h2>
+<h2>Назначить скаута</h2>
 
 {% if messages %}
 <ul class="messages">
     {% for message in messages %}
-    <li
-            {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}
-    </li>
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
     {% endfor %}
 </ul>
 {% endif %}
@@ -19,10 +133,10 @@
 <table>
     <thead>
     <tr>
-        <th>Courier</th>
-        <th>Current Zone</th>
-        <th>New Zone</th>
-        <th>Action</th>
+        <th>Скаут</th>
+        <th>Зона</th>
+        <th>Новая зона</th>
+        <th></th>
     </tr>
     </thead>
     <tbody>
@@ -49,7 +163,7 @@
                 </select>
         </td>
         <td>
-            <button type="submit">Assign</button>
+            <button type="submit">Назначить</button>
             </form>
         </td>
     </tr>

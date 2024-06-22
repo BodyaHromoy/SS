@@ -16,7 +16,7 @@
             color: #343a40;
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            min-height: 100vh;
         }
         .main-content {
             flex: 1;
@@ -25,6 +25,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            margin-top: 4%; /* Небольшой отступ от верхнего хедера */
         }
         h1 {
             margin: 20px 0;
@@ -32,9 +33,16 @@
             color: #007bff;
             text-transform: uppercase;
         }
-        .table-responsive {
+        h2 {
             margin-top: 20px;
-            width: 80%;
+            text-align: center;
+            color: #007bff;
+            text-transform: uppercase;
+        }
+        .table-container {
+            width: 90%;
+            max-width: 800px;
+            margin-top: 20px;
         }
         table {
             width: 100%;
@@ -71,33 +79,58 @@
             max-width: 100px;
             margin: 0 10px;
         }
+        .info-header {
+            background-color: #343a40;
+            color: white;
+            padding: 3%;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+        }
+        .info-header p {
+            margin: 0;
+        }
     </style>
 </head>
 <body>
-    <div class="main-content">
-        <h1>Детали зоны - {{ zone.zone_name }}</h1>
-        <h2>Курьеры</h2>
-        <div class="table-responsive">
-            <table class="table table-striped table-bordered table-hover">
-                <thead class="thead-dark">
-                    <tr>
-                        <th>Имя пользователя</th>
-                        <th>Полное имя</th>
-                        <th>Последний раз в сети</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for courier in couriers %}
-                    <tr>
-                        <td>{{ courier.username }}</td>
-                        <td>{{ courier.get_full_name }}</td>
-                        <td>{{ courier.last_login }}</td>
-                    </tr>
-                    {% endfor %}
-                <a href="{% url 'zone_list' %}">Back to Zone List</a>
-                </tbody>
-            </table>
-        </div>
+<div class="info-header">
+    <p>Детали зоны - {{ zone.zone_name }}</p>
+</div>
+<div class="main-content">
+    <h2>Скауты</h2>
+    <div class="table-container">
+        <table class="table table-striped table-bordered table-hover">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Имя пользователя</th>
+                    <th>Полное имя</th>
+                    <th>Последний раз в сети</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for courier in couriers %}
+                <tr>
+                    <td>{{ courier.username }}</td>
+                    <td>{{ courier.get_full_name }}</td>
+                    <td>{{ courier.last_login }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+</div>
+<div class="footer">
+    <button class="btn btn-secondary" onclick="goBack()">Назад</button>
+</div>
+<script>
+    function goBack() {
+        window.history.back();
+    }
+</script>
 </body>
 </html>
