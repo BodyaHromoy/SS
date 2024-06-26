@@ -51,6 +51,10 @@ def update_entry(existing_entry, stat_id, status_data):
         existing_entry.vid = "JET"
     elif "4e34300e" in str(status_data.get("VID")):
         existing_entry.vid = "WOOSH"
+    elif "4e34400d" in str(status_data.get("VID")):
+        existing_entry.vid = "YANDEX"
+    elif "4e34400a" in str(status_data.get("VID")):
+        existing_entry.vid = "SVING"
     elif "4e34300c" in str(status_data.get("VID")):
         existing_entry.vid = "VOI"
     else:
