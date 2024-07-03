@@ -120,7 +120,7 @@
     </style>
 </head>
 <body>
-<h2>Назначить скаута</h2>
+<h2>Управление скаутами</h2>
 
 {% if messages %}
 <ul class="messages">
@@ -165,11 +165,35 @@
         <td>
             <button type="submit">Назначить</button>
             </form>
+            <button class="btn btn-danger" onclick="deleteCourier({{ courier.id }})">Удалить</button>
         </td>
     </tr>
     {% endfor %}
     </tbody>
 </table>
 <a href="{% url 'zone_list' %}">Back to Zone List</a>
+<script>
+function deleteCourier(courierId) {
+    const confirmation = confirm('Вы уверены, что хотите удалить этого пользователя?');
+    if (!confirmation) {
+        return;
+    }
+
+    fetch(`/delete_courier/${courierId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            location.reload();
+        } else {
+            alert('Не удалось удалить аккаунт');
+        }
+    });
+}
+</script>
 </body>
 </html>

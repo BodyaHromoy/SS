@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Assign Zone to Couriers</title>
+    <title>Assign Zone to Logistician</title>
 </head>
 <body>
 <h2>Assign Zone to Couriers</h2>
@@ -26,11 +26,11 @@
     </tr>
     </thead>
     <tbody>
-    {% for courier in couriers %}
+    {% for logistician in logisticians %}
     <tr>
-        <td>{{ courier.username }}</td>
+        <td>{{ logistician.username }}</td>
         <td>
-            {% for zone in courier.zones.all %}
+            {% for zone in logistician.zones.all %}
             {{ zone.zone_name }}
             {% empty %}
             No Zone Assigned
@@ -57,5 +57,6 @@
     </tbody>
 </table>
 <a href="{% url 'zone_list' %}">Back to Zone List</a>
+
 </body>
 </html>

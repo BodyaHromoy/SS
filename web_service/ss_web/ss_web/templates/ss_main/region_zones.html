@@ -112,6 +112,8 @@
                         <tr>
                             <th>Зоны</th>
                             <th>Шкафы</th>
+                            <th>Логисты</th>
+                            <th>Скауты</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -119,6 +121,8 @@
                         {% for data in zone_data %}
                         <tr>
                             <td>{{ data.zone.zone_name }}</td>
+                            <td>{{ data.cabinets_count }}</td>
+                            <td>{{ data.cabinets_count }}</td>
                             <td>{{ data.cabinets_count }}</td>
                             <td><a href="{% url 'region_logic' data.zone.id %}" class="btn btn-primary btn-sm">Логисты</a></td>
                         </tr>

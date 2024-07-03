@@ -1,5 +1,7 @@
 from datetime import timedelta
-
+import random
+import string
+from django.core.mail import send_mail
 import openpyxl
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -50,9 +52,19 @@ def create_courier(request):
         form = CourierCreationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.set_password(form.cleaned_data['password'])
+            password = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(10))
+            user.set_password(password)
+            user.username = f'{user.first_name}_{user.last_name}'
             user.save()
-            return redirect('courier_list')
+
+            send_mail(
+                'Scout Registration Info',
+                f'Username: {user.username}\nPassword: {password}\nEmail: {user.email}\nFull Name: {user.first_name} {user.last_name}',
+                'bhromenko@mail.ru',
+                [request.user.email],  # The logistician's email
+                fail_silently=False,
+            )
+            messages.success(request, f"Скаут '{user.username}' успешно зарегестрирован (проверьте свою почту).")
     else:
         form = CourierCreationForm()
 
@@ -69,8 +81,19 @@ def create_logic(request):
         form = LogicCreationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.set_password(form.cleaned_data['password'])
+            password = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(10))
+            user.set_password(password)
+            user.username = f'{user.first_name}_{user.last_name}'
             user.save()
+
+            send_mail(
+                'Logistician Registration Info',
+                f'Username: {user.username}\nPassword: {password}\nEmail: {user.email}\nFull Name: {user.first_name} {user.last_name}',
+                'bhromenko@mail.ru',
+                [request.user.email],  # The regional manager's email
+                fail_silently=False,
+            )
+            messages.success(request, f"Logistician '{user.username}' successfully registered (check your email).")
     else:
         form = LogicCreationForm()
 
@@ -102,6 +125,14 @@ def assign_zone_to_courier(request):
     return render(request, 'ss_main/assign_zone.html', {'couriers': couriers, 'zones': zones})
 
 
+# Удаление курьера
+@user_passes_test(is_logistician)
+def delete_courier(request, courier_id):
+    courier = get_object_or_404(CustomUser, pk=courier_id)
+    courier.delete()
+    return JsonResponse({'status': 'success'})
+
+
 # Назначение зоны зоны логисту
 @login_required
 @user_passes_test(is_regional_manager)
@@ -122,7 +153,7 @@ def assign_zone_to_logic(request):
             messages.error(request, f"An error occurred: {str(e)}")
             return redirect('assign_zone_to_logic')
 
-    logisticians = CustomUser.objects.filter(role='courier')
+    logisticians = CustomUser.objects.filter(role='logistician')
     zones = Zone.objects.all()
     return render(request, 'ss_main/assign_logic.html', {'logisticians': logisticians, 'zones': zones})
 
@@ -228,12 +259,12 @@ def region_zones(request, city_id):
     zones = Zone.objects.filter(city=city)
     zone_data = []
     total_cells = 0
-    total_cabinets = 0  # Добавляем счетчик для шкафов
+    total_cabinets = 0
     for zone in zones:
         status_counts = zone.cell_status_counts()
         total_cells += sum(status_counts.values())
-        cabinets_count = Cabinet.objects.filter(zone=zone).count()  # Считаем количество шкафов в зоне
-        total_cabinets += cabinets_count  # Увеличиваем общее количество шкафов
+        cabinets_count = Cabinet.objects.filter(zone=zone).count()
+        total_cabinets += cabinets_count
         zone_data.append({
             'zone': zone,
             'status_counts': status_counts,

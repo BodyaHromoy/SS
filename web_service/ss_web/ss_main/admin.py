@@ -5,7 +5,6 @@ from .models import *
 admin.site.register(Cell)
 admin.site.register(Cabinet)
 admin.site.register(Report)
-admin.site.register(City)
 admin.site.register(Vendor)
 
 
@@ -25,5 +24,12 @@ class ZoneAdmin(admin.ModelAdmin):
     filter_horizontal = ('users',)
 
 
+class CityAdmin(admin.ModelAdmin):
+    list_display = ('city_name', 'country', 'vendor')
+    search_fields = ('city_name')
+    filter_horizontal = ('users',)
+
+
 admin.site.register(Zone, ZoneAdmin)
+admin.site.register(City, CityAdmin)
 admin.site.register(CustomUser, CustomUserAdmin)

@@ -100,15 +100,14 @@
 <body>
     <div class="info-header">
         <p>Логин: {{ user.username }}</p>
-    </div>
-    <div class="main-content">
-        <label for="city-filter">Выберите город:</label>
         <select id="city-filter">
             {% for city in cities %}
             <option value="{{ city.city_name }}">{{ city.city_name }}</option>
             {% endfor %}
         </select>
-
+    </div>
+    <div class="main-content">
+        <label for="city-filter">Выберите город:</label>
         <div class="table-container">
             <div class="table-responsive">
                 <table class="table table-striped table-bordered table-hover">
@@ -126,7 +125,7 @@
                             <td>{{ data.city.city_name }}</td>
                             <td>{{ data.zones_count }}</td>
                             <td>{{ data.cabinets_count }}</td>
-                            <td><a href="{% url 'region_zones' data.city.id %}" class="btn btn-primary btn-sm">Показать зоны</a></td>
+                            <td><a href="{% url 'region_zones' data.city.id %}" class="btn btn-primary btn-sm">Зоны</a></td>
                         </tr>
                         {% endfor %}
                     </tbody>

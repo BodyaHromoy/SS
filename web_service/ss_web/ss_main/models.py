@@ -42,6 +42,8 @@ class City(models.Model):
     city_name = models.CharField(max_length=255, unique=True, null=False)
     country = models.CharField(max_length=255, null=False)
     vendor = models.ForeignKey(to=Vendor, on_delete=models.CASCADE, null=False, to_field='vendor_name')
+    users = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='citys')
+
 
     def __str__(self):
         return self.city_name

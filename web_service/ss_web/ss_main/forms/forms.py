@@ -13,18 +13,16 @@ class ReportFilterForm(forms.Form):
 
 
 class CourierCreationForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput())
     role = forms.CharField(initial='courier', disabled=True)
 
     class Meta:
         model = CustomUser
-        fields = ['username', 'password', 'first_name', 'last_name', 'email', 'role']
+        fields = ['first_name', 'last_name', 'email', 'role']
 
 
 class LogicCreationForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput())
     role = forms.CharField(initial='logistician', disabled=True)
 
     class Meta:
         model = CustomUser
-        fields = ['username', 'password', 'first_name', 'last_name', 'email', 'role']
+        fields = ['first_name', 'last_name', 'email', 'role']
