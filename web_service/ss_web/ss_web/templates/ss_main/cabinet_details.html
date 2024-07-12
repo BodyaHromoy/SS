@@ -9,89 +9,99 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
+            background-color: #f0f0f0;
             font-family: Arial, sans-serif;
+            padding: 1em;
             margin: 0;
-            padding: 0;
-            background-color: #f8f9fa; /* Светло-серый фон */
-            color: #343a40; /* Темный серый цвет текста */
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
+            font-size: 18px;
+            box-sizing: border-box;
         }
         .info-header {
-            background-color: #343a40; /* Темный фон */
-            color: white; /* Белый текст */
-            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            padding: 0.5em; /* уменьшить padding */
+            border-radius: 0.3em;
             position: fixed;
-            top: 0;
             width: 100%;
+            top: 0;
+            left: 0;
             z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 5px;
+            text-align: left;
+            border: 1px solid #ccc;
+            font-size: 0.85em; /* уменьшить размер шрифта */
         }
         .info-header p {
-            margin: 0;
+            margin: 0.2em 0; /* уменьшить отступы между параграфами */
         }
         .main-content {
-            flex: 1;
-            padding-top: 80px; /* Отступ для фиксированного хедера */
-            padding-bottom: 80px; /* Отступ для фиксированного футера */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 120px; /* Высота .info-header + небольшой отступ */
+            padding-top: 8em; /* Отступ сверху для фиксации хедера */
+            padding-bottom: 5em; /* Отступ снизу для фиксации футера */
         }
-        h2 {
-            margin: 20px 0;
-            text-align: center;
-            color: #007bff; /* Синий цвет для заголовка */
-            text-transform: uppercase; /* Преобразование заголовка в верхний регистр */
-        }
-        .table-responsive {
-            margin-top: 20px;
-            width: 80%;
+        .table-container {
+            margin-bottom: 1em;
         }
         table {
             width: 100%;
             border-collapse: collapse;
+            background: #fff;
+            border: 1px solid #CCC;
+            border-radius: 1em;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            font-size: 0.9em;
         }
         th, td {
-            border: 1px solid #dddddd;
-            text-align: center;
-            padding: 12px;
+            padding: 0.5em;
+            text-align: left;
+            border-bottom: 1px solid #CCC;
+            box-sizing: border-box;
         }
         th {
-            background-color: #343a40; /* Темный фон для заголовков таблицы */
-            color: #ffffff; /* Белый цвет текста в заголовках */
-            text-transform: uppercase; /* Преобразование заголовков в верхний регистр */
+            background-color: #f9f9f9;
         }
-        tr:nth-child(even) {
-            background-color: #f2f2f2; /* Светло-серый фон для четных строк */
-        }
-        tr:nth-child(odd) {
-            background-color: #e9ecef; /* Еще светлее серый фон для нечетных строк */
+        td:last-child {
+            padding-right: 1em;
         }
         .footer {
-            background-color: #343a40; /* Темный фон */
-            color: white; /* Белый текст */
-            padding: 10px;
+            text-align: center;
             position: fixed;
-            bottom: 0;
             width: 100%;
+            bottom: 0;
+            left: 0;
+            background-color: #f0f0f0;
+            padding: 1em;
+            border-top: 1px solid #CCC;
             z-index: 1000;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
         }
-        .btn {
-            flex: 1;
-            max-width: 100px;
-            margin: 0 10px;
+        .footer button {
+            margin: 0.5em;
         }
-
-        /* Стили для индикатора загрузки */
+        @media (max-width: 768px) {
+            thead {
+                display: none;
+            }
+            th, td {
+                display: block;
+                width: 100%;
+                text-align: right;
+            }
+            th {
+                text-align: left;
+            }
+            tr {
+                display: block;
+                margin-bottom: 1em;
+                background: #fff;
+                padding: 0.5em;
+                border-radius: 0.5em;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            }
+            td:before {
+                content: attr(data-label);
+                float: left;
+                font-weight: bold;
+            }
+        }
         .loader {
             border: 16px solid #f3f3f3;
             border-radius: 50%;
@@ -104,7 +114,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 2000;
-            display: none; /* Скрыто по умолчанию */
+            display: none;
         }
 
         @keyframes spin {
@@ -135,9 +145,9 @@
                 <tbody id="cells-table-body">
                     {% for cell in cells|dictsort:"endpointid" %}
                     <tr>
-                        <td>●{{ cell.endpointid|default:"-" }}</td>
-                        <td>{{ cell.cap_percent|default:"-" }}%</td>
-                        <td>{{ cell.vid|default:"-" }}</td>
+                        <td data-label="Номер">●{{ cell.endpointid|default:"-" }}</td>
+                        <td data-label="Заряд">{{ cell.cap_percent|default:"-" }}%</td>
+                        <td data-label="Вендор">{{ cell.vid|default:"-" }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -150,10 +160,8 @@
         <button class="btn btn-primary" onclick="updateData()">Обновить данные</button>
     </div>
 
-    <!-- Индикатор загрузки -->
     <div id="loader" class="loader"></div>
 
-    <!-- Bootstrap JS and dependencies -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -164,7 +172,7 @@
 
         async function updateData() {
             const loader = document.getElementById('loader');
-            loader.style.display = 'block'; // Показать индикатор загрузки
+            loader.style.display = 'block';
             try {
                 const response = await fetch('/api/cabinet/{{ cabinet.shkaf_id }}/details/');
                 if (!response.ok) {
@@ -172,25 +180,23 @@
                 }
                 const data = await response.json();
 
-                // Сортируем ячейки по номеру слота (endpointid) по возрастанию
                 data.cells.sort((a, b) => a.endpointid - b.endpointid);
 
-                // Обновляем таблицу ячеек
                 const cellsTableBody = document.getElementById('cells-table-body');
-                cellsTableBody.innerHTML = ''; // Очищаем текущее содержимое таблицы
+                cellsTableBody.innerHTML = '';
                 data.cells.forEach(cell => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>●${cell.endpointid || '-'}</td>
-                        <td>${cell.cap_percent || '-'}%</td>
-                        <td>${cell.vid || '-'}</td>
+                        <td data-label="Номер">●${cell.endpointid || '-'}</td>
+                        <td data-label="Заряд">${cell.cap_percent || '-'}%</td>
+                        <td data-label="Вендор">${cell.vid || '-'}</td>
                     `;
                     cellsTableBody.appendChild(row);
                 });
             } catch (error) {
                 console.error('Error updating data:', error);
             } finally {
-                loader.style.display = 'none'; // Скрыть индикатор загрузки
+                loader.style.display = 'none';
             }
         }
     </script>

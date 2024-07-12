@@ -9,90 +9,143 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
+            background-color: #f0f0f0;
             font-family: Arial, sans-serif;
+            padding: 1em;
             margin: 0;
-            padding: 0;
-            background-color: #f8f9fa; /* Светло-серый фон */
-            color: #343a40; /* Темный серый цвет текста */
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
+            font-size: 18px;
+            box-sizing: border-box;
         }
         .info-header {
-            background-color: #343a40; /* Темный фон */
-            color: white; /* Белый текст */
-            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            padding: 1em;
+            border-radius: 0.3em;
             position: fixed;
-            top: 0;
             width: 100%;
+            top: 0;
+            left: 0;
             z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 5px;
-        }
-        .info-header p {
-            margin: 0;
+            text-align: left; /* Выровнять текст по левому краю */
+            border: 1px solid #ccc; /* Добавить серую обводку */
         }
         .main-content {
-            flex: 1;
-            padding-top: 80px; /* Отступ для фиксированного хедера */
-            padding-bottom: 80px; /* Отступ для фиксированного футера */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 120px; /* Высота .info-header + небольшой отступ */
+            padding-top: 7em; /* Отступ сверху для фиксации хедера */
+            padding-bottom: 5em; /* Отступ снизу для фиксации футера */
         }
         h2 {
-            margin-top: 20px;
+            color: #333;
             text-align: center;
-            color: #007bff; /* Синий цвет для заголовка */
-            text-transform: uppercase; /* Преобразование заголовка в верхний регистр */
-        }
-        p {
-            margin-bottom: 10px;
-            line-height: 1.6; /* Увеличение межстрочного интервала */
-        }
-        ul {
-            list-style-type: none; /* Убираем маркеры списка */
-            padding-left: 0;
+            font-size: 1.5em;
+            margin-bottom: 1em;
         }
         .table-container {
-            width: 90%;
-            max-width: 800px; /* Максимальная ширина таблицы */
-            margin: 0 auto; /* Центрирование таблицы */
+            margin-bottom: 1em;
         }
         table {
             width: 100%;
             border-collapse: collapse;
+            background: #fff;
+            border: 1px solid #CCC;
+            border-radius: 1em;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            font-size: 0.9em;
         }
         th, td {
-            border: 1px solid #dddddd;
-            text-align: center;
-            padding: 12px;
+            padding: 0.5em;
+            text-align: left;
+            border-bottom: 1px solid #CCC;
+            box-sizing: border-box;
         }
         th {
-            background-color: #343a40; /* Темный фон для заголовков таблицы */
-            color: #ffffff; /* Белый цвет текста в заголовках */
-            text-transform: uppercase; /* Преобразование заголовков в верхний регистр */
+            background-color: #f9f9f9;
         }
-        tr:nth-child(even) {
-            background-color: #f2f2f2; /* Светло-серый фон для четных строк */
+        .btn-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5em;
         }
-        tr:nth-child(odd) {
-            background-color: #e9ecef; /* Еще светлее серый фон для нечетных строк */
+        .btn-container a {
+            flex: 1;
+            text-align: center;
+        }
+        .menu-container {
+            margin-bottom: 1em;
+            text-align: center;
+        }
+        .menu-btn {
+            background: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 0.75em;
+            border-radius: 0.3em;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        .menu-btn:hover {
+            background: #0056b3;
+        }
+        .hidden-buttons {
+            display: none;
+            flex-direction: column;
+            gap: 0.5em;
+            margin-top: 0.5em;
         }
         .footer {
-            background-color: #343a40; /* Темный фон */
-            color: white; /* Белый текст */
-            padding: 10px;
+            text-align: center;
             position: fixed;
-            bottom: 0;
             width: 100%;
+            bottom: 0;
+            left: 0;
+            background-color: #f0f0f0;
+            padding: 1em;
+            border-top: 1px solid #CCC;
             z-index: 1000;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
+        }
+        .footer button {
+            margin: 0.5em;
+        }
+        @media (max-width: 768px) {
+            thead {
+                display: none;
+            }
+            th, td {
+                display: block;
+                width: 100%;
+                text-align: right;
+            }
+            th {
+                text-align: left;
+            }
+            tr {
+                display: block;
+                margin-bottom: 1em;
+                background: #fff;
+                padding: 0.5em;
+                border-radius: 0.5em;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            }
+            td:before {
+                content: attr(data-label);
+                float: left;
+                font-weight: bold;
+            }
+            .btn-container {
+                flex-direction: column;
+            }
+            .btn-container a {
+                margin-top: 0.5em;
+            }
+            .btn-sm {
+                width: 100%;
+                padding: 1em; /* Добавлено для увеличения области нажатия */
+                box-sizing: border-box;
+            }
+            td:last-child {
+                padding: 0; /* Убрать отступы у ячейки */
+            }
         }
         .loader {
             border: 16px solid #f3f3f3;
@@ -112,16 +165,6 @@
         @keyframes spin {
             0% { transform: translate(-50%, -50%) rotate(0deg); }
             100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-        .btn {
-            flex: 1;
-            max-width: 100px;
-            margin: 0 10px;
-        }
-        @media only screen and (max-width: 600px) {
-            table {
-                font-size: 12px;
-            }
         }
     </style>
 </head>
@@ -153,11 +196,11 @@
                     <tbody id="cabinet-table-body">
                         {% for cabinet_status in cabinet_statuses %}
                         <tr>
-                            <td>{{ cabinet_status.cabinet.shkaf_id }}</td>
-                            <td>{{ cabinet_status.ready_count }}</td>
-                            <td>{{ cabinet_status.charging_count }}</td>
-                            <td>{{ cabinet_status.empty_count }}</td>
-                            <td><a href="{% url 'cabinet_details' cabinet_status.cabinet.shkaf_id %}" class="btn btn-primary btn-sm">Детали</a></td>
+                            <td data-label="Шкаф">{{ cabinet_status.cabinet.shkaf_id }}</td>
+                            <td data-label="Готово">{{ cabinet_status.ready_count }}</td>
+                            <td data-label="Зарядка">{{ cabinet_status.charging_count }}</td>
+                            <td data-label="Пусто">{{ cabinet_status.empty_count }}</td>
+                            <td data-label=""><a href="{% url 'cabinet_details' cabinet_status.cabinet.shkaf_id %}" class="btn btn-primary btn-sm">Детали</a></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -199,11 +242,11 @@
                     const row = document.createElement('tr');
 
                     row.innerHTML = `
-                        <td>${cabinet_status.shkaf_id}</td>
-                        <td>${cabinet_status.ready_count}</td>
-                        <td>${cabinet_status.charging_count}</td>
-                        <td>${cabinet_status.empty_count}</td>
-                        <td><a href="/cabinet/${cabinet_status.shkaf_id}/" class="btn btn-primary btn-sm">Детали</a></td>
+                        <td data-label="Шкаф">${cabinet_status.shkaf_id}</td>
+                        <td data-label="Готово">${cabinet_status.ready_count}</td>
+                        <td data-label="Зарядка">${cabinet_status.charging_count}</td>
+                        <td data-label="Пусто">${cabinet_status.empty_count}</td>
+                        <td data-label=""><a href="/cabinet/${cabinet_status.shkaf_id}/" class="btn btn-primary btn-sm">Детали</a></td>
                     `;
 
                     tableBody.appendChild(row);

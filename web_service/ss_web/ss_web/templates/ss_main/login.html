@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Form</title>
+    <title>Авторизация</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <style>
         body {
@@ -42,7 +42,7 @@
     </style>
 </head>
 <body>
-<h1>Login Form</h1>
+<h1>Авторизация</h1>
 <div class="container-fluid">
     <form method="post">
         {% csrf_token %}
@@ -56,6 +56,15 @@
         </div>
         <button type="submit" class="btn btn-primary">Login</button>
     </form>
+</div>
+
+<div class="container-fluid mt-4">
+    <ul>
+        <li>☑ Готово</li>
+        <li>↯ Заряжается</li>
+        <li>◯ Пусто</li>
+        <li>! Неактивно</li>
+    </ul>
 </div>
 </body>
 </html>

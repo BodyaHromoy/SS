@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assign Zone to Couriers</title>
     <style>
         body {
@@ -9,15 +11,16 @@
             padding: 1em;
             margin: 0;
             font-size: 18px;
+            box-sizing: border-box;
         }
         h2 {
             color: #333;
             text-align: center;
-            font-size: 2em;
+            font-size: 1.5em;
             margin-bottom: 1em;
         }
         .messages {
-            margin: 0 auto;
+            margin: 0 auto 1em;
             width: 100%;
             max-width: 600px;
             padding: 1em;
@@ -25,25 +28,43 @@
             border-radius: 1em;
             background: #fff;
             list-style: none;
+            box-sizing: border-box;
         }
         .messages li {
             padding: 0.5em 0;
         }
-        table {
-            margin: 0 auto;
+        .search-wrapper {
+            margin-bottom: 1em;
+            text-align: center;
+        }
+        .search-wrapper input {
             width: 100%;
-            max-width: 800px;
+            max-width: 600px;
+            padding: 0.5em;
+            border: 1px solid #CCC;
+            border-radius: 0.3em;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
             border-collapse: collapse;
             background: #fff;
             border: 1px solid #CCC;
             border-radius: 1em;
             overflow: hidden;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            font-size: 0.9em;
         }
         th, td {
-            padding: 1em;
+            padding: 0.5em;
             text-align: left;
             border-bottom: 1px solid #CCC;
+            box-sizing: border-box;
         }
         th {
             background-color: #f9f9f9;
@@ -57,6 +78,7 @@
             border: 1px solid #CCC;
             border-radius: 0.3em;
             font-size: 1em;
+            box-sizing: border-box;
         }
         button {
             background: #007BFF;
@@ -67,6 +89,12 @@
         }
         button:hover {
             background: #0056b3;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn-danger:hover {
+            background: #c82333;
         }
         a {
             display: block;
@@ -80,120 +108,147 @@
             color: #007BFF;
             text-decoration: none;
             font-size: 1em;
+            box-sizing: border-box;
         }
         a:hover {
             background: #007BFF;
             color: white;
         }
-        @media (min-width: 600px) {
-            table {
-                width: 80%;
+        @media (max-width: 768px) {
+            thead {
+                display: none;
             }
-            .messages, a {
-                width: 80%;
+            th, td {
+                display: block;
+                width: 100%;
+                text-align: right;
             }
-        }
-        @media (min-width: 768px) {
-            table {
-                width: 60%;
+            th {
+                text-align: left;
             }
-            .messages, a {
-                width: 60%;
+            tr {
+                display: block;
+                margin-bottom: 1em;
+                background: #fff;
+                padding: 0.5em;
+                border-radius: 0.5em;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             }
-        }
-        @media (min-width: 992px) {
-            table {
-                width: 50%;
+            td:before {
+                content: attr(data-label);
+                float: left;
+                font-weight: bold;
             }
-            .messages, a {
-                width: 50%;
+            .btn-container {
+                display: flex;
+                justify-content: space-between;
+                flex-wrap: wrap;
             }
-        }
-        @media (min-width: 1200px) {
-            table {
-                width: 40%;
-            }
-            .messages, a {
-                width: 40%;
+            .btn-container button {
+                flex: 1 1 48%;
+                margin-top: 0.5em;
             }
         }
     </style>
 </head>
 <body>
-<h2>Управление скаутами</h2>
+    <h2>Управление скаутами</h2>
 
-{% if messages %}
-<ul class="messages">
-    {% for message in messages %}
-    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-    {% endfor %}
-</ul>
-{% endif %}
+    <div class="search-wrapper">
+        <input type="text" id="searchInput" placeholder="Поиск скаутов..." onkeyup="filterTable()">
+    </div>
 
-<table>
-    <thead>
-    <tr>
-        <th>Скаут</th>
-        <th>Зона</th>
-        <th>Новая зона</th>
-        <th></th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for courier in couriers %}
-    <tr>
-        <td>{{ courier.username }}</td>
-        <td>
-            {% for zone in courier.zones.all %}
-            {{ zone.zone_name }}
-            {% empty %}
-            No Zone Assigned
-            {% endfor %}
-        </td>
-        <td>
-            <form id="form_{{ courier.id }}" method="post" action="{% url 'assign_zone_to_courier' %}">
-                {% csrf_token %}
-                <input type="hidden" name="courier_id" value="{{ courier.id }}">
-                <select name="zone_id">
-                    {% for zone in zones %}
-                    <option value="{{ zone.id }}" {% if zone in courier.zones.all %}selected{% endif %}>
-                        {{ zone.zone_name }}
-                    </option>
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <div class="table-wrapper">
+        <table id="courierTable">
+            <thead>
+            <tr>
+                <th>Скаут</th>
+                <th>Зона</th>
+                <th>Новая зона</th>
+                <th>Действия</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for courier in couriers %}
+            <tr>
+                <td data-label="Скаут">{{ courier.username }}</td>
+                <td data-label="Зона">
+                    {% for zone in courier.zones.all %}
+                    {{ zone.zone_name }}
+                    {% empty %}
+                    No Zone Assigned
                     {% endfor %}
-                </select>
-        </td>
-        <td>
-            <button type="submit">Назначить</button>
-            </form>
-            <button class="btn btn-danger" onclick="deleteCourier({{ courier.id }})">Удалить</button>
-        </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table>
-<a href="{% url 'zone_list' %}">Back to Zone List</a>
-<script>
-function deleteCourier(courierId) {
-    const confirmation = confirm('Вы уверены, что хотите удалить этого пользователя?');
-    if (!confirmation) {
-        return;
-    }
+                </td>
+                <td data-label="Новая зона">
+                    <form id="form_{{ courier.id }}" method="post" action="{% url 'assign_zone_to_courier' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="courier_id" value="{{ courier.id }}">
+                        <select name="zone_id">
+                            {% for zone in zones %}
+                            <option value="{{ zone.id }}" {% if zone in courier.zones.all %}selected{% endif %}>
+                                {{ zone.zone_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                </td>
+                <td data-label="">
+                    <div class="btn-container">
+                        <button type="submit">Назначить</button>
+                        </form>
+                        <button class="btn btn-danger" onclick="deleteCourier({{ courier.id }})">Удалить</button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <a href="{% url 'zone_list' %}">Back to Zone List</a>
+    <script>
+        function deleteCourier(courierId) {
+            const confirmation = confirm('Вы уверены, что хотите удалить этого пользователя?');
+            if (!confirmation) {
+                return;
+            }
 
-    fetch(`/delete_courier/${courierId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}'
+            fetch(`/delete_courier/${courierId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    location.reload();
+                } else {
+                    alert('Не удалось удалить аккаунт');
+                }
+            });
         }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            location.reload();
-        } else {
-            alert('Не удалось удалить аккаунт');
+
+        function filterTable() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toLowerCase();
+            const table = document.getElementById('courierTable');
+            const trs = table.getElementsByTagName('tr');
+
+            for (let i = 1; i < trs.length; i++) {
+                const td = trs[i].getElementsByTagName('td')[0];
+                if (td) {
+                    const textValue = td.textContent || td.innerText;
+                    trs[i].style.display = textValue.toLowerCase().indexOf(filter) > -1 ? '' : 'none';
+                }
+            }
         }
-    });
-}
-</script>
+    </script>
 </body>
 </html>

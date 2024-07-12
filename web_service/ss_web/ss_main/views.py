@@ -19,7 +19,7 @@ from .models import *
 
 
 def is_logistician(user):
-    return user.is_authenticated and user.role == 'logistician'
+    return user.is_authenticated and user.role == 'logistician' or 'engineer'
 
 
 def is_engineer(user):
@@ -27,10 +27,10 @@ def is_engineer(user):
 
 
 def is_regional_manager(user):
-    return user.is_authenticated and user.role == 'regional_manager'
+    return user.is_authenticated and user.role == 'regional_manager' or 'engineer'
 
 
-def is_role(user, roles):
+def has_role(user, *roles):
     return user.is_authenticated and user.role in roles
 
 
@@ -57,14 +57,18 @@ def create_courier(request):
             user.username = f'{user.first_name}_{user.last_name}'
             user.save()
 
+            current_user_citys = request.user.citys.all()
+            for city in current_user_citys:
+                user.citys.add(city)
+
             send_mail(
                 'Scout Registration Info',
                 f'Username: {user.username}\nPassword: {password}\nEmail: {user.email}\nFull Name: {user.first_name} {user.last_name}',
                 'bhromenko@mail.ru',
-                [request.user.email],  # The logistician's email
+                [request.user.email],
                 fail_silently=False,
             )
-            messages.success(request, f"Скаут '{user.username}' успешно зарегестрирован (проверьте свою почту).")
+            messages.success(request, f"Скаут '{user.username}' успешно зарегистрирован (проверьте свою почту).")
     else:
         form = CourierCreationForm()
 
@@ -72,6 +76,7 @@ def create_courier(request):
 
 
 # Создание нового логиста
+@login_required
 @user_passes_test(is_regional_manager)
 def create_logic(request):
     if not request.user.role == 'regional_manager':
@@ -104,28 +109,31 @@ def create_logic(request):
 @login_required
 @user_passes_test(is_logistician)
 def assign_zone_to_courier(request):
+    user_city = request.user.citys.first()
     if request.method == 'POST':
         courier_id = request.POST.get('courier_id')
         zone_id = request.POST.get('zone_id')
-
         try:
             courier = get_object_or_404(CustomUser, pk=courier_id)
             zone = get_object_or_404(Zone, pk=zone_id)
-
-            # Убедимся, что назначаем только одну зону
-            courier.zones.clear()
-            courier.zones.add(zone)
-            messages.success(request, f"Zone '{zone.zone_name}' successfully assigned to courier '{courier.username}'.")
+            if zone.city == user_city:
+                courier.zones.clear()
+                courier.zones.add(zone)
+                messages.success(request, f"Zone '{zone.zone_name}' successfully assigned to courier '{courier.username}'.")
+            else:
+                messages.error(request, "The selected zone is not in your city.")
         except Exception as e:
             messages.error(request, f"An error occurred: {str(e)}")
             return redirect('assign_zone_to_courier')
 
-    couriers = CustomUser.objects.filter(role='courier')
-    zones = Zone.objects.all()
+    # Filter couriers and zones by the user's city
+    couriers = CustomUser.objects.filter(role='courier', citys=user_city)
+    zones = Zone.objects.filter(city=user_city)
     return render(request, 'ss_main/assign_zone.html', {'couriers': couriers, 'zones': zones})
 
 
 # Удаление курьера
+@login_required
 @user_passes_test(is_logistician)
 def delete_courier(request, courier_id):
     courier = get_object_or_404(CustomUser, pk=courier_id)
@@ -163,7 +171,13 @@ def assign_zone_to_logic(request):
 @user_passes_test(is_logistician)
 def zone_list(request):
     user = request.user
-    zones = Zone.objects.all()
+    # Предполагаем, что у пользователя может быть закреплен только один город
+    user_city = user.citys.first()  # Используем related_name 'citys' из модели CustomUser
+    if user_city:
+        zones = Zone.objects.filter(city=user_city)
+    else:
+        zones = Zone.objects.none()
+
     zone_data = []
 
     for zone in zones:
@@ -193,7 +207,7 @@ def zone_list(request):
             'user': user
         })
 
-    return render(request, 'ss_main/zone_list.html', {'zone_data': zone_data})
+    return render(request, 'ss_main/zone_list.html', {'zone_data': zone_data, 'user_city': user_city})
 
 
 # Список курьеров в зоне(у логиста)
@@ -211,7 +225,25 @@ def zone_detail(request, zone_id):
 def cabinet_list(request, zone_id):
     zone = get_object_or_404(Zone, pk=zone_id)
     cabinets = Cabinet.objects.filter(zone=zone)
-    return render(request, 'ss_main/cabinet_list.html', {'zone': zone, 'cabinets': cabinets})
+    cabinets_count = cabinets.count()
+
+    # Собираем информацию о статусах ячеек для каждого шкафа
+    cabinets_status_counts = []
+    for cabinet in cabinets:
+        cells = Cell.objects.filter(cabinet_id=cabinet)
+        status_counts = {
+            'ready': cells.filter(status='ready').count(),
+            'charging': cells.filter(status='charging').count(),
+            'empty': cells.filter(status='empty').count(),
+            'Inactive': cells.filter(status='Inactive').count(),
+        }
+        cabinets_status_counts.append((cabinet, status_counts))
+
+    return render(request, 'ss_main/cabinet_list.html', {
+        'zone': zone,
+        'cabinets_count': cabinets_count,
+        'cabinets_status_counts': cabinets_status_counts,
+    })
 
 
 # Обновление деталий шкафа
@@ -462,12 +494,23 @@ def reset_selection(request):
     return redirect('report')
 
 
+# Авторизация
 class CustomLoginView(LoginView):
     form_class = CustomAuthenticationForm
     template_name = 'ss_main/login.html'
 
     def get_success_url(self):
-        return self.request.GET.get('next', '/')
+        user = self.request.user
+        if user.role == 'courier':
+            return '/my-cabinets/'
+        elif user.role == 'logistician':
+            return '/zones/'
+        elif user.role == 'regional_manager':
+            return '/region/'
+        elif user.role == 'engineer':
+            return '/'
+        else:
+            return '/'
 
 
 class CustomLogoutView(LogoutView):

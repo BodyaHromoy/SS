@@ -9,164 +9,190 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
+            background-color: #f0f0f0;
             font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
-            color: #343a40;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
+            padding: 1em;
             margin: 0;
-            padding: 0;
+            font-size: 18px;
+            box-sizing: border-box;
         }
         .info-header {
-            background-color: #343a40;
+            background-color: #007BFF;
             color: white;
-            padding: 3%;
+            padding: 1em;
+            text-align: center;
+            border-radius: 0.3em;
             position: fixed;
-            top: 0;
             width: 100%;
+            top: 0;
+            left: 0;
             z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 5px;
-        }
-        .info-header p {
-            margin: 0;
         }
         .main-content {
-            flex: 1;
-            padding-top: 80px;
-            padding-bottom: 80px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 4%;
+            padding-top: 7em;
+            padding-bottom: 5em;
         }
         h1 {
-            margin-top: 20px;
+            color: #333;
             text-align: center;
-            color: #007bff;
-            text-transform: uppercase;
-        }
-        p {
-            margin-bottom: 10px;
-            line-height: 1.6;
-        }
-        ul {
-            list-style-type: none;
-            padding-left: 0;
+            font-size: 1.5em;
+            margin-bottom: 1em;
         }
         .table-container {
-            width: 90%;
-            max-width: 800px;
-            margin: 0 auto;
+            margin-bottom: 1em;
         }
         table {
             width: 100%;
             border-collapse: collapse;
+            background: #fff;
+            border: 1px solid #CCC;
+            border-radius: 1em;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            font-size: 0.9em;
         }
         th, td {
-            border: 1px solid #dddddd;
-            text-align: center;
-            padding: 12px;
+            padding: 0.5em;
+            text-align: left;
+            border-bottom: 1px solid #CCC;
+            box-sizing: border-box;
         }
         th {
-            background-color: #343a40;
-            color: #ffffff;
-            text-transform: uppercase;
+            background-color: #f9f9f9;
         }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
+        .btn-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5em;
         }
-        tr:nth-child(odd) {
-            background-color: #e9ecef;
+        .btn-container a {
+            flex: 1;
+            text-align: center;
+        }
+        .menu-container {
+            margin-bottom: 1em;
+            text-align: center;
+        }
+        .menu-btn {
+            background: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 0.75em;
+            border-radius: 0.3em;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        .menu-btn:hover {
+            background: #0056b3;
+        }
+        .hidden-buttons {
+            display: none;
+            flex-direction: column;
+            gap: 0.5em;
+            margin-top: 0.5em;
         }
         .footer {
-            background-color: #343a40;
-            color: white;
-            padding: 10px;
+            text-align: center;
             position: fixed;
-            bottom: 0;
             width: 100%;
+            bottom: 0;
+            left: 0;
+            background-color: #f0f0f0;
+            padding: 1em;
+            border-top: 1px solid #CCC;
             z-index: 1000;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
         }
-        .loader {
-            border: 16px solid #f3f3f3;
-            border-radius: 50%;
-            border-top: 16px solid #3498db;
-            width: 120px;
-            height: 120px;
-            animation: spin 2s linear infinite;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 2000;
-            display: none;
+        .footer button {
+            margin: 0.5em;
         }
-        @keyframes spin {
-            0% { transform: translate(-50%, -50%) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-        .btn {
-            flex: 1;
-            max-width: 100px;
-            margin: 0 10px;
-        }
-        @media only screen and (max-width: 600px) {
-            table {
-                font-size: 12px;
+        @media (max-width: 768px) {
+            thead {
+                display: none;
+            }
+            th, td {
+                display: block;
+                width: 100%;
+                text-align: right;
+            }
+            th {
+                text-align: left;
+            }
+            tr {
+                display: block;
+                margin-bottom: 1em;
+                background: #fff;
+                padding: 0.5em;
+                border-radius: 0.5em;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            }
+            td:before {
+                content: attr(data-label);
+                float: left;
+                font-weight: bold;
+            }
+            .btn-container {
+                flex-direction: column;
+            }
+            .btn-container a {
+                margin-top: 0.5em;
             }
         }
     </style>
 </head>
 <body>
-<div class="info-header">
-    <p>Логин: {{ user.username }}</p>
-    <p>Кабинеты в {{ zone.zone_name }}</p>
-</div>
-<div class="main-content">
-    <h1></h1>
-    <div class="table-container">
-        <table class="table table-striped table-bordered table-hover">
-            <thead class="thead-dark">
-                <tr>
-                    <th>Номер шкафа</th>
-                    <th>Локация</th>
-                    <th>Улица</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for cabinet in cabinets %}
-            <tr>
-                <td>{{ cabinet.shkaf_id }}</td>
-                <td>{{ cabinet.location }}</td>
-                <td>{{ cabinet.street }}</td>
-                <td>
-                    <a href="{% url 'cabinet_details' cabinet.shkaf_id %}" class="btn btn-primary btn-sm">Детали</a>
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-<div class="footer">
-    <button class="btn btn-secondary" onclick="goBack()">Назад</button>
-</div>
-<div id="loader" class="loader"></div>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-<script>
-    function goBack() {
-        window.history.back();
-    }
-</script>
+    <header class="info-header">
+        <p>Логин: {{ user.username }}</p>
+        <p>Кабинеты в {{ zone.zone_name }} - Всего шкафов: {{ cabinets_count }}</p>
+    </header>
+
+    <main class="main-content">
+        <div class="table-container">
+            <table class="table table-striped table-bordered table-hover">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Шкаф</th>
+                        <th>☑</th>
+                        <th>↯</th>
+                        <th>◯</th>
+                        <th>!</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cabinet, status_counts in cabinets_status_counts %}
+                    <tr>
+                        <td data-label="Шкаф №">№{{ cabinet.shkaf_id }}</td>
+                        <td data-label="☑">{{ status_counts.ready }}</td>
+                        <td data-label="↯">{{ status_counts.charging }}</td>
+                        <td data-label="◯">{{ status_counts.empty }}</td>
+                        <td data-label="!">{{ status_counts.Inactive }}</td>
+                        <td data-label="">
+                            <a href="{% url 'cabinet_details' cabinet.shkaf_id %}" class="btn btn-primary btn-sm">Детали</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <button class="btn btn-secondary" onclick="goBack()">Назад</button>
+        <button class="btn btn-primary" onclick="updateData()">Обновить</button>
+    </footer>
+
+    <div id="loader" class="loader"></div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function goBack() {
+            window.history.back();
+        }
+        function updateData() {
+            location.reload();
+        }
+    </script>
 </body>
 </html>

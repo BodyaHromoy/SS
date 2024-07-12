@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -136,6 +137,10 @@
     <div class="footer">
         <button class="btn btn-secondary" onclick="goBack()">Назад</button>
         <button class="btn btn-primary" onclick="updateData()">Обновить данные</button>
+        <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-link btn btn-primary mt-2">Logout</button>
+                </form>
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>

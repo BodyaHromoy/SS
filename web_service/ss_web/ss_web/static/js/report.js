@@ -30,7 +30,6 @@ function setupAutocomplete(inputElement, url) {
                 return response.json();
             })
             .then(data => {
-                // Фильтруем уникальные значения с помощью Set
                 const uniqueData = Array.from(new Set(data.map(item => item.split('-')[0])));
 
                 if (uniqueData.length === 0) {
@@ -38,7 +37,7 @@ function setupAutocomplete(inputElement, url) {
                 } else {
                     uniqueData.forEach(function(item) {
                         let option = document.createElement('div');
-                        let displayItem = item; // Отображаем только уникальные элементы
+                        let displayItem = item;
                         option.innerHTML = displayItem.replace(currentValue, `<strong>${currentValue}</strong>`);
                         option.className = 'autocomplete-option';
                         option.addEventListener('click', function() {
