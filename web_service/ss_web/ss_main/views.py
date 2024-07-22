@@ -227,10 +227,12 @@ def cabinet_list(request, zone_id):
     cabinets = Cabinet.objects.filter(zone=zone)
     cabinets_count = cabinets.count()
 
-    # Собираем информацию о статусах ячеек для каждого шкафа
+    # Собираем информацию о статусах ячеек для каждого шкафа и подсчитываем общее количество ячеек
+    total_cells_count = 0
     cabinets_status_counts = []
     for cabinet in cabinets:
         cells = Cell.objects.filter(cabinet_id=cabinet)
+        total_cells_count += cells.count()
         status_counts = {
             'ready': cells.filter(status='ready').count(),
             'charging': cells.filter(status='charging').count(),
@@ -242,6 +244,7 @@ def cabinet_list(request, zone_id):
     return render(request, 'ss_main/cabinet_list.html', {
         'zone': zone,
         'cabinets_count': cabinets_count,
+        'total_cells_count': total_cells_count,  # Добавляем общее количество ячеек в контекст
         'cabinets_status_counts': cabinets_status_counts,
     })
 
@@ -286,6 +289,7 @@ def main_region(request):
 
 # Список зон в городе(региональный менеджер)
 @user_passes_test(is_regional_manager)
+@user_passes_test(is_regional_manager)
 def region_zones(request, city_id):
     city = get_object_or_404(City, id=city_id)
     zones = Zone.objects.filter(city=city)
@@ -297,10 +301,14 @@ def region_zones(request, city_id):
         total_cells += sum(status_counts.values())
         cabinets_count = Cabinet.objects.filter(zone=zone).count()
         total_cabinets += cabinets_count
+        couriers_count = CustomUser.objects.filter(zones=zone, role='courier').count()
+        logisticians_count = CustomUser.objects.filter(zones=zone, role='logistician').count()
         zone_data.append({
             'zone': zone,
             'status_counts': status_counts,
-            'cabinets_count': cabinets_count  # Добавляем количество шкафов в данные зоны
+            'cabinets_count': cabinets_count,
+            'couriers_count': couriers_count,
+            'logisticians_count': logisticians_count
         })
     return render(request, 'ss_main/region_zones.html', {'zone_data': zone_data, 'city': city,
                                                          'total_zones': len(zone_data), 'total_cells': total_cells,

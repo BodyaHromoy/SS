@@ -19,17 +19,22 @@
         .info-header {
             background-color: #007BFF;
             color: white;
-            padding: 1em;
-            text-align: center;
+            padding: 0.5em; /* уменьшить padding */
             border-radius: 0.3em;
             position: fixed;
             width: 100%;
             top: 0;
             left: 0;
             z-index: 1000;
+            text-align: left;
+            border: 1px solid #ccc;
+            font-size: 0.85em; /* уменьшить размер шрифта */
+        }
+        .info-header p {
+            margin: 0.2em 0; /* уменьшить отступы между параграфами */
         }
         .main-content {
-            padding-top: 7em;
+            padding-top: 6.8em;
             padding-bottom: 5em;
         }
         h1 {
@@ -142,8 +147,10 @@
 </head>
 <body>
     <header class="info-header">
-        <p>Логин: {{ user.username }}</p>
-        <p>Кабинеты в {{ zone.zone_name }} - Всего шкафов: {{ cabinets_count }}</p>
+        <p>Boxes in {{ zone.zone_name }} </p>
+        <p>Capacity: {{ total_cells_count }}</p>
+        <p>Online boxes: {{ cabinets_count }}</p>
+        <p>Locked doors: 3</p>
     </header>
 
     <main class="main-content">
@@ -151,24 +158,26 @@
             <table class="table table-striped table-bordered table-hover">
                 <thead class="thead-dark">
                     <tr>
-                        <th>Шкаф</th>
+                        <th>Box</th>
                         <th>☑</th>
                         <th>↯</th>
                         <th>◯</th>
                         <th>!</th>
+                        <th>Door state</th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for cabinet, status_counts in cabinets_status_counts %}
                     <tr>
-                        <td data-label="Шкаф №">№{{ cabinet.shkaf_id }}</td>
+                        <td data-label="Box">№{{ cabinet.shkaf_id }}</td>
                         <td data-label="☑">{{ status_counts.ready }}</td>
                         <td data-label="↯">{{ status_counts.charging }}</td>
                         <td data-label="◯">{{ status_counts.empty }}</td>
                         <td data-label="!">{{ status_counts.Inactive }}</td>
+                        <td data-label="Door state"> Undefined </td>
                         <td data-label="">
-                            <a href="{% url 'cabinet_details' cabinet.shkaf_id %}" class="btn btn-primary btn-sm">Детали</a>
+                            <a href="{% url 'cabinet_details' cabinet.shkaf_id %}" class="btn btn-primary btn-sm">Details</a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -178,8 +187,8 @@
     </main>
 
     <footer class="footer">
-        <button class="btn btn-secondary" onclick="goBack()">Назад</button>
-        <button class="btn btn-primary" onclick="updateData()">Обновить</button>
+        <a class="btn btn-secondary" href="{% url 'zone_list' %}">Back</a>
+        <button class="btn btn-primary" onclick="updateData()">Update</button>
     </footer>
 
     <div id="loader" class="loader"></div>

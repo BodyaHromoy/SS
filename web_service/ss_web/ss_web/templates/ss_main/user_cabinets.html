@@ -19,7 +19,7 @@
         .info-header {
             background-color: #007BFF;
             color: white;
-            padding: 1em;
+            padding: 0.5em; /* Уменьшение отступа */
             border-radius: 0.3em;
             position: fixed;
             width: 100%;
@@ -28,9 +28,10 @@
             z-index: 1000;
             text-align: left; /* Выровнять текст по левому краю */
             border: 1px solid #ccc; /* Добавить серую обводку */
+            font-size: 0.9em; /* Уменьшение размера шрифта */
         }
         .main-content {
-            padding-top: 7em; /* Отступ сверху для фиксации хедера */
+            padding-top: 7em; /* Уменьшение отступа сверху для фиксации хедера */
             padding-bottom: 5em; /* Отступ снизу для фиксации футера */
         }
         h2 {
@@ -103,6 +104,9 @@
             padding: 1em;
             border-top: 1px solid #CCC;
             z-index: 1000;
+            display: flex;
+            justify-content: center;
+            gap: 0.5em;
         }
         .footer button {
             margin: 0.5em;
@@ -196,7 +200,7 @@
                     <tbody id="cabinet-table-body">
                         {% for cabinet_status in cabinet_statuses %}
                         <tr>
-                            <td data-label="Шкаф">{{ cabinet_status.cabinet.shkaf_id }}</td>
+                            <td data-label="Шкаф">№{{ cabinet_status.cabinet.shkaf_id }}</td>
                             <td data-label="Готово">{{ cabinet_status.ready_count }}</td>
                             <td data-label="Зарядка">{{ cabinet_status.charging_count }}</td>
                             <td data-label="Пусто">{{ cabinet_status.empty_count }}</td>
@@ -210,7 +214,10 @@
     </div>
 
     <div class="footer">
-        <button class="btn btn-secondary" onclick="goBack()">Назад</button>
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="nav-link btn btn-secondary mt-2">Выход</button>
+        </form>
         <button class="btn btn-primary" onclick="updateData()">Обновить данные</button>
     </div>
 
@@ -225,7 +232,7 @@
         }
 
         async function updateData() {
-            const loader = document.getElementById('loader');
+            const loader = document.getElementById('loader'); // Исправление ошибки
             loader.style.display = 'block'; // Показать индикатор загрузки
 
             try {
@@ -242,7 +249,7 @@
                     const row = document.createElement('tr');
 
                     row.innerHTML = `
-                        <td data-label="Шкаф">${cabinet_status.shkaf_id}</td>
+                        <td data-label="Шкаф">№${cabinet_status.shkaf_id}</td>
                         <td data-label="Готово">${cabinet_status.ready_count}</td>
                         <td data-label="Зарядка">${cabinet_status.charging_count}</td>
                         <td data-label="Пусто">${cabinet_status.empty_count}</td>

@@ -11,24 +11,28 @@
         body {
             background-color: #f0f0f0;
             font-family: Arial, sans-serif;
-            padding-top: 4.5em; /* Adjusted padding for fixed header */
-            font-size: 18px;
+            padding: 1em;
             margin: 0;
+            font-size: 18px;
             box-sizing: border-box;
         }
         .info-header {
             background-color: #007BFF;
             color: white;
-            padding: 1em 0;
-            text-align: center;
+            padding: 1em;
+            border-radius: 0.3em;
             position: fixed;
             width: 100%;
             top: 0;
             left: 0;
             z-index: 1000;
+            text-align: left;
+            border: 1px solid #ccc;
+            font-size: 1.2em;
         }
         .main-content {
-            padding: 2em 1em; /* Added padding for content */
+            padding-top: 8em; /* Adjusted for larger header */
+            padding-bottom: 5em;
         }
         h2 {
             color: #333;
@@ -37,25 +41,58 @@
             margin-bottom: 1em;
         }
         .table-container {
-            overflow-x: auto; /* Enable horizontal scroll for small screens */
+            margin-bottom: 1em;
         }
         table {
             width: 100%;
             border-collapse: collapse;
             background: #fff;
             border: 1px solid #CCC;
-            border-radius: 0.5em;
+            border-radius: 1em;
+            overflow: hidden;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             font-size: 0.9em;
         }
         th, td {
-            padding: 0.75em;
+            padding: 0.5em;
             text-align: left;
             border-bottom: 1px solid #CCC;
+            box-sizing: border-box;
         }
         th {
             background-color: #f9f9f9;
-            font-weight: bold;
+        }
+        .btn-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5em;
+        }
+        .btn-container a {
+            flex: 1;
+            text-align: center;
+        }
+        .menu-container {
+            margin-bottom: 1em;
+            text-align: center;
+        }
+        .menu-btn {
+            background: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 0.75em;
+            border-radius: 0.3em;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        .menu-btn:hover {
+            background: #0056b3;
+        }
+        .hidden-buttons {
+            display: none;
+            flex-direction: column;
+            gap: 0.5em;
+            margin-top: 0.5em;
         }
         .footer {
             text-align: center;
@@ -72,46 +109,88 @@
             margin: 0.5em;
         }
         @media (max-width: 768px) {
-            .info-header {
-                padding: 0.75em 0;
+            thead {
+                display: none;
             }
-            h2 {
-                font-size: 1.3em;
+            th, td {
+                display: block;
+                width: 100%;
+                text-align: right;
             }
-            .main-content {
-                padding: 1em 0.5em;
+            th {
+                text-align: left;
             }
-            .table-container {
+            tr {
+                display: block;
                 margin-bottom: 1em;
-                overflow-x: auto;
+                background: #fff;
+                padding: 0.5em;
+                border-radius: 0.5em;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             }
-            table {
-                min-width: 100%; /* Ensure table expands full width */
+            td:before {
+                content: attr(data-label);
+                float: left;
+                font-weight: bold;
             }
+            .btn-container {
+                flex-direction: column;
+            }
+            .btn-container a {
+                margin-top: 0.5em;
+            }
+            .btn-sm {
+                width: 100%;
+                padding: 1em;
+                box-sizing: border-box;
+            }
+            td:last-child {
+                padding: 0;
+            }
+        }
+        .loader {
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 16px solid #3498db;
+            width: 120px;
+            height: 120px;
+            animation: spin 2s linear infinite;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
         }
     </style>
 </head>
 <body>
 <div class="info-header">
-    <p>Детали зоны - {{ zone.zone_name }}</p>
+    <p>Scouts in zone : {{ zone.zone_name }}</p>
 </div>
 <div class="main-content">
-    <h2>Скауты</h2>
     <div class="table-container">
         <table class="table table-striped table-bordered table-hover">
             <thead class="thead-dark">
                 <tr>
-                    <th scope="col">Имя пользователя</th>
-                    <th scope="col">Полное имя</th>
-                    <th scope="col">Последний раз в сети</th>
+                    <th>Username</th>
+                    <th>Full name</th>
+                    <th>Last login</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
                 {% for courier in couriers %}
                 <tr>
-                    <td>{{ courier.username }}</td>
-                    <td>{{ courier.get_full_name }}</td>
-                    <td>{{ courier.last_login }}</td>
+                    <td data-label="Username:" >{{ courier.username }}</td>
+                    <td data-label="Full name:">{{ courier.get_full_name }}</td>
+                    <td data-label="Last login:">{{ courier.last_login }}</td>
+                    <td></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -119,7 +198,7 @@
     </div>
 </div>
 <div class="footer">
-    <button class="btn btn-secondary" onclick="goBack()">Назад</button>
+    <a class="btn btn-secondary" href="{% url 'zone_list' %}">Back</a>
 </div>
 <script>
 

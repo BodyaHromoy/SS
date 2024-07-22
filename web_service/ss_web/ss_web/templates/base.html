@@ -17,9 +17,9 @@
             <ul class="nav flex-column">
                 <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="#">Box list</a></li>
                 <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="{% url 'report' %}">Reports</a></li>
-                <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="{% url 'user_cabinets' %}">Курэр</a></li>
-                <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="{% url 'zone_list' %}">Лоджик</a></li>
-                <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="{% url 'main_region' %}">Реджион</a></li>
+                <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="{% url 'user_cabinets' %}">Scout</a></li>
+                <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="{% url 'zone_list' %}">Logic</a></li>
+                <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="{% url 'main_region' %}">Region</a></li>
                 <form method="post" action="{% url 'logout' %}">
                     {% csrf_token %}
                     <button type="submit" class="nav-link btn btn-primary mt-2">Logout</button>

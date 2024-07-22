@@ -34,7 +34,7 @@
             margin: 0.2em 0; /* уменьшить отступы между параграфами */
         }
         .main-content {
-            padding-top: 8em; /* Отступ сверху для фиксации хедера */
+            padding-top: 8.5em; /* Отступ сверху для фиксации хедера */
             padding-bottom: 5em; /* Отступ снизу для фиксации футера */
         }
         .table-container {
@@ -127,9 +127,10 @@
     <div class="info-header">
         <p><strong>Номер шкафа:</strong> <span id="cabinet-name">{{ cabinet.shkaf_id|default:"-" }}</span></p>
         <p><strong>Зона:</strong> <span id="zone-name">{{ cabinet.zone.zone_name|default:"-" }}</span></p>
-        <p><strong>Локация:</strong> <span id="location">{{ cabinet.location|default:"-" }}</span></p>
-        <p><strong>Улица:</strong> <span id="street">{{ cabinet.street|default:"-" }}</span></p>
-        <p><strong>Дополнительная информация:</strong> <span id="extra-info">{{ cabinet.extra_inf|default:"-" }}</span></p>
+        <p><strong>Локация:</strong> <span id="street">{{ cabinet.street|default:"-" }}</span></p>
+        <p><strong>Дополнительно:</strong> <span id="location">{{ cabinet.location|default:"-" }}</span></p>
+        <p><strong>ID Замка:</strong> <span id="extra-info">{{ cabinet.extra_inf|default:"-" }}</span></p>
+        <p><strong>Состояние двери:</strong> <span id="door-info">Не назначено</span></p>
     </div>
 
     <div class="main-content">
@@ -137,7 +138,7 @@
             <table class="table table-striped table-bordered table-hover">
                 <thead class="thead-dark">
                     <tr>
-                        <th>Номер</th>
+                        <th>Слот</th>
                         <th>Заряд</th>
                         <th>Вендор</th>
                     </tr>
@@ -145,7 +146,7 @@
                 <tbody id="cells-table-body">
                     {% for cell in cells|dictsort:"endpointid" %}
                     <tr>
-                        <td data-label="Номер">●{{ cell.endpointid|default:"-" }}</td>
+                        <td data-label="Слот">●{{ cell.endpointid|default:"-" }}</td>
                         <td data-label="Заряд">{{ cell.cap_percent|default:"-" }}%</td>
                         <td data-label="Вендор">{{ cell.vid|default:"-" }}</td>
                     </tr>
@@ -187,7 +188,7 @@
                 data.cells.forEach(cell => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td data-label="Номер">●${cell.endpointid || '-'}</td>
+                        <td data-label="Слот">●${cell.endpointid || '-'}</td>
                         <td data-label="Заряд">${cell.cap_percent || '-'}%</td>
                         <td data-label="Вендор">${cell.vid || '-'}</td>
                     `;

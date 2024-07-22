@@ -20,7 +20,7 @@
             background-color: #007BFF;
             color: white;
             padding: 1em;
-            text-align: center;
+            text-align: left;
             border-radius: 0.3em;
             position: fixed;
             width: 100%;
@@ -86,12 +86,6 @@
         .menu-btn:hover {
             background: #0056b3;
         }
-        .hidden-buttons {
-            display: none;
-            flex-direction: column;
-            gap: 0.5em;
-            margin-top: 0.5em;
-        }
         .footer {
             text-align: center;
             position: fixed;
@@ -102,6 +96,9 @@
             padding: 1em;
             border-top: 1px solid #CCC;
             z-index: 1000;
+            display: flex;
+            justify-content: center;
+            gap: 0.5em;
         }
         .footer button {
             margin: 0.5em;
@@ -142,22 +139,19 @@
 </head>
 <body>
     <div class="info-header">
-        <p>Логин: {{ user.username }}</p>
-        <p>Город: {{ user_city.city_name }}</p>
+        <p>Login: {{ user.username }}</p>
+        <p>City: {{ user_city.city_name }}</p>
     </div>
     <div class="main-content">
         <div class="menu-container">
-            <button class="menu-btn" onclick="toggleMenu()">Меню</button>
-            <div class="hidden-buttons" id="hidden-buttons">
-                <a href="{% url 'create_courier' %}" class="btn btn-primary">Регистрация скаута</a>
-                <a href="{% url 'assign_zone_to_courier' %}" class="btn btn-primary">Управление скаутами</a>
-            </div>
+            <a href="{% url 'create_courier' %}" class="btn btn-primary">Scout registration</a>
+            <a href="{% url 'assign_zone_to_courier' %}" class="btn btn-primary">Scout management</a>
         </div>
         <div class="table-container">
             <table>
                 <thead>
                     <tr>
-                        <th>Зона</th>
+                        <th>Zone</th>
                         <th>☑</th>
                         <th>↯</th>
                         <th>◯</th>
@@ -168,15 +162,15 @@
                 <tbody id="cabinet-table-body">
                 {% for item in zone_data %}
                 <tr>
-                    <td data-label="Зона">{{ item.zone.zone_name }}</td>
+                    <td data-label="Zone">{{ item.zone.zone_name }}</td>
                     <td data-label="☑">{{ item.status_counts.ready }}</td>
                     <td data-label="↯">{{ item.status_counts.charging }}</td>
                     <td data-label="◯">{{ item.status_counts.empty }}</td>
                     <td data-label="!">{{ item.status_counts.Inactive }}</td>
                     <td data-label="">
                         <div class="btn-container">
-                            <a href="{% url 'zone_detail' item.zone.id %}" class="btn btn-primary btn-sm">Скауты</a>
-                            <a href="{% url 'cabinet_list' item.zone.id %}" class="btn btn-primary btn-sm">Шкафы</a>
+                            <a href="{% url 'zone_detail' item.zone.id %}" class="btn btn-primary btn-sm">Scouts</a>
+                            <a href="{% url 'cabinet_list' item.zone.id %}" class="btn btn-primary btn-sm">Boxes</a>
                         </div>
                     </td>
                 </tr>
@@ -186,8 +180,11 @@
         </div>
     </div>
     <div class="footer">
-        <button class="btn btn-secondary" onclick="goBack()">Назад</button>
-        <button class="btn btn-primary" onclick="updateData()">Обновить</button>
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="nav-link btn btn-secondary mt-2">Exit</button>
+        </form>
+        <button class="btn btn-primary" onclick="updateData()">Update</button>
     </div>
     <div id="loader" class="loader"></div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -198,23 +195,13 @@
             window.history.back();
         }
 
+        function goForvard() {
+            window.history.forward();
+        }
+
         function updateData() {
             location.reload();
         }
-
-        function toggleMenu() {
-            var hiddenButtons = document.getElementById("hidden-buttons");
-            if (hiddenButtons.style.display === "none" || hiddenButtons.style.display === "") {
-                hiddenButtons.style.display = "flex";
-            } else {
-                hiddenButtons.style.display = "none";
-            }
-        }
-
-        // Скрытие кнопок меню по умолчанию
-        document.addEventListener("DOMContentLoaded", function() {
-            document.getElementById("hidden-buttons").style.display = "none";
-        });
     </script>
 </body>
 </html>

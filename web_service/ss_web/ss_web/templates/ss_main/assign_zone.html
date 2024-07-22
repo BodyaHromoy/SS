@@ -152,10 +152,10 @@
     </style>
 </head>
 <body>
-    <h2>Управление скаутами</h2>
+    <h2>Scout managing tool</h2>
 
     <div class="search-wrapper">
-        <input type="text" id="searchInput" placeholder="Поиск скаутов..." onkeyup="filterTable()">
+        <input type="text" id="searchInput" placeholder="Search..." onkeyup="filterTable()">
     </div>
 
     {% if messages %}
@@ -170,24 +170,24 @@
         <table id="courierTable">
             <thead>
             <tr>
-                <th>Скаут</th>
-                <th>Зона</th>
-                <th>Новая зона</th>
-                <th>Действия</th>
+                <th>Scout</th>
+                <th>Current zone</th>
+                <th>New zone</th>
+                <th>Actions</th>
             </tr>
             </thead>
             <tbody>
             {% for courier in couriers %}
             <tr>
-                <td data-label="Скаут">{{ courier.username }}</td>
-                <td data-label="Зона">
+                <td data-label="Scout">{{ courier.username }}</td>
+                <td data-label="Current zone">
                     {% for zone in courier.zones.all %}
                     {{ zone.zone_name }}
                     {% empty %}
                     No Zone Assigned
                     {% endfor %}
                 </td>
-                <td data-label="Новая зона">
+                <td data-label="New zone">
                     <form id="form_{{ courier.id }}" method="post" action="{% url 'assign_zone_to_courier' %}">
                         {% csrf_token %}
                         <input type="hidden" name="courier_id" value="{{ courier.id }}">
@@ -201,9 +201,9 @@
                 </td>
                 <td data-label="">
                     <div class="btn-container">
-                        <button type="submit">Назначить</button>
+                        <button type="submit">Assign</button>
                         </form>
-                        <button class="btn btn-danger" onclick="deleteCourier({{ courier.id }})">Удалить</button>
+                        <button class="btn btn-danger" onclick="deleteCourier({{ courier.id }})">Delete</button>
                     </div>
                 </td>
             </tr>
@@ -214,7 +214,7 @@
     <a href="{% url 'zone_list' %}">Back to Zone List</a>
     <script>
         function deleteCourier(courierId) {
-            const confirmation = confirm('Вы уверены, что хотите удалить этого пользователя?');
+            const confirmation = confirm('You sure want to delete that user?');
             if (!confirmation) {
                 return;
             }
@@ -230,7 +230,7 @@
                 if (data.status === 'success') {
                     location.reload();
                 } else {
-                    alert('Не удалось удалить аккаунт');
+                    alert('ERROR: User not deleted!');
                 }
             });
         }

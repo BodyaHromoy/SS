@@ -26,7 +26,7 @@ class ZoneAdmin(admin.ModelAdmin):
 
 class CityAdmin(admin.ModelAdmin):
     list_display = ('city_name', 'country', 'vendor')
-    search_fields = ('city_name')
+    search_fields = ['city_name']
     filter_horizontal = ('users',)
 
 
