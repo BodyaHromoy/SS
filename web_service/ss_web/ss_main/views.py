@@ -8,9 +8,10 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView, LogoutView
 from django.http import HttpResponse
 from django.http import HttpResponseForbidden
-from django.http import JsonResponse
+
 from django.shortcuts import redirect
 from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
 
 from .decorators.auth_decorators import staff_required
 from .forms.auth_form import CustomAuthenticationForm

@@ -7,6 +7,8 @@ from django.contrib.sessions.models import Session
 
 
 class OneDeviceMiddleware(MiddlewareMixin):
+
+
     def process_request(self, request):
         if request.user.is_authenticated:
             current_session_key = request.session.session_key

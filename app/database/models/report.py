@@ -2,7 +2,7 @@ from app.database.database_connect import *
 
 
 
-class Ss_main_report(BaseModel):
+class Ss_main_report(BaseModel2):
     stationid = CharField(null=True, column_name='stationid')
     balance_status = CharField(null=True, column_name='balance_status')
     capacity = CharField(null=True, column_name='capacity')
@@ -39,4 +39,4 @@ class Ss_main_report(BaseModel):
 
 
 # Создание таблицы
-db.create_tables([Ss_main_report])
+db2.create_tables([Ss_main_report])
