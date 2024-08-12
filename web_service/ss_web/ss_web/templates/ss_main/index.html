@@ -3,32 +3,8 @@
 {% block title %}Specific Page Title{% endblock %}
 
 {% block content %}
-    <button class="btn btn-primary mt-2" onclick="toggleFilters()">Filter</button>
-    <div id="filters" style="display: none;">
-        <label for="cityFilter">City filter:</label>
-        <select id="cityFilter" onchange="applyFilters()">
-            <option value="">All</option>
-            {% for city in cities %}
-                <option value="{{ city }}">{{ city }}</option>
-            {% endfor %}
-        </select>
-        <label for="zoneFilter">Zone filter:</label>
-        <select id="zoneFilter" onchange="applyFilters()">
-            <option value="">All</option>
-            <option value="1">Zone 1</option>
-            <option value="2">Zone 2</option>
-            <option value="3">Zone 3</option>
-            <option value="4">Zone 4</option>
-        </select>
-    </div>
-    <button class="btn btn-primary mt-2" onclick="toggleSearch()">Search</button>
-    <div id="searchContainer">
-        <input type="text" id="searchInput" placeholder="Search" onkeyup="filterTable()">
-        <button class="btn btn-secondary" onclick="clearSearch()">Clear</button>
-    </div>
-    <button class="btn btn-secondary mt-2" onclick="goBack()">RETURN</button>
-    <button class="btn btn-primary mt-2" onclick="refreshData()">Update data</button>
+    <button class="btn btn-secondary btn-sm btn-narrow mt-2" onclick="goBack()">RETURN</button>
+    <button class="btn btn-primary btn-sm btn-narrow mt-2 ml-2" onclick="refreshData()">Update data</button>
     <br>
-    <div id="breadcrumb" class="breadcrumb"></div>
     <div id="dataDisplay">Press "Box list"</div>
 {% endblock %}

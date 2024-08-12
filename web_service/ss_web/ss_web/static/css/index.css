@@ -6,7 +6,8 @@ body {
 
 h1 {
     color: white;
-    text-align: center;
+    text-align: left;
+    font-size: 1.5rem;
 }
 
 .container-fluid {
@@ -21,15 +22,8 @@ table {
     width: 100%;
 }
 
-th {
-    background-color: #fff;
-    color: #345;
-    padding: 0.3em;
-    text-align: left;
-}
-
-td {
-    padding: 0.3em;
+th, td {
+    padding: 0.2em;
     text-align: left;
 }
 
@@ -104,6 +98,57 @@ tr:nth-child(odd) {
 }
 
 #searchContainer input[type="text"] {
-    width: calc(100% - 120px);
+    width: calc(100% - 80px); /* Подгоняем ширину ввода под новый размер кнопок */
     margin-right: 10px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logout-form {
+    margin-left: auto; /* Отодвинуть кнопку logout вправо */
+}
+
+#search-filter-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#search-filter-buttons {
+    display: flex;
+    align-items: center;
+}
+
+#filters, #searchContainer {
+    margin-top: 0;
+}
+
+.btn-narrow {
+    width: 70px; /* Уменьшенная фиксированная ширина кнопок */
+    padding: 4px 8px; /* Уменьшенное внутреннее поле */
+    font-size: 0.75rem; /* Уменьшенный размер шрифта */
+}
+
+nav {
+    padding-right: 10px; /* Уменьшение внутреннего отступа справа для навигационного контейнера */
+}
+
+nav ul {
+    padding-left: 0; /* Убираем отступ слева */
+    list-style-type: none; /* Убираем маркеры списка */
+}
+
+nav .nav-item {
+    margin-bottom: 5px; /* Отступ между элементами списка */
+}
+
+nav .nav-link {
+    display: block; /* Чтобы кнопки занимали всю ширину элемента списка */
+    width: 100%;
+    padding: 6px 8px; /* Уменьшенные внутренние отступы для кнопок в навигации */
+    font-size: 0.75rem; /* Уменьшенный размер шрифта */
 }

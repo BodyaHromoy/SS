@@ -10,29 +10,58 @@
     <link rel="stylesheet" href="{% static 'css/index.css' %}">
 </head>
 <body>
-<h1>Charge Monitoring Service</h1>
-<div class="container-fluid">
-    <div class="row">
-        <nav class="col-lg-2 col-md-3 col-sm-4 col-xs-12 bg-light">
-            <ul class="nav flex-column">
-                <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="#">Box list</a></li>
-                <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="{% url 'report' %}">Reports</a></li>
-                <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="{% url 'user_cabinets' %}">Scout</a></li>
-                <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="{% url 'zone_list' %}">Logic</a></li>
-                <li class="nav-item"><a class="nav-link btn btn-primary mt-2" href="{% url 'main_region' %}">Region</a></li>
-                <form method="post" action="{% url 'logout' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="nav-link btn btn-primary mt-2">Logout</button>
-                </form>
-            </ul>
-        </nav>
-        <main role="main" class="col-lg-10 col-md-9 col-sm-8 col-xs-12">
-            {% block content %}{% endblock %}
-        </main>
+    <div class="header">
+        <h1>Charge Monitoring Service</h1>
+        <form method="post" action="{% url 'logout' %}" class="logout-form">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-secondary btn-sm btn-narrow">Logout</button>
+        </form>
     </div>
-</div>
-<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-<script src="{% static 'js/index.js' %}"></script>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-lg-2 col-md-3 col-sm-4 col-xs-12 bg-light">
+                <ul class="nav flex-column">
+                    <li class="nav-item"><a class="nav-link btn btn-primary btn-sm btn-narrow mt-2" href="#">Box list</a></li>
+                    <li class="nav-item"><a class="nav-link btn btn-primary btn-sm btn-narrow mt-2" href="{% url 'report' %}">Reports</a></li>
+                    <li class="nav-item"><a class="nav-link btn btn-primary btn-sm btn-narrow mt-2" href="{% url 'user_cabinets' %}">Scout</a></li>
+                    <li class="nav-item"><a class="nav-link btn btn-primary btn-sm btn-narrow mt-2" href="{% url 'zone_list' %}">Logic</a></li>
+                    <li class="nav-item"><a class="nav-link btn btn-primary btn-sm btn-narrow mt-2" href="{% url 'main_region' %}">Region</a></li>
+                </ul>
+            </nav>
+            <main role="main" class="col-lg-10 col-md-9 col-sm-8 col-xs-12">
+                <div id="search-filter-header">
+                    <div id="search-filter-buttons">
+                        <button class="btn btn-primary btn-sm btn-narrow mt-2" onclick="toggleFilters()">Filter</button>
+                        <button class="btn btn-primary btn-sm btn-narrow mt-2 ml-2" onclick="toggleSearch()">Search</button>
+                    </div>
+                    <div id="filters" style="display: none;">
+                        <label for="cityFilter">City filter:</label>
+                        <select id="cityFilter" onchange="applyFilters()">
+                            <option value="">All</option>
+                            {% for city in cities %}
+                                <option value="{{ city }}">{{ city }}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="zoneFilter">Zone filter:</label>
+                        <select id="zoneFilter" onchange="applyFilters()">
+                            <option value="">All</option>
+                            <option value="1">Zone 1</option>
+                            <option value="2">Zone 2</option>
+                            <option value="3">Zone 3</option>
+                            <option value="4">Zone 4</option>
+                        </select>
+                    </div>
+                    <div id="searchContainer" style="display: none;">
+                        <input type="text" id="searchInput" placeholder="Search" onkeyup="filterTable()">
+                        <button class="btn btn-secondary btn-sm btn-narrow" onclick="clearSearch()">Clear</button>
+                    </div>
+                </div>
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="{% static 'js/index.js' %}"></script>
 </body>
 </html>

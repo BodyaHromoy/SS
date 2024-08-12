@@ -32,7 +32,12 @@ urlpatterns = [
     path('create_logic/', create_logic, name='create_logic'),
     path('assign_logic/', assign_zone_to_logic, name='assign_zone_to_logic'),
 
-    path('', main, name='main'),
+
+    path('', views.new_eng, name='new_eng'),
+    path('new_eng_cabinet/<str:shkaf_id>/', views.new_eng_cabinet_detail, name='new_eng_cabinet_detail'),
+
+
+    path('123/', main, name='main'),
 
     # API
     path('api/station_ids', views.station_ids),

@@ -1,4 +1,3 @@
-from datetime import timedelta
 import random
 import string
 from django.core.mail import send_mail
@@ -8,7 +7,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView, LogoutView
 from django.http import HttpResponse
 from django.http import HttpResponseForbidden
-
+from datetime import datetime, time, timedelta
 from django.shortcuts import redirect
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
@@ -34,9 +33,25 @@ def is_regional_manager(user):
 def has_role(user, *roles):
     return user.is_authenticated and user.role in roles
 
+@login_required
+@user_passes_test(is_engineer)
+def new_eng(request):
+    cabinets = Cabinet.objects.all()
+    cities = City.objects.all()
+    zones = Zone.objects.all()
+    return render(request, 'ss_main/new_eng.html', {'cabinets': cabinets, 'cities': cities, 'zones': zones})
 
-# Главная страница(инженерная)
-@staff_required
+
+@login_required
+@user_passes_test(is_engineer)
+def new_eng_cabinet_detail(request, shkaf_id):
+    cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
+    cells = Cell.objects.filter(cabinet_id=cabinet).order_by('endpointid')
+    return render(request, 'ss_main/new_eng_cabinet_detail.html', {'cabinet': cabinet, 'cells': cells})
+
+
+@login_required
+@user_passes_test(is_engineer)
 def main(request):
     cities = Cabinet.objects.values_list('city', flat=True).distinct()
     return render(request, 'ss_main/index.html', {'cities': cities})
@@ -290,7 +305,6 @@ def main_region(request):
 
 # Список зон в городе(региональный менеджер)
 @user_passes_test(is_regional_manager)
-@user_passes_test(is_regional_manager)
 def region_zones(request, city_id):
     city = get_object_or_404(City, id=city_id)
     zones = Zone.objects.filter(city=city)
@@ -394,7 +408,7 @@ def user_cabinets_api(request):
 # API для получения информации о статусах ячеек в шкафе
 def station_ids(request):
     query = request.GET.get('query', '')
-    data = Report.objects.filter(stationid__icontains=query)
+    data = Report.objects.using('new_db').filter(stationid__icontains=query)
     suggestions = list(data.values_list('stationid', flat=True).distinct())
     return JsonResponse(suggestions, safe=False)
 
@@ -402,7 +416,7 @@ def station_ids(request):
 # API для получения информации о городах
 def cities(request):
     query = request.GET.get('query', '')
-    data = Report.objects.filter(city__icontains=query)
+    data = Report.objects.using('new_db').filter(city__icontains=query)
     suggestions = list(data.values_list('city', flat=True).distinct())
     return JsonResponse(suggestions, safe=False)
 
@@ -410,7 +424,7 @@ def cities(request):
 # API для получения информации о зонах
 def zones(request):
     query = request.GET.get('query', '')
-    data = Report.objects.filter(zone__icontains=query)
+    data = Report.objects.using('new_db').filter(zone__icontains=query)
     suggestions = list(data.values_list('zone', flat=True).distinct())
     return JsonResponse(suggestions, safe=False)
 
@@ -431,7 +445,7 @@ def report(request):
             if not all([station_id, city, zone, time_from, time_to]):
                 return HttpResponse("Пожалуйста, выберите все фильтры.")
 
-            reports = Report.objects.all()
+            reports = Report.objects.using('new_db').all()
 
             if station_id:
                 reports = reports.filter(stationid__startswith=station_id)
@@ -440,10 +454,18 @@ def report(request):
             if zone:
                 reports = reports.filter(zone=zone)
             if time_from and time_to:
-                time_to += timedelta(days=1)  # Добавляем один день к конечной дате
+                # Преобразуем time_from и time_to в объекты datetime
+                if isinstance(time_from, datetime):
+                    time_from = time_from.time()
+                if isinstance(time_to, datetime):
+                    time_to = time_to.time()
+
+                # Извлекаем только время и добавляем день к time_to
+                time_to = (datetime.combine(datetime.today(), time_to) + timedelta(days=1)).time()
+
                 reports = reports.filter(time__range=[time_from, time_to])
 
-            if reports:
+            if reports.exists():
                 response = HttpResponse(
                     content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
                 response['Content-Disposition'] = f'attachment; filename="reports.xlsx"'
@@ -452,13 +474,11 @@ def report(request):
                 worksheet = workbook.active
 
                 headers = ['city', 'zone', 'stationid', 'reason', 'balance_status', 'capacity', 'cap_coulo',
-                           'cap_percent',
-                           'cap_vol', 'charge_cap_h', 'charge_cap_l', 'charge_times', 'core_volt',
-                           'current_cur', 'cycle_times', 'design_voltage', 'fun_boolean', 'healthy',
-                           'ochg_state', 'odis_state', 'over_discharge_times', 'pcb_ver',
-                           'remaining_cap', 'remaining_cap_percent', 'sn', 'sw_ver', 'temp_cur1',
-                           'temp_cur2', 'total_capacity', 'vid', 'voltage_cur', 'session_start',
-                           'session_end']
+                           'cap_percent', 'cap_vol', 'charge_cap_h', 'charge_cap_l', 'charge_times', 'core_volt',
+                           'current_cur', 'cycle_times', 'design_voltage', 'fun_boolean', 'healthy', 'ochg_state',
+                           'odis_state', 'over_discharge_times', 'pcb_ver', 'remaining_cap', 'remaining_cap_percent',
+                           'sn', 'sw_ver', 'temp_cur1', 'temp_cur2', 'total_capacity', 'vid', 'voltage_cur',
+                           'session_start', 'time']
                 worksheet.append(headers)
 
                 for report in reports:
@@ -479,10 +499,10 @@ def report(request):
                 return HttpResponse("Для выбранной зарядной станции, города или зоны отчеты отсутствуют.")
     else:
         form = ReportFilterForm()
-        prefixes = Report.objects.values_list('stationid', flat=True).distinct()
+        prefixes = Report.objects.using('new_db').values_list('stationid', flat=True).distinct()
         prefixes = set(prefix.split('-')[0] for prefix in prefixes)
-        cities = Report.objects.values_list('city', flat=True).distinct()
-        zones = Report.objects.values_list('zone', flat=True).distinct()
+        cities = Report.objects.using('new_db').values_list('city', flat=True).distinct()
+        zones = Report.objects.using('new_db').values_list('zone', flat=True).distinct()
 
         return render(request, 'ss_main/report.html', {
             'form': form,

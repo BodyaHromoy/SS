@@ -168,3 +168,6 @@ class Report(models.Model):
     reason = models.CharField(max_length=255, null=True)
     city = models.CharField(max_length=255, null=True)
     zone = models.CharField(max_length=255, null=True)
+
+    class Meta:
+        app_label = 'ss_main'

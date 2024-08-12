@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-s-5(v)$6+drk%_4(!ci&iq@zozkxb4(c5htu8flt1%orhce4!9'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
@@ -95,10 +95,21 @@ DATABASES = {
         'NAME': 'testik6',
         'USER': 'bogdanafter',
         'PASSWORD': 'bogdanafter',
-        'HOST': '192.168.1.206',
+        'HOST': '192.168.0.113',
+        'PORT': '5432',
+    },
+    'new_db': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'testik7',
+        'USER': 'bogdanafter',
+        'PASSWORD': 'bogdanafter',
+        'HOST': '192.168.0.113',
         'PORT': '5432',
     }
 }
+
+DATABASE_ROUTERS = ['ss_web.routers.NewDBRouter']
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -122,6 +133,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
+
 
 TIME_ZONE = 'Asia/Almaty'
 

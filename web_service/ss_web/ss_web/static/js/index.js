@@ -196,7 +196,7 @@ function updateContent(response) {
     }
 
     tableHtml += '</tbody></table>';
-    document.getElementById('breadcrumb').innerHTML = breadcrumbHtml;
+
     document.getElementById('dataDisplay').innerHTML = tableHtml;
 }
 
@@ -229,7 +229,6 @@ function updateBreadcrumb(type) {
             break;
     }
 
-    document.getElementById('breadcrumb').textContent = breadcrumb;
 }
 
 function goBack() {

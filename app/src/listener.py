@@ -5,13 +5,62 @@ import json
 from paho.mqtt.client import Client
 import pytz
 
-
 from app.database.models.modules import ss_main_cell
 from app.database.models.report import Ss_main_report
 from app.database.models.cabinets import Ss_main_cabinet
 
-
 active_v_sn = {}
+
+
+def initialize_cells():
+    try:
+        for cell in ss_main_cell.select():
+            cell.sn = None
+            cell.balance_status = None
+            cell.capacity = None
+            cell.cap_coulo = None
+            cell.cap_percent = None
+            cell.cap_vol = None
+            cell.charge_cap_h = None
+            cell.charge_cap_l = None
+            cell.charge_times = None
+            cell.core_volt = None
+            cell.current_cur = None
+            cell.cycle_times = None
+            cell.design_voltage = None
+            cell.fun_boolean = None
+            cell.healthy = None
+            cell.ochg_state = None
+            cell.odis_state = None
+            cell.over_discharge_times = None
+            cell.pcb_ver = None
+            cell.remaining_cap = None
+            cell.remaining_cap_percent = None
+            cell.sw_ver = None
+            cell.temp_cur1 = None
+            cell.temp_cur2 = None
+            cell.total_capacity = None
+            cell.vid = None
+            cell.voltage_cur = None
+            cell.session_start = None
+            cell.session_end = None
+            cell.time = None
+            cell.status = "initialization"
+            cell.save()
+        print("Все записи обнулены успешно.")
+    except Exception as e:
+        print(f"Ошибка при инициализации ячеек: {e}")
+
+
+def initialize_active_v_sn():
+    try:
+        for cell in ss_main_cell.select():
+            vir_sn_eid = cell.vir_sn_eid
+            if vir_sn_eid:
+                active_v_sn[vir_sn_eid] = datetime.datetime.now()
+        print("Словарь активных записей инициализирован успешно.")
+    except Exception as e:
+        print(f"Ошибка при инициализации active_v_sn: {e}")
 
 
 def update_entry(existing_entry, stat_id, status_data):
@@ -50,7 +99,7 @@ def update_entry(existing_entry, stat_id, status_data):
     if "4e344007" in str(status_data.get("VID")):
         existing_entry.vid = "JET"
     elif "4e34300e" in str(status_data.get("VID")):
-        existing_entry.vid = "WOOSH"
+        existing_entry.vid = "WHOOSH"
     elif "4e34400d" in str(status_data.get("VID")):
         existing_entry.vid = "YANDEX"
     elif "4e34400a" in str(status_data.get("VID")):
@@ -119,21 +168,13 @@ def move_to_report(existing_entry, reason):
 
 
 def find_city_name(city_name):
-    try:
-        cabinet = Ss_main_cabinet.get(Ss_main_cabinet.city == city_name)
-        return cabinet.city.city_name
-    except Ss_main_cabinet.DoesNotExist:
-        print(f"Не удалось найти шкаф для города {city_name}")
-        return None
+    cabinet = Ss_main_cabinet.get(Ss_main_cabinet.city == city_name)
+    return cabinet.city.city_name
 
 
 def find_zone_name(zone_name):
-    try:
-        cabinet = Ss_main_cabinet.get(Ss_main_cabinet.zone == zone_name)
-        return cabinet.zone.zone_name
-    except Ss_main_cabinet.DoesNotExist:
-        print(f"{zone_name} не найден.")
-        return None
+    cabinet = Ss_main_cabinet.get(Ss_main_cabinet.zone == zone_name)
+    return cabinet.zone.zone_name
 
 
 def create_new_entry(end_id, stat_id, sn=None, status_data=None, status="empty", vir_sn_eid="empty"):
@@ -190,7 +231,6 @@ async def sort(msg):
         stat_id = data.get("StationID")
         delimiter = "-"
         vir_sn = str(v_stat_id) + str(delimiter) + str(v_end_id)
-        print(vir_sn)
 
         active_v_sn[vir_sn] = datetime.datetime.now()
 
@@ -235,7 +275,38 @@ async def sort(msg):
                 existing_entry.save()
                 print("Обнулены поля существующей записи.")
             else:
-                print("SN в записи пуст. Ничего не копируем в отчет.")
+                existing_entry.sn = None
+                existing_entry.balance_status = None
+                existing_entry.capacity = None
+                existing_entry.cap_coulo = None
+                existing_entry.cap_percent = None
+                existing_entry.cap_vol = None
+                existing_entry.charge_cap_h = None
+                existing_entry.charge_cap_l = None
+                existing_entry.charge_times = None
+                existing_entry.core_volt = None
+                existing_entry.current_cur = None
+                existing_entry.cycle_times = None
+                existing_entry.design_voltage = None
+                existing_entry.fun_boolean = None
+                existing_entry.healthy = None
+                existing_entry.ochg_state = None
+                existing_entry.odis_state = None
+                existing_entry.over_discharge_times = None
+                existing_entry.pcb_ver = None
+                existing_entry.remaining_cap = None
+                existing_entry.remaining_cap_percent = None
+                existing_entry.sw_ver = None
+                existing_entry.temp_cur1 = None
+                existing_entry.temp_cur2 = None
+                existing_entry.total_capacity = None
+                existing_entry.vid = None
+                existing_entry.voltage_cur = None
+                existing_entry.session_start = None
+                existing_entry.session_end = None
+                existing_entry.time = None
+                existing_entry.status = "empty"
+                existing_entry.save()
         else:
             create_new_entry(end_id, stat_id, status="empty", vir_sn_eid=vir_sn)
         return
@@ -280,7 +351,7 @@ async def start_mqtt_client():
     client = Client()
     client.on_message = on_message
     client.on_publish = on_publish
-    client.connect("192.168.1.15", 1883, 60)
+    client.connect("192.168.0.112", 1883, 60)
     client.subscribe("test", 0)
     client.subscribe("test1", 0)
     client.loop_start()
@@ -334,5 +405,7 @@ async def check_inactive_endpoints():
 
 
 if __name__ == '__main__':
+    initialize_cells()
+    initialize_active_v_sn()
     asyncio.run(start_mqtt_client())
     asyncio.run(check_inactive_endpoints())
