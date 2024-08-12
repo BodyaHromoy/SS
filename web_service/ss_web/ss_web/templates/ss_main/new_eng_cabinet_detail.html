@@ -1,0 +1,30 @@
+<div id="cabinet-details">
+    <h2>Шкаф ID: {{ cabinet.shkaf_id }}</h2>
+    <p>Город: {{ cabinet.city.city_name }}</p>
+    <p>Зона: {{ cabinet.zone.zone_name }}</p>
+    <p>Улица: {{ cabinet.street }}</p>
+    <p>Доп. информация: {{ cabinet.extra_inf }}</p>
+</div>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Endpoint ID</th>
+<th>Состояние баланса</th>
+<th>Ёмкость</th>
+<th>Процент ёмкости</th>
+</tr>
+</thead>
+<tbody id="cell-list">
+{% for cell in cells %}
+<tr>
+<td>{{ cell.endpointid }}</td>
+<td>{{ cell.status }}</td>
+<td>{{ cell.cap_percent }}</td>
+<td>{{ cell.vid }}</td>
+<td>{{ cell.sw_ver }}</td>
+<td>{{ cell.sn }}</td>
+</tr>
+{% endfor %}
+</tbody>
+
+</table>

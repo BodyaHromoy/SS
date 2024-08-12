@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMS</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e6f0ff;
+        }
+
+        .sidebar {
+            background-color: #f1f5f9;
+            padding: 20px;
+            min-height: 100vh;
+            width: 200px;
+            position: fixed;
+        }
+
+        .sidebar h1 {
+    font-size: 10.5px; /* Уменьшите размер шрифта по необходимости */
+    white-space: pre;
+    font-family: monospace;
+    line-height: 1.1; /* Можно уменьшить для более плотного размещения текста */
+}
+
+        .sidebar .nav-link {
+            font-size: 16px;
+            margin: 10px 0;
+        }
+
+        .sidebar .nav-link.active {
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .main-content {
+            margin-left: 220px;
+            padding: 20px;
+        }
+
+        .table {
+            margin-top: 20px;
+            background-color: #ffffff;
+            border: 1px solid #dee2e6;
+        }
+
+        .table th, .table td {
+            vertical-align: middle;
+        }
+
+        .filter-container {
+            margin-bottom: 20px;
+        }
+
+        .filter-container .form-control {
+            margin-right: 10px;
+        }
+
+        .filter-container .btn {
+            margin-right: 10px;
+        }
+
+        .details-view h2, .details-view h3 {
+            margin-top: 20px;
+        }
+
+        .details-view .btn {
+            margin-bottom: 20px;
+        }
+
+        .btn-custom {
+            margin: 5px;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f1f5f9;
+        }
+
+        .details-view {
+            margin-top: 20px;
+        }
+
+        .button-container {
+            margin-top: 20px;
+        }
+
+        .logout-button {
+            margin-bottom: 20px;
+        }
+
+        /* Для горизонтального размещения кнопок */
+        .button-container .btn {
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        /* Для индикатора загрузки */
+        #loading-indicator {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #007bff;
+        }
+
+        #loading-indicator::after {
+            content: '';
+            display: block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #007bff;
+            border-top: 5px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-2 sidebar">
+                <h1 class="my-4">
+  _______  _______   ______
+(_______)(_______) / _____)
+ _        _  _  _ ( (____
+| |      | ||_|| | \____ \
+| |_____ | |   | | _____) )
+ \______)|_|   |_|(______/
+
+                </h1>
+                <ul class="nav flex-column">
+                    <li class="nav-item"><a class="nav-link btn btn-primary btn-sm btn-narrow mt-2" href="{% url 'new_eng' %}">Main</a></li>
+                    <li class="nav-item"><a class="nav-link btn btn-primary btn-sm btn-narrow mt-2" href="{% url 'report' %}">Reports</a></li>
+                </ul>
+            </div>
+            <div class="col-md-10 main-content">
+                <div class="row mb-4">
+                    <div class="col-md-12 text-right">
+                        <button class="btn btn-danger logout-button">Exit</button>
+                    </div>
+                </div>
+                <div id="main-view">
+                    <div class="row my-4 filter-container">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" placeholder="Поиск" id="search-input">
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-control" id="city-filter">
+                                <option value="">All cities</option>
+                                {% for city in cities %}
+                                    <option value="{{ city.city_name }}">{{ city.city_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-control" id="zone-filter">
+                                <option value="">All zones</option>
+                                {% for zone in zones %}
+                                    <option value="{{ zone.zone_name }}">{{ zone.zone_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Кнопка "Обновить" только в режиме списка -->
+                    <div id="refresh-button-container">
+                        <button class="btn btn-primary btn-custom" onclick="refreshData()">↻</button>
+                    </div>
+                    <div id="cabinet-list-view">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Box ID</th>
+                                    <th>City</th>
+                                    <th>Zone</th>
+                                    <th>Address</th>
+                                    <th>Locker ID</th>
+                                    <th>Additional info</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cabinet-list">
+                                {% for cabinet in cabinets %}
+                                <tr>
+                                    <td>{{ cabinet.shkaf_id }}</td>
+                                    <td>{{ cabinet.city.city_name }}</td>
+                                    <td>{{ cabinet.zone.zone_name }}</td>
+                                    <td>{{ cabinet.street }}</td>
+                                    <td>{{ cabinet.extra_inf }}</td>
+                                    <td>{{ cabinet.location }}</td>
+                                    <td><button class="btn btn-primary" onclick="showCabinetDetails('{{ cabinet.shkaf_id }}')">Check slots</button></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="details-view" style="display: none;">
+                    <!-- Кнопки "Назад" и "Обновить" горизонтально размещены рядом -->
+
+                    <!-- Фильтр для статусов -->
+                    <div class="row my-4 filter-container">
+                        <div class="col-md-3">
+                            <select class="form-control" id="status-filter">
+                                <option value="">All statuses</option>
+                                <!-- Опции для фильтра будут добавляться динамически -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="button-container">
+                        <button class="btn btn-secondary btn-custom" onclick="showMainView()">←</button>
+                        <button class="btn btn-primary btn-custom" onclick="refreshData()">↻</button>
+                    </div>
+                    <div id="cabinet-details"></div>
+                    <input type="hidden" id="cabinet-id-hidden">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Slot id</th>
+                                <th>Status</th>
+                                <th>Charge in %</th>
+                                <th>VID</th>
+                                <th>SW Ver</th>
+                                <th>SN</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cell-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Индикатор загрузки -->
+    <div id="loading-indicator"></div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function refreshData() {
+            const isDetailsViewVisible = $('#details-view').is(':visible');
+            $('#loading-indicator').show();
+
+            if (isDetailsViewVisible) {
+                const currentCabinetId = $("#cabinet-id-hidden").val();
+                if (currentCabinetId) {
+                    $.get("/new_eng_cabinet/" + currentCabinetId + "/", function(data) {
+                        $("#cabinet-details").html($(data).find("#cabinet-details").html());
+                        $("#cell-list").html($(data).find("#cell-list").html());
+                        updateStatusFilter();
+                        applyStatusFilter();
+                    }).fail(function() {
+                        console.error("Ошибка при загрузке данных.");
+                    }).always(function() {
+                        $('#loading-indicator').hide();
+                    });
+                } else {
+                    console.error("Ошибка: ID шкафа не найден.");
+                    $('#loading-indicator').hide();
+                }
+            } else {
+                $.get("{% url 'new_eng' %}", function(data) {
+                    $("#cabinet-list").html($(data).find("#cabinet-list").html());
+                }).fail(function() {
+                    console.error("Ошибка при загрузке данных.");
+                }).always(function() {
+                    $('#loading-indicator').hide();
+                });
+            }
+        }
+
+        function showCabinetDetails(shkaf_id) {
+            $('#loading-indicator').show();
+
+            $.get("/new_eng_cabinet/" + shkaf_id + "/", function(data) {
+                $("#cabinet-details").html($(data).find("#cabinet-details").html());
+                $("#cell-list").html($(data).find("#cell-list").html());
+                $("#cabinet-id-hidden").val(shkaf_id);
+                $("#main-view").hide();
+                $("#details-view").show();
+                updateStatusFilter();
+                applyStatusFilter();
+            }).fail(function() {
+                console.error("Ошибка при загрузке данных.");
+            }).always(function() {
+                $('#loading-indicator').hide();
+            });
+        }
+
+        function showMainView() {
+            $("#details-view").hide();
+            $("#main-view").show();
+        }
+
+        function updateStatusFilter() {
+            const statuses = new Set();
+            $("#cell-list tr").each(function() {
+                const status = $(this).find("td:nth-child(2)").text().trim();
+                statuses.add(status);
+            });
+            const $statusFilter = $("#status-filter");
+            $statusFilter.find('option:not(:first)').remove();
+            statuses.forEach(status => {
+                $statusFilter.append(`<option value="${status}">${status}</option>`);
+            });
+        }
+
+        function applyStatusFilter() {
+            const selectedStatus = $("#status-filter").val();
+            $("#cell-list tr").filter(function() {
+                $(this).toggle(!selectedStatus || $(this).children("td:nth-child(2)").text() === selectedStatus);
+            });
+        }
+
+        $("#search-input").on("input", function() {
+            var value = $(this).val().toLowerCase();
+            $("#cabinet-list tr").filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
+        });
+
+        $("#city-filter").on("change", function() {
+            var value = $(this).val();
+            $("#cabinet-list tr").filter(function() {
+                $(this).toggle(!value || $(this).children("td:nth-child(2)").text() === value)
+            });
+        });
+
+        $("#zone-filter").on("change", function() {
+            var value = $(this).val();
+            $("#cabinet-list tr").filter(function() {
+                $(this).toggle(!value || $(this).children("td:nth-child(3)").text() === value)
+            });
+        });
+
+        $("#status-filter").on("change", function() {
+            applyStatusFilter();
+        });
+    </script>
+</body>
+</html>
