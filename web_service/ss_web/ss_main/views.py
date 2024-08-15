@@ -1,21 +1,26 @@
 import random
 import string
-from django.core.mail import send_mail
+from datetime import timedelta
+
 import openpyxl
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView, LogoutView
+from django.core.mail import send_mail
 from django.http import HttpResponse
 from django.http import HttpResponseForbidden
-from datetime import datetime, time, timedelta
+from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse
 
 from .decorators.auth_decorators import staff_required
 from .forms.auth_form import CustomAuthenticationForm
 from .forms.forms import ReportFilterForm, CourierCreationForm, LogicCreationForm
 from .models import *
+
+
+def is_courier(user):
+    return user.is_authenticated and user.role == 'courier' or 'engineer'
 
 
 def is_logistician(user):
@@ -30,10 +35,6 @@ def is_regional_manager(user):
     return user.is_authenticated and user.role == 'regional_manager' or 'engineer'
 
 
-def has_role(user, *roles):
-    return user.is_authenticated and user.role in roles
-
-@login_required
 @user_passes_test(is_engineer)
 def new_eng(request):
     cabinets = Cabinet.objects.all()
@@ -42,7 +43,6 @@ def new_eng(request):
     return render(request, 'ss_main/new_eng.html', {'cabinets': cabinets, 'cities': cities, 'zones': zones})
 
 
-@login_required
 @user_passes_test(is_engineer)
 def new_eng_cabinet_detail(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
@@ -50,7 +50,6 @@ def new_eng_cabinet_detail(request, shkaf_id):
     return render(request, 'ss_main/new_eng_cabinet_detail.html', {'cabinet': cabinet, 'cells': cells})
 
 
-@login_required
 @user_passes_test(is_engineer)
 def main(request):
     cities = Cabinet.objects.values_list('city', flat=True).distinct()
@@ -288,6 +287,7 @@ def cabinet_details_api(request, shkaf_id):
 
 
 # Основная страница регионального менеджера
+@login_required
 @user_passes_test(is_regional_manager)
 def main_region(request):
     cities = City.objects.all()
@@ -304,6 +304,7 @@ def main_region(request):
 
 
 # Список зон в городе(региональный менеджер)
+@login_required
 @user_passes_test(is_regional_manager)
 def region_zones(request, city_id):
     city = get_object_or_404(City, id=city_id)
@@ -331,6 +332,7 @@ def region_zones(request, city_id):
 
 
 # Логисты зоны(региональный менеджер)
+@login_required
 @user_passes_test(is_regional_manager)
 def region_logic(request, zone_id):
     zone = get_object_or_404(Zone, id=zone_id)
@@ -345,6 +347,7 @@ def region_logic(request, zone_id):
 
 # Основная страница курьера
 @login_required
+@user_passes_test(is_courier)
 def user_cabinets(request):
     user = request.user
     zones = user.zones.all()
@@ -372,6 +375,7 @@ def user_cabinets(request):
 
 
 # Детали шкафа
+@login_required
 def cabinet_details(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
     cells = Cell.objects.filter(cabinet_id=cabinet)
@@ -454,14 +458,8 @@ def report(request):
             if zone:
                 reports = reports.filter(zone=zone)
             if time_from and time_to:
-                # Преобразуем time_from и time_to в объекты datetime
-                if isinstance(time_from, datetime):
-                    time_from = time_from.time()
-                if isinstance(time_to, datetime):
-                    time_to = time_to.time()
-
-                # Извлекаем только время и добавляем день к time_to
-                time_to = (datetime.combine(datetime.today(), time_to) + timedelta(days=1)).time()
+                time_to += timedelta(days=1)  # Добавляем один день к конечной дате
+                reports = reports.filter(time__range=[time_from, time_to])
 
                 reports = reports.filter(time__range=[time_from, time_to])
 

@@ -69,6 +69,7 @@ def update_entry(existing_entry, stat_id, status_data):
     almaty_timezone = pytz.timezone('Asia/Almaty')
     time_wth_tzinfo = datetime.datetime.now(almaty_timezone)
     current_time = time_wth_tzinfo.replace(tzinfo=None)
+
     existing_entry.cabinet_id_id = stat_id
     existing_entry.balance_status = status_data.get("BALANCE_STATUS")
     existing_entry.capacity = status_data.get("CAPACITY")
@@ -128,6 +129,13 @@ def update_entry(existing_entry, stat_id, status_data):
 
 
 def move_to_report(existing_entry, reason):
+    import datetime
+
+    almaty_timezone = pytz.timezone('Asia/Almaty')
+    current_time_with_tz = datetime.datetime.now(almaty_timezone)
+    current_time = current_time_with_tz.replace(tzinfo=None).strftime('%Y-%m-%d %H:%M:%S')
+    print(f"Время: {current_time}")
+
     report_entry = Ss_main_report.create(
         stationid=existing_entry.vir_sn_eid,
         balance_status=existing_entry.balance_status,
@@ -159,7 +167,7 @@ def move_to_report(existing_entry, reason):
         voltage_cur=existing_entry.voltage_cur,
         session_start=existing_entry.session_start,
         session_end=existing_entry.session_end,
-        time=existing_entry.time,
+        time=current_time,
         reason=reason,
         city=find_city_name(existing_entry.cabinet_id_id.city.city_name),
         zone=find_zone_name(existing_entry.cabinet_id_id.zone.zone_name)

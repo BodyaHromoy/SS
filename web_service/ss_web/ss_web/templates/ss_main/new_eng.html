@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -146,7 +147,10 @@
             <div class="col-md-10 main-content">
                 <div class="row mb-4">
                     <div class="col-md-12 text-right">
+                        <form method="post" action="{% url 'logout' %}" class="logout-form">
+            {% csrf_token %}
                         <button class="btn btn-danger logout-button">Exit</button>
+                            </form>
                     </div>
                 </div>
                 <div id="main-view">
@@ -171,7 +175,6 @@
                             </select>
                         </div>
                     </div>
-                    <!-- Кнопка "Обновить" только в режиме списка -->
                     <div id="refresh-button-container">
                         <button class="btn btn-primary btn-custom" onclick="refreshData()">↻</button>
                     </div>
@@ -205,14 +208,10 @@
                     </div>
                 </div>
                 <div id="details-view" style="display: none;">
-                    <!-- Кнопки "Назад" и "Обновить" горизонтально размещены рядом -->
-
-                    <!-- Фильтр для статусов -->
                     <div class="row my-4 filter-container">
                         <div class="col-md-3">
                             <select class="form-control" id="status-filter">
                                 <option value="">All statuses</option>
-                                <!-- Опции для фильтра будут добавляться динамически -->
                             </select>
                         </div>
                     </div>
@@ -239,10 +238,7 @@
             </div>
         </div>
     </div>
-
-    <!-- Индикатор загрузки -->
     <div id="loading-indicator"></div>
-
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
