@@ -110,7 +110,7 @@
                         backgroundColor: data.status_counts.map(item => {
                             switch (item.status) {
                                 case 'ready': return '#57fa98';
-                                case 'charging': return '#f7f568';
+                                case 'charging': return '#687df7';
                                 case 'Inactive': return '#ff4545';
                                 case 'empty': return 'gray';
                                 default: return '#FF6384';  // цвет по умолчанию
@@ -139,7 +139,7 @@
                                     sum += data;
                                 });
                                 const percentage = (value * 100 / sum).toFixed(2) + "%";
-                                return `${value} (${percentage})`;
+                                return `${value}`;
                             },
                             anchor: 'center',
                             align: 'center',
