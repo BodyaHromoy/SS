@@ -95,7 +95,7 @@ DATABASES = {
         'NAME': 'testik6',
         'USER': 'bogdanafter',
         'PASSWORD': 'bogdanafter',
-        'HOST': '192.168.0.113',
+        'HOST': '192.168.1.206',
         'PORT': '5432',
     },
     'new_db': {
@@ -103,7 +103,7 @@ DATABASES = {
         'NAME': 'testik7',
         'USER': 'bogdanafter',
         'PASSWORD': 'bogdanafter',
-        'HOST': '192.168.0.113',
+        'HOST': '192.168.1.206',
         'PORT': '5432',
     }
 }

@@ -63,6 +63,13 @@ def initialize_active_v_sn():
         print(f"Ошибка при инициализации active_v_sn: {e}")
 
 
+def sanitize(value):
+    if value and '\x00' in value:
+        print(f"Найден нулевой байт в значении: {value}")
+        return "ERROR"
+    return value
+
+
 def update_entry(existing_entry, stat_id, status_data):
     import datetime
 
@@ -112,7 +119,7 @@ def update_entry(existing_entry, stat_id, status_data):
 
     existing_entry.voltage_cur = status_data.get("VOLTAGE_CUR")
     existing_entry.time = current_time
-    existing_entry.sn = status_data.get("SN")
+    existing_entry.sn = sanitize(status_data.get("SN"))
 
     if not existing_entry.session_start:
         existing_entry.session_start = current_time
@@ -359,7 +366,7 @@ async def start_mqtt_client():
     client = Client()
     client.on_message = on_message
     client.on_publish = on_publish
-    client.connect("192.168.0.112", 1883, 60)
+    client.connect("192.168.1.15", 1883, 60)
     client.subscribe("test", 0)
     client.subscribe("test1", 0)
     client.loop_start()

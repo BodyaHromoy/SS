@@ -14,6 +14,7 @@ urlpatterns = [
     # Скауты
     path('my-cabinets/', views.user_cabinets, name='user_cabinets'),
     path('cabinet/<str:shkaf_id>/', views.cabinet_details, name='cabinet_details'),
+    path('cabinet/<int:shkaf_id>/update/', update_cabinet_data, name='update_cabinet_data'),
 
     # Регистрация скаута
     path('create_courier/', create_courier, name='create_courier'),

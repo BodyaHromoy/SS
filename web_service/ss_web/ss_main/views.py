@@ -1,18 +1,19 @@
 import random
 import string
 from datetime import timedelta
-
+from django.db.models.functions import Cast
 import openpyxl
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.mail import send_mail
+from django.db.models import Count, Avg
 from django.http import HttpResponse
 from django.http import HttpResponseForbidden
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.shortcuts import render, get_object_or_404
-
+from django.db.models import F, FloatField
 from .decorators.auth_decorators import staff_required
 from .forms.auth_form import CustomAuthenticationForm
 from .forms.forms import ReportFilterForm, CourierCreationForm, LogicCreationForm
@@ -379,11 +380,48 @@ def user_cabinets(request):
 def cabinet_details(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
     cells = Cell.objects.filter(cabinet_id=cabinet)
+
+    # Подсчет количества различных статусов
+    status_counts = cells.values('status').annotate(count=Count('status'))
+
+    # Преобразование cap_percent в число и расчет среднего заряда
+    average_charge = cells.annotate(cap_percent_as_float=Cast('cap_percent', FloatField())).aggregate(
+        average_charge=Avg('cap_percent_as_float'))['average_charge']
+
     context = {
         'cabinet': cabinet,
         'cells': cells,
+        'status_counts': status_counts,
+        'average_charge': average_charge,
     }
     return render(request, 'ss_main/cabinet_details.html', context)
+
+
+# Обновление деталей шкафа
+def update_cabinet_data(request, shkaf_id):
+    cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
+
+    # Check if the request is an AJAX request
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        # Logic to update data
+        # Fetch new data or perform your update actions
+        cells = Cell.objects.filter(cabinet_id=cabinet)
+
+        # Подсчет количества различных статусов
+        status_counts = cells.values('status').annotate(count=Count('status'))
+
+        # Преобразование cap_percent в число и расчет среднего заряда
+        average_charge = cells.annotate(cap_percent_as_float=Cast('cap_percent', FloatField())).aggregate(
+            average_charge=Avg('cap_percent_as_float'))['average_charge']
+
+        # Respond with JSON data
+        return JsonResponse({
+            'status_counts': list(status_counts),
+            'average_charge': average_charge,
+        })
+    else:
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
 
 
 # API для получения информации о статусах ячеек в шкафах

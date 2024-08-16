@@ -7,6 +7,8 @@
     <title>Детали шкафа {{ cabinet.shkaf_id }}</title>
     <link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.0.0/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
     <style>
         body {
             background-color: #f0f0f0;
@@ -19,7 +21,7 @@
         .info-header {
             background-color: #007BFF;
             color: white;
-            padding: 0.5em; /* уменьшить padding */
+            padding: 0.5em;
             border-radius: 0.3em;
             position: fixed;
             width: 100%;
@@ -28,39 +30,27 @@
             z-index: 1000;
             text-align: left;
             border: 1px solid #ccc;
-            font-size: 0.85em; /* уменьшить размер шрифта */
+            font-size: 0.85em;
         }
         .info-header p {
-            margin: 0.2em 0; /* уменьшить отступы между параграфами */
+            margin: 0.2em 0;
         }
         .main-content {
-            padding-top: 9em; /* Отступ сверху для фиксации хедера */
-            padding-bottom: 5em; /* Отступ снизу для фиксации футера */
+            padding-top: 9em;
+            padding-bottom: 5em;
+            text-align: center;
         }
-        .table-container {
-            margin-bottom: 1em;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #fff;
-            border: 1px solid #CCC;
-            border-radius: 1em;
-            overflow: hidden;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            font-size: 0.9em;
-        }
-        th, td {
+        .average-charge {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 1em;
             padding: 0.5em;
-            text-align: left;
-            border-bottom: 1px solid #CCC;
-            box-sizing: border-box;
-        }
-        th {
-            background-color: #f9f9f9;
-        }
-        td:last-child {
-            padding-right: 1em;
+            border: 1px solid #ccc;
+            border-radius: 0.5em;
+            background-color: #007BFF;
+            color: white;
+            display: inline-block;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
         }
         .footer {
             text-align: center;
@@ -76,51 +66,6 @@
         .footer button {
             margin: 0.5em;
         }
-        @media (max-width: 768px) {
-            thead {
-                display: none;
-            }
-            th, td {
-                display: block;
-                width: 100%;
-                text-align: right;
-            }
-            th {
-                text-align: left;
-            }
-            tr {
-                display: block;
-                margin-bottom: 1em;
-                background: #fff;
-                padding: 0.5em;
-                border-radius: 0.5em;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            }
-            td:before {
-                content: attr(data-label);
-                float: left;
-                font-weight: bold;
-            }
-        }
-        .loader {
-            border: 16px solid #f3f3f3;
-            border-radius: 50%;
-            border-top: 16px solid #3498db;
-            width: 120px;
-            height: 120px;
-            animation: spin 2s linear infinite;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 2000;
-            display: none;
-        }
-
-        @keyframes spin {
-            0% { transform: translate(-50%, -50%) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
     </style>
 </head>
 <body>
@@ -134,26 +79,8 @@
     </div>
 
     <div class="main-content">
-        <div class="table-responsive">
-            <table class="table table-striped table-bordered table-hover">
-                <thead class="thead-dark">
-                    <tr>
-                        <th>Слот</th>
-                        <th>Заряд</th>
-                        <th>Вендор</th>
-                    </tr>
-                </thead>
-                <tbody id="cells-table-body">
-                    {% for cell in cells|dictsort:"endpointid" %}
-                    <tr>
-                        <td data-label="Слот">●{{ cell.endpointid|default:"-" }}</td>
-                        <td data-label="Заряд">{{ cell.cap_percent|default:"-" }}%</td>
-                        <td data-label="Вендор">{{ cell.vid|default:"-" }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        <canvas id="statusPieChart"></canvas>
+        <p class="average-charge">Средний заряд по шкафу: {{ average_charge|floatformat:2 }}%</p>
     </div>
 
     <div class="footer">
@@ -161,45 +88,101 @@
         <button class="btn btn-primary" onclick="updateData()">Обновить данные</button>
     </div>
 
-    <div id="loader" class="loader"></div>
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
         function goBack() {
             window.history.back();
         }
 
-        async function updateData() {
-            const loader = document.getElementById('loader');
-            loader.style.display = 'block';
-            try {
-                const response = await fetch('/api/cabinet/{{ cabinet.shkaf_id }}/details/');
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                const data = await response.json();
+        let statusPieChart;
 
-                data.cells.sort((a, b) => a.endpointid - b.endpointid);
-
-                const cellsTableBody = document.getElementById('cells-table-body');
-                cellsTableBody.innerHTML = '';
-                data.cells.forEach(cell => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td data-label="Слот">●${cell.endpointid || '-'}</td>
-                        <td data-label="Заряд">${cell.cap_percent || '-'}%</td>
-                        <td data-label="Вендор">${cell.vid || '-'}</td>
-                    `;
-                    cellsTableBody.appendChild(row);
-                });
-            } catch (error) {
-                console.error('Error updating data:', error);
-            } finally {
-                loader.style.display = 'none';
+        function createPieChart(data) {
+            const ctx = document.getElementById('statusPieChart').getContext('2d');
+            if (statusPieChart) {
+                statusPieChart.destroy(); // Удаляем старую диаграмму
             }
+            statusPieChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: data.status_counts.map(item => item.status || 'Неизвестно'),
+                    datasets: [{
+                        label: 'Количество',
+                        data: data.status_counts.map(item => item.count),
+                        backgroundColor: data.status_counts.map(item => {
+                            switch (item.status) {
+                                case 'ready': return '#57fa98';
+                                case 'charging': return '#f7f568';
+                                case 'Inactive': return '#ff4545';
+                                case 'empty': return 'gray';
+                                default: return '#FF6384';  // цвет по умолчанию
+                            }
+                        })
+                    }]
+                },
+                options: {
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    return `${label}: ${value}`;
+                                }
+                            }
+                        },
+                        datalabels: {
+                            display: true,
+                            color: '#fff',
+                            formatter: (value, context) => {
+                                let sum = 0;
+                                const dataArr = context.chart.data.datasets[0].data;
+                                dataArr.map(data => {
+                                    sum += data;
+                                });
+                                const percentage = (value * 100 / sum).toFixed(2) + "%";
+                                return `${value} (${percentage})`;
+                            },
+                            anchor: 'center',
+                            align: 'center',
+                            font: {
+                                weight: 'bold',
+                                size: 14
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1000, // Длительность анимации
+                        easing: 'easeOutQuart'
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
         }
+
+        function updateData() {
+            const cabinetId = "{{ cabinet.shkaf_id }}";
+
+            fetch(`/cabinet/${cabinetId}/update/`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                createPieChart(data); // Создаем новую диаграмму
+            })
+            .catch(error => console.error('Error updating data:', error));
+        }
+
+        // Инициализация диаграммы при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            createPieChart({
+                status_counts: [{% for status in status_counts %}{
+                    status: "{{ status.status|default:'Неизвестно' }}",
+                    count: {{ status.count }}
+                }{% if not forloop.last %},{% endif %}{% endfor %}]
+            });
+        });
     </script>
 </body>
 </html>
