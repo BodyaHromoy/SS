@@ -66,6 +66,24 @@
         .footer button {
             margin: 0.5em;
         }
+        #chartjs-tooltip {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 3px;
+            color: white;
+            opacity: 1;
+            pointer-events: none;
+            position: absolute;
+            transform: translate(-50%, 0);
+            transition: opacity 0.1s ease;
+            padding: 8px;
+            white-space: nowrap;
+            z-index: 100;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            max-height: 200px; /* Установите максимальную высоту по вашему усмотрению */
+            overflow-y: auto;  /* Добавьте прокрутку по вертикали */
+        }
     </style>
 </head>
 <body>
@@ -92,13 +110,11 @@
         function goBack() {
             window.history.back();
         }
-
         let statusPieChart;
-
         function createPieChart(data) {
             const ctx = document.getElementById('statusPieChart').getContext('2d');
             if (statusPieChart) {
-                statusPieChart.destroy(); // Удаляем старую диаграмму
+                statusPieChart.destroy();
             }
             statusPieChart = new Chart(ctx, {
                 type: 'pie',
@@ -113,7 +129,7 @@
                                 case 'charging': return '#687df7';
                                 case 'Inactive': return '#ff4545';
                                 case 'empty': return 'gray';
-                                default: return '#FF6384';  // цвет по умолчанию
+                                default: return '#FF6384';
                             }
                         })
                     }]
@@ -121,12 +137,33 @@
                 options: {
                     plugins: {
                         tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.raw || 0;
-                                    return `${label}: ${value}`;
+                            enabled: false,
+                            external: function(context) {
+                                let tooltipEl = document.getElementById('chartjs-tooltip');
+                                if (!tooltipEl) {
+                                    tooltipEl = document.createElement('div');
+                                    tooltipEl.id = 'chartjs-tooltip';
+                                    tooltipEl.innerHTML = '<table></table>';
+                                    document.body.appendChild(tooltipEl);
                                 }
+                                const tooltipModel = context.tooltip;
+
+                                if (tooltipModel.opacity === 0) {
+                                    tooltipEl.style.opacity = 0;
+                                    return;
+                                }
+                                if (tooltipModel.body) {
+                                    const status = tooltipModel.dataPoints[0].label;
+                                    const slots = data.status_slots[status] || [];
+                                    const innerHtml = `<thead><tr><th>${status}</th></tr></thead>`;
+                                    const bodyHtml = slots.map(slot => `<tr><td>Slot: ${slot.sn}, Charge: ${slot.charge}%</td></tr>`).join('');
+
+                                    tooltipEl.querySelector('table').innerHTML = innerHtml + '<tbody>' + bodyHtml + '</tbody>';
+                                }
+                                const position = context.chart.canvas.getBoundingClientRect();
+                                tooltipEl.style.opacity = 1;
+                                tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 'px';
+                                tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY + 'px';
                             }
                         },
                         datalabels: {
@@ -150,17 +187,21 @@
                         }
                     },
                     animation: {
-                        duration: 1000, // Длительность анимации
+                        duration: 1000,
                         easing: 'easeOutQuart'
                     }
                 },
                 plugins: [ChartDataLabels]
             });
         }
-
+        document.addEventListener('DOMContentLoaded', () => {
+            createPieChart({
+                status_counts: JSON.parse('{{ status_counts|escapejs }}'),
+                status_slots: JSON.parse('{{ status_slots|escapejs }}')
+            });
+        });
         function updateData() {
             const cabinetId = "{{ cabinet.shkaf_id }}";
-
             fetch(`/cabinet/${cabinetId}/update/`, {
                 method: 'GET',
                 headers: {
@@ -173,16 +214,6 @@
             })
             .catch(error => console.error('Error updating data:', error));
         }
-
-        // Инициализация диаграммы при загрузке страницы
-        document.addEventListener('DOMContentLoaded', () => {
-            createPieChart({
-                status_counts: [{% for status in status_counts %}{
-                    status: "{{ status.status|default:'Неизвестно' }}",
-                    count: {{ status.count }}
-                }{% if not forloop.last %},{% endif %}{% endfor %}]
-            });
-        });
     </script>
 </body>
 </html>

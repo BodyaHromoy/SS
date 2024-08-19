@@ -19,20 +19,20 @@
         .info-header {
             background-color: #007BFF;
             color: white;
-            padding: 0.5em; /* Уменьшение отступа */
+            padding: 0.5em;
             border-radius: 0.3em;
             position: fixed;
             width: 100%;
             top: 0;
             left: 0;
             z-index: 1000;
-            text-align: left; /* Выровнять текст по левому краю */
-            border: 1px solid #ccc; /* Добавить серую обводку */
-            font-size: 0.9em; /* Уменьшение размера шрифта */
+            text-align: left;
+            border: 1px solid #ccc;
+            font-size: 0.9em;
         }
         .main-content {
-            padding-top: 8.5em; /* Уменьшение отступа сверху для фиксации хедера */
-            padding-bottom: 5em; /* Отступ снизу для фиксации футера */
+            padding-top: 8.5em;
+            padding-bottom: 5em;
         }
         h2 {
             color: #333;
@@ -144,11 +144,11 @@
             }
             .btn-sm {
                 width: 100%;
-                padding: 1em; /* Добавлено для увеличения области нажатия */
+                padding: 1em;
                 box-sizing: border-box;
             }
             td:last-child {
-                padding: 0; /* Убрать отступы у ячейки */
+                padding: 0;
             }
         }
         .loader {
@@ -163,7 +163,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 2000;
-            display: none; /* Скрыто по умолчанию */
+            display: none;
         }
 
         @keyframes spin {
@@ -232,8 +232,8 @@
         }
 
         async function updateData() {
-            const loader = document.getElementById('loader'); // Исправление ошибки
-            loader.style.display = 'block'; // Показать индикатор загрузки
+            const loader = document.getElementById('loader');
+            loader.style.display = 'block';
 
             try {
                 const response = await fetch("{% url 'user_cabinets_api' %}");

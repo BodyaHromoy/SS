@@ -14,6 +14,8 @@ from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.shortcuts import render, get_object_or_404
 from django.db.models import F, FloatField
+from rest_framework.utils import json
+
 from .decorators.auth_decorators import staff_required
 from .forms.auth_form import CustomAuthenticationForm
 from .forms.forms import ReportFilterForm, CourierCreationForm, LogicCreationForm
@@ -169,7 +171,6 @@ def assign_zone_to_logic(request):
             logistician = get_object_or_404(CustomUser, pk=logistician_id)
             zone = get_object_or_404(Zone, pk=zone_id)
 
-            # Убедимся, что назначаем только одну зону
             logistician.zones.clear()
             logistician.zones.add(zone)
             messages.success(request, f"Zone '{zone.zone_name}' successfully assigned to logistician '{logistician.username}'.")
@@ -187,8 +188,7 @@ def assign_zone_to_logic(request):
 @user_passes_test(is_logistician)
 def zone_list(request):
     user = request.user
-    # Предполагаем, что у пользователя может быть закреплен только один город
-    user_city = user.citys.first()  # Используем related_name 'citys' из модели CustomUser
+    user_city = user.citys.first()
     if user_city:
         zones = Zone.objects.filter(city=user_city)
     else:
@@ -243,7 +243,6 @@ def cabinet_list(request, zone_id):
     cabinets = Cabinet.objects.filter(zone=zone)
     cabinets_count = cabinets.count()
 
-    # Собираем информацию о статусах ячеек для каждого шкафа и подсчитываем общее количество ячеек
     total_cells_count = 0
     cabinets_status_counts = []
     for cabinet in cabinets:
@@ -375,23 +374,29 @@ def user_cabinets(request):
     return render(request, 'ss_main/user_cabinets.html', context)
 
 
-# Детали шкафа
 @login_required
 def cabinet_details(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
     cells = Cell.objects.filter(cabinet_id=cabinet)
 
-    # Подсчет количества различных статусов
-    status_counts = cells.values('status').annotate(count=Count('status'))
+    status_counts = cells.values('status').annotate(count=Count('status')).order_by('status')
+    status_slots = {}
 
-    # Преобразование cap_percent в число и расчет среднего заряда
+    for cell in cells:
+        status = cell.status
+        sn = cell.endpointid
+        cap_percent = cell.cap_percent or "N/A"
+        if status not in status_slots:
+            status_slots[status] = []
+        status_slots[status].append({'sn': sn, 'charge': cap_percent})
+
     average_charge = cells.annotate(cap_percent_as_float=Cast('cap_percent', FloatField())).aggregate(
         average_charge=Avg('cap_percent_as_float'))['average_charge']
 
     context = {
         'cabinet': cabinet,
-        'cells': cells,
-        'status_counts': status_counts,
+        'status_counts': json.dumps(list(status_counts)),
+        'status_slots': json.dumps(status_slots),
         'average_charge': average_charge,
     }
     return render(request, 'ss_main/cabinet_details.html', context)
@@ -401,27 +406,29 @@ def cabinet_details(request, shkaf_id):
 def update_cabinet_data(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
 
-    # Check if the request is an AJAX request
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         # Logic to update data
-        # Fetch new data or perform your update actions
         cells = Cell.objects.filter(cabinet_id=cabinet)
 
-        # Подсчет количества различных статусов
         status_counts = cells.values('status').annotate(count=Count('status'))
 
-        # Преобразование cap_percent в число и расчет среднего заряда
         average_charge = cells.annotate(cap_percent_as_float=Cast('cap_percent', FloatField())).aggregate(
             average_charge=Avg('cap_percent_as_float'))['average_charge']
 
-        # Respond with JSON data
+        status_slots = {}
+        for cell in cells:
+            status = cell.status
+            if status not in status_slots:
+                status_slots[status] = []
+            status_slots[status].append({'sn': cell.endpointid, 'charge': cell.cap_percent})
+
         return JsonResponse({
             'status_counts': list(status_counts),
+            'status_slots': status_slots,
             'average_charge': average_charge,
         })
     else:
         return JsonResponse({'error': 'Invalid request'}, status=400)
-
 
 
 # API для получения информации о статусах ячеек в шкафах
@@ -496,7 +503,7 @@ def report(request):
             if zone:
                 reports = reports.filter(zone=zone)
             if time_from and time_to:
-                time_to += timedelta(days=1)  # Добавляем один день к конечной дате
+                time_to += timedelta(days=1)
                 reports = reports.filter(time__range=[time_from, time_to])
 
                 reports = reports.filter(time__range=[time_from, time_to])
@@ -550,12 +557,10 @@ def report(request):
 
 def reset_selection(request):
     if request.method == 'GET':
-        # Очищаем значения выбора станции и чекбокса "Выбрать все" из сессии
         if 'station_id' in request.session:
             del request.session['station_id']
         if 'select_all' in request.session:
             del request.session['select_all']
-    # Перенаправляем пользователя обратно на страницу отчета
     return redirect('report')
 
 
