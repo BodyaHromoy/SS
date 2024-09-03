@@ -241,6 +241,33 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
+
+
+        function sendCommand(endpoint_id, cabinet_id) {
+    const cmd_number = prompt("Введите номер команды (cmd):");
+    if (!cmd_number) {
+        alert("Команда не введена!");
+        return;
+    }
+
+    $.ajax({
+        url: "{% url 'send_command' %}",
+        type: "POST",
+        data: {
+            'cabinet_id': cabinet_id,
+            'endpoint_id': endpoint_id,
+            'cmd_number': cmd_number,
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            alert(response.message);
+        },
+        error: function() {
+            alert("Ошибка при отправке команды.");
+        }
+    });
+}
+
         function refreshData() {
             const isDetailsViewVisible = $('#details-view').is(':visible');
             $('#loading-indicator').show();

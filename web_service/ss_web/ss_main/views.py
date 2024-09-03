@@ -1,3 +1,4 @@
+import json
 import random
 import string
 from datetime import timedelta
@@ -14,7 +15,7 @@ from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.shortcuts import render, get_object_or_404
 from django.db.models import F, FloatField
-from rest_framework.utils import json
+import paho.mqtt.client as mqtt
 
 from .decorators.auth_decorators import staff_required
 from .forms.auth_form import CustomAuthenticationForm
@@ -36,6 +37,37 @@ def is_engineer(user):
 
 def is_regional_manager(user):
     return user.is_authenticated and user.role == 'regional_manager' or 'engineer'
+
+
+@user_passes_test(is_engineer)
+def send_command(request):
+    if request.method == 'POST':
+        cabinet_id = request.POST.get('cabinet_id')
+        endpoint_id = request.POST.get('endpoint_id')
+        cmd_number = request.POST.get('cmd_number')
+
+        try:
+            record = Cell.objects.get(cabinet_id__shkaf_id=cabinet_id, endpointid=endpoint_id)
+
+            json_data = {
+                "Type": "cmd",
+                "StationID": int(record.cabinet_id_id),
+                "EndpointID": int(record.endpointid),
+                "CMD": int(cmd_number),
+                "SN": record.sn
+            }
+
+            client = mqtt.Client()
+            client.connect("192.168.1.15", 1883, 60)
+            client.publish("test/back", json.dumps(json_data))
+            client.disconnect()
+
+            return JsonResponse({"success": True, "message": "Команда отправлена успешно!"})
+        except Cell.DoesNotExist:
+            return JsonResponse({"success": False, "message": "Ячейка не найдена."})
+        except Exception as e:
+            return JsonResponse({"success": False, "message": f"Ошибка при отправке команды: {str(e)}"})
+    return JsonResponse({"success": False, "message": "Неверный запрос."})
 
 
 @user_passes_test(is_engineer)
@@ -524,6 +556,7 @@ def report(request):
                            'session_start', 'time']
                 worksheet.append(headers)
 
+
                 for report in reports:
                     row = [report.city, report.zone, report.stationid, report.reason, report.balance_status,
                            report.capacity, report.cap_coulo, report.cap_percent, report.cap_vol, report.charge_cap_h,
@@ -535,6 +568,7 @@ def report(request):
                            report.session_start.replace(tzinfo=None) if report.session_start else None,
                            report.time.replace(tzinfo=None) if report.time else None]
                     worksheet.append(row)
+
 
                 workbook.save(response)
                 return response

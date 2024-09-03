@@ -65,7 +65,7 @@ def initialize_active_v_sn():
 
 def sanitize(value):
     if value and '\x00' in value:
-        print(f"Найден нулевой байт в значении: {value}")
+        print(f"Найден нулевой байт в значении:   {value}")
         return "ERROR"
     return value
 
@@ -368,6 +368,7 @@ async def start_mqtt_client():
     client.on_publish = on_publish
     client.connect("192.168.1.15", 1883, 60)
     client.subscribe("test", 0)
+    client.subscribe("test/back", 0)
     client.subscribe("test1", 0)
     client.loop_start()
 
