@@ -75,14 +75,22 @@
             position: absolute;
             transform: translate(-50%, 0);
             transition: opacity 0.1s ease;
-            padding: 8px;
-            white-space: nowrap;
+            padding: 5px;
             z-index: 100;
             font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.5;
-            max-height: 200px; /* Установите максимальную высоту по вашему усмотрению */
-            overflow-y: auto;  /* Добавьте прокрутку по вертикали */
+            font-size: 10px; /* Уменьшенный размер шрифта */
+            line-height: 1.2;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); /* Уменьшена минимальная ширина */
+            gap: 5px;
+            max-width: 300px; /* Уменьшена максимальная ширина */
+        }
+        #chartjs-tooltip .tooltip-column {
+            background-color: #333;
+            color: #fff;
+            padding: 4px;
+            border-radius: 4px;
+            text-align: center;
         }
     </style>
 </head>
@@ -110,12 +118,40 @@
         function goBack() {
             window.history.back();
         }
+
+        function adjustTooltipPosition(tooltipEl, position, tooltipModel) {
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            const tooltipWidth = tooltipEl.offsetWidth;
+            const tooltipHeight = tooltipEl.offsetHeight;
+
+            let left = position.left + tooltipModel.caretX;
+            let top = position.top + tooltipModel.caretY;
+
+            if (left + tooltipWidth > windowWidth) {
+                left = windowWidth - tooltipWidth - 10; // 10px отступ
+            } else if (left < 0) {
+                left = 10; // 10px отступ
+            }
+
+            if (top + tooltipHeight > windowHeight) {
+                top = windowHeight - tooltipHeight - 10; // 10px отступ
+            } else if (top < 0) {
+                top = 10; // 10px отступ
+            }
+
+            tooltipEl.style.left = left + 'px';
+            tooltipEl.style.top = top + 'px';
+        }
+
         let statusPieChart;
+
         function createPieChart(data) {
             const ctx = document.getElementById('statusPieChart').getContext('2d');
             if (statusPieChart) {
                 statusPieChart.destroy();
             }
+
             statusPieChart = new Chart(ctx, {
                 type: 'pie',
                 data: {
@@ -143,7 +179,6 @@
                                 if (!tooltipEl) {
                                     tooltipEl = document.createElement('div');
                                     tooltipEl.id = 'chartjs-tooltip';
-                                    tooltipEl.innerHTML = '<table></table>';
                                     document.body.appendChild(tooltipEl);
                                 }
                                 const tooltipModel = context.tooltip;
@@ -152,18 +187,28 @@
                                     tooltipEl.style.opacity = 0;
                                     return;
                                 }
+
                                 if (tooltipModel.body) {
                                     const status = tooltipModel.dataPoints[0].label;
-                                    const slots = data.status_slots[status] || [];
-                                    const innerHtml = `<thead><tr><th>${status}</th></tr></thead>`;
-                                    const bodyHtml = slots.map(slot => `<tr><td>Slot: ${slot.sn}, Charge: ${slot.charge}%</td></tr>`).join('');
+                                    let slots = data.status_slots[status] || [];
 
-                                    tooltipEl.querySelector('table').innerHTML = innerHtml + '<tbody>' + bodyHtml + '</tbody>';
+                                    slots.sort((a, b) => {
+                                        return parseInt(a.sn) - parseInt(b.sn);
+                                    });
+
+                                    const innerHtml = slots.map(slot => `
+                                        <div class="tooltip-column">
+                                            <div>Slot: ${slot.sn}</div>
+                                            <div>Charge: ${slot.charge}%</div>
+                                        </div>
+                                    `).join('');
+
+                                    tooltipEl.innerHTML = innerHtml;
                                 }
+
                                 const position = context.chart.canvas.getBoundingClientRect();
                                 tooltipEl.style.opacity = 1;
-                                tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 'px';
-                                tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY + 'px';
+                                adjustTooltipPosition(tooltipEl, position, tooltipModel);
                             }
                         },
                         datalabels: {
@@ -186,6 +231,27 @@
                             }
                         }
                     },
+                    hover: {
+                        mode: 'nearest',
+                        intersect: true,
+                        animationDuration: 400, // Длительность анимации
+                        onHover: function(event, chartElement) {
+                            if (chartElement.length) {
+                                const segment = chartElement[0];
+                                segment._model.borderColor = '#000';
+                                segment._model.borderWidth = 4;
+                                segment._model.hoverBackgroundColor = '#fff'; // Цвет фона при наведении
+                            }
+                        },
+                        onLeave: function(event, chartElement) {
+                            if (chartElement.length) {
+                                const segment = chartElement[0];
+                                segment._model.borderColor = null;
+                                segment._model.borderWidth = null;
+                                segment._model.hoverBackgroundColor = null;
+                            }
+                        }
+                    },
                     animation: {
                         duration: 1000,
                         easing: 'easeOutQuart'
@@ -194,12 +260,14 @@
                 plugins: [ChartDataLabels]
             });
         }
+
         document.addEventListener('DOMContentLoaded', () => {
             createPieChart({
                 status_counts: JSON.parse('{{ status_counts|escapejs }}'),
                 status_slots: JSON.parse('{{ status_slots|escapejs }}')
             });
         });
+
         function updateData() {
             const cabinetId = "{{ cabinet.shkaf_id }}";
             fetch(`/cabinet/${cabinetId}/update/`, {
