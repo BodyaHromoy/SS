@@ -1,3 +1,18 @@
+<!-- Add SW and Marked filter dropdowns -->
+<div class="filter-container">
+    <label for="sw-filter">SW Ver:</label>
+    <select id="sw-filter" onchange="applyFilters()">
+        <option value="">All</option>
+        <!-- Add options dynamically or statically -->
+    </select>
+
+    <label for="marked-filter">Marked:</label>
+    <select id="marked-filter" onchange="applyFilters()">
+        <option value="">All</option>
+        <option value="true">True</option>
+        <option value="false">False</option>
+    </select>
+</div>
 <table class="table table-striped">
     <thead>
         <tr>
@@ -8,6 +23,7 @@
             <th>VID</th>
             <th>SW Ver</th>
             <th>SN</th>
+            <th>Marked</th>
             <th>Действие</th>
         </tr>
     </thead>
@@ -20,6 +36,7 @@
             <td>{{ cell.vid }}</td>
             <td>{{ cell.sw_ver }}</td>
             <td>{{ cell.sn }}</td>
+            <td>{{ cell.is_error }}</td>
             <td>
                 <button class="btn btn-primary btn-sm" onclick="sendCommand('{{ cell.endpointid }}', '{{ cell.cabinet_id.shkaf_id }}')">Send command</button>
             </td>

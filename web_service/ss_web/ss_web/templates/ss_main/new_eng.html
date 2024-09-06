@@ -207,12 +207,23 @@
                 </div>
                 <div id="details-view" style="display: none;">
                     <div class="row my-4 filter-container">
-                        <div class="col-md-3">
-                            <select class="form-control" id="status-filter">
-                                <option value="">All statuses</option>
-                            </select>
-                        </div>
-                    </div>
+    <div class="col-md-3">
+        <select class="form-control" id="status-filter">
+            <option value="">All statuses</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select class="form-control" id="swver-filter">
+            <option value="">All SW ver</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select class="form-control" id="marked-filter">
+            <option value="">All Marked</option>
+        </select>
+    </div>
+</div>
+
                     <div class="button-container">
                         <button class="btn btn-secondary btn-custom" onclick="showMainView()">←</button>
                         <button class="btn btn-primary btn-custom" onclick="refreshData()">↻</button>
@@ -228,6 +239,7 @@
                                 <th>VID</th>
                                 <th>SW Ver</th>
                                 <th>SN</th>
+                                <th>Marked</th>
                             </tr>
                         </thead>
                         <tbody id="cell-list"></tbody>
@@ -241,10 +253,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-
-
         function sendCommand(endpoint_id, cabinet_id) {
-    const cmd_number = prompt("Введите номер команды (cmd):");
+    const cmd_number = prompt("Введите номер команды :");
     if (!cmd_number) {
         alert("Команда не введена!");
         return;
@@ -267,56 +277,63 @@
         }
     });
 }
-
         function refreshData() {
-            const isDetailsViewVisible = $('#details-view').is(':visible');
-            $('#loading-indicator').show();
+    const isDetailsViewVisible = $('#details-view').is(':visible');
+    $('#loading-indicator').show();
 
-            if (isDetailsViewVisible) {
-                const currentCabinetId = $("#cabinet-id-hidden").val();
-                if (currentCabinetId) {
-                    $.get("/new_eng_cabinet/" + currentCabinetId + "/", function(data) {
-                        $("#cabinet-details").html($(data).find("#cabinet-details").html());
-                        $("#cell-list").html($(data).find("#cell-list").html());
-                        updateStatusFilter();
-                        applyStatusFilter();
-                    }).fail(function() {
-                        console.error("Ошибка при загрузке данных.");
-                    }).always(function() {
-                        $('#loading-indicator').hide();
-                    });
-                } else {
-                    console.error("Ошибка: ID шкафа не найден.");
-                    $('#loading-indicator').hide();
-                }
-            } else {
-                $.get("{% url 'new_eng' %}", function(data) {
-                    $("#cabinet-list").html($(data).find("#cabinet-list").html());
-                }).fail(function() {
-                    console.error("Ошибка при загрузке данных.");
-                }).always(function() {
-                    $('#loading-indicator').hide();
-                });
-            }
-        }
-
-        function showCabinetDetails(shkaf_id) {
-            $('#loading-indicator').show();
-
-            $.get("/new_eng_cabinet/" + shkaf_id + "/", function(data) {
+    if (isDetailsViewVisible) {
+        const currentCabinetId = $("#cabinet-id-hidden").val();
+        if (currentCabinetId) {
+            $.get("/new_eng_cabinet/" + currentCabinetId + "/", function(data) {
                 $("#cabinet-details").html($(data).find("#cabinet-details").html());
                 $("#cell-list").html($(data).find("#cell-list").html());
-                $("#cabinet-id-hidden").val(shkaf_id);
-                $("#main-view").hide();
-                $("#details-view").show();
                 updateStatusFilter();
+                updateSwVerFilter();
+                updateMarkedFilter();
                 applyStatusFilter();
+                applySwVerFilter();
+                applyMarkedFilter();
             }).fail(function() {
                 console.error("Ошибка при загрузке данных.");
             }).always(function() {
                 $('#loading-indicator').hide();
             });
+        } else {
+            console.error("Ошибка: ID шкафа не найден.");
+            $('#loading-indicator').hide();
         }
+    } else {
+        $.get("{% url 'new_eng' %}", function(data) {
+            $("#cabinet-list").html($(data).find("#cabinet-list").html());
+        }).fail(function() {
+            console.error("Ошибка при загрузке данных.");
+        }).always(function() {
+            $('#loading-indicator').hide();
+        });
+    }
+}
+
+function showCabinetDetails(shkaf_id) {
+    $('#loading-indicator').show();
+
+    $.get("/new_eng_cabinet/" + shkaf_id + "/", function(data) {
+        $("#cabinet-details").html($(data).find("#cabinet-details").html());
+        $("#cell-list").html($(data).find("#cell-list").html());
+        $("#cabinet-id-hidden").val(shkaf_id);
+        $("#main-view").hide();
+        $("#details-view").show();
+        updateStatusFilter();
+        updateSwVerFilter();
+        updateMarkedFilter();
+        applyStatusFilter();
+        applySwVerFilter();
+        applyMarkedFilter();
+    }).fail(function() {
+        console.error("Ошибка при загрузке данных.");
+    }).always(function() {
+        $('#loading-indicator').hide();
+    });
+}
 
         function showMainView() {
             $("#details-view").hide();
@@ -364,9 +381,57 @@
             });
         });
 
+function updateSwVerFilter() {
+    const swVers = new Set();
+    $("#cell-list tr").each(function() {
+        const swVer = $(this).find("td:nth-child(5)").text().trim();
+        swVers.add(swVer);
+    });
+    const $swVerFilter = $("#swver-filter");
+    $swVerFilter.find('option:not(:first)').remove();
+    swVers.forEach(swVer => {
+        $swVerFilter.append(`<option value="${swVer}">${swVer}</option>`);
+    });
+}
+
+function applySwVerFilter() {
+    const selectedSwVer = $("#swver-filter").val();
+    $("#cell-list tr").filter(function() {
+        $(this).toggle(!selectedSwVer || $(this).children("td:nth-child(5)").text() === selectedSwVer);
+    });
+}
+
+function updateMarkedFilter() {
+    const markedValues = new Set();
+    $("#cell-list tr").each(function() {
+        const marked = $(this).find("td:nth-child(7)").text().trim();
+        markedValues.add(marked);
+    });
+    const $markedFilter = $("#marked-filter");
+    $markedFilter.find('option:not(:first)').remove();
+    markedValues.forEach(marked => {
+        $markedFilter.append(`<option value="${marked}">${marked}</option>`);
+    });
+}
+
+function applyMarkedFilter() {
+    const selectedMarked = $("#marked-filter").val();
+    $("#cell-list tr").filter(function() {
+        $(this).toggle(!selectedMarked || $(this).children("td:nth-child(7)").text() === selectedMarked);
+    });
+}
+
+
         $("#status-filter").on("change", function() {
             applyStatusFilter();
         });
+        $("#swver-filter").on("change", function() {
+    applySwVerFilter();
+});
+
+$("#marked-filter").on("change", function() {
+    applyMarkedFilter();
+});
     </script>
 </body>
 </html>

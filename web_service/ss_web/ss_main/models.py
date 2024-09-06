@@ -129,6 +129,7 @@ class Cell(models.Model):
     status = models.CharField(max_length=255, null=True, verbose_name='STATUS')
     time = models.DateTimeField(null=True, verbose_name='time')
     vir_sn_eid = models.TextField(null=True, verbose_name='VIR_SN_EID')
+    is_error = models.BooleanField(default=False, verbose_name='IS_ERROR')
 
     def __str__(self):
         return self.vir_sn_eid

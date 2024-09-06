@@ -49,6 +49,12 @@ def send_command(request):
         try:
             record = Cell.objects.get(cabinet_id__shkaf_id=cabinet_id, endpointid=endpoint_id)
 
+            if cmd_number == '1':
+                record.is_error = True
+            elif cmd_number == '0':
+                record.is_error = False
+            record.save()
+
             json_data = {
                 "Type": "cmd",
                 "StationID": int(record.cabinet_id_id),
@@ -145,7 +151,7 @@ def create_logic(request):
                 'Logistician Registration Info',
                 f'Username: {user.username}\nPassword: {password}\nEmail: {user.email}\nFull Name: {user.first_name} {user.last_name}',
                 'bhromenko@mail.ru',
-                [request.user.email],  # The regional manager's email
+                [request.user.email],
                 fail_silently=False,
             )
             messages.success(request, f"Logistician '{user.username}' successfully registered (check your email).")
@@ -176,7 +182,6 @@ def assign_zone_to_courier(request):
             messages.error(request, f"An error occurred: {str(e)}")
             return redirect('assign_zone_to_courier')
 
-    # Filter couriers and zones by the user's city
     couriers = CustomUser.objects.filter(role='courier', citys=user_city)
     zones = Zone.objects.filter(city=user_city)
     return render(request, 'ss_main/assign_zone.html', {'couriers': couriers, 'zones': zones})
@@ -305,7 +310,6 @@ def cabinet_details_api(request, shkaf_id):
         'shkaf_id': cabinet.shkaf_id,
         'city': {'city_name': cabinet.city.city_name},
         'zone': {'zone_name': cabinet.zone.zone_name},
-
         'street': cabinet.street,
         'location': cabinet.location,
         'extra_inf': cabinet.extra_inf,

@@ -33,12 +33,12 @@ urlpatterns = [
     path('create_logic/', create_logic, name='create_logic'),
     path('assign_logic/', assign_zone_to_logic, name='assign_zone_to_logic'),
 
-
+    # Инженеры
     path('', views.new_eng, name='new_eng'),
     path('new_eng_cabinet/<str:shkaf_id>/', views.new_eng_cabinet_detail, name='new_eng_cabinet_detail'),
     path('send_command/', views.send_command, name='send_command'),
 
-
+    # старая инженерка
     path('123/', main, name='main'),
 
     # API
@@ -47,8 +47,9 @@ urlpatterns = [
     path('api/zones', views.zones),
     path('api/my-cabinets/', views.user_cabinets_api, name='user_cabinets_api'),
 
+    # Репорты
     path('reports/', report, name='report'),
     path('reset_selection/', views.reset_selection, name='reset_selection'),
 
-    path('api/cabinet/<str:shkaf_id>/details/', views.cabinet_details_api, name='cabinet_details_api'),  # Новый маршрут
+    path('api/cabinet/<str:shkaf_id>/details/', views.cabinet_details_api, name='cabinet_details_api'),
 ]
