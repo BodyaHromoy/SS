@@ -36,7 +36,7 @@
             <td>{{ cell.vid }}</td>
             <td>{{ cell.sw_ver }}</td>
             <td>{{ cell.sn }}</td>
-            <td>{{ cell.is_error }}</td>
+            <td><input type="checkbox" class="checkbox-custom" {% if cell.is_error %}checked{% endif %} disabled></td>
             <td>
                 <button class="btn btn-primary btn-sm" onclick="sendCommand('{{ cell.endpointid }}', '{{ cell.cabinet_id.shkaf_id }}')">Send command</button>
             </td>

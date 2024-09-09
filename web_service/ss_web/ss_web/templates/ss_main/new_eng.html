@@ -21,10 +21,10 @@
         }
 
         .sidebar h1 {
-    font-size: 10.5px; /* Уменьшите размер шрифта по необходимости */
+    font-size: 10.5px;
     white-space: pre;
     font-family: monospace;
-    line-height: 1.1; /* Можно уменьшить для более плотного размещения текста */
+    line-height: 1.1;
 }
 
         .sidebar .nav-link {
@@ -43,7 +43,7 @@
         }
 
         .table {
-            margin-top: 20px;
+            margin-top: 75px;
             background-color: #ffffff;
             border: 1px solid #dee2e6;
         }
@@ -89,7 +89,7 @@
         }
 
         .logout-button {
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
 
         .button-container .btn {
@@ -122,36 +122,98 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+.checkbox-custom {
+    width: 20px;
+    height: 20px;
+    cursor: not-allowed;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: #fff;
+    border: 2px solid #007bff;
+    border-radius: 3px;
+    display: inline-block;
+    position: relative;
+}
+
+.checkbox-custom:checked {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.checkbox-custom:checked::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 6px;
+    width: 6px;
+    height: 12px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.fixed-header {
+    position: fixed;
+    top: 0;
+    left: 200px;
+    width: calc(100% - 200px);
+    background-color: #f1f5f9;
+    padding: 10px 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.fixed-header .filter-container {
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.fixed-header .button-container {
+    margin-top: 20px;
+}
+
+.fixed-header .btn {
+    margin: 5px;
+}
+
     </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-2 sidebar">
-                <h1 class="my-4">
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-2 sidebar">
+            <h1 class="my-4">
   _______  _______   ______
 (_______)(_______) / _____)
  _        _  _  _ ( (____
 | |      | ||_|| | \____ \
 | |_____ | |   | | _____) )
  \______)|_|   |_|(______/
-
-                </h1>
-                <ul class="nav flex-column">
-                    <li class="nav-item"><a class="nav-link btn btn-primary btn-sm btn-narrow mt-2" href="{% url 'new_eng' %}">Main</a></li>
-                    <li class="nav-item"><a class="nav-link btn btn-primary btn-sm btn-narrow mt-2" href="{% url 'report' %}">Reports</a></li>
-                </ul>
-            </div>
-            <div class="col-md-10 main-content">
-                <div class="row mb-4">
-                    <div class="col-md-12 text-right">
-                        <form method="post" action="{% url 'logout' %}" class="logout-form">
-            {% csrf_token %}
+            </h1>
+            <ul class="nav flex-column">
+                <li class="nav-item"><a class="nav-link btn btn-primary btn-sm btn-narrow mt-2"
+                                        href="{% url 'new_eng' %}">Main</a></li>
+                <li class="nav-item"><a class="nav-link btn btn-primary btn-sm btn-narrow mt-2"
+                                        href="{% url 'report' %}">Reports</a></li>
+                <form method="post" action="{% url 'logout' %}" class="logout-form">
+                    {% csrf_token %}
+                    <button class="btn btn-danger logout-button">Exit</button>
+                </form>
+            </ul>
+        </div>
+        <div class="col-md-10 main-content">
+            <div class="row mb-4">
+                <div class="col-md-12 text-right">
+                    <form method="post" action="{% url 'logout' %}" class="logout-form">
+                        {% csrf_token %}
                         <button class="btn btn-danger logout-button">Exit</button>
-                            </form>
-                    </div>
+                    </form>
                 </div>
-                <div id="main-view">
+            </div>
+            <div id="main-view">
+                <footer class="fixed-header">
                     <div class="row my-4 filter-container">
                         <div class="col-md-6">
                             <input type="text" class="form-control" placeholder="Поиск" id="search-input">
@@ -160,7 +222,7 @@
                             <select class="form-control" id="city-filter">
                                 <option value="">All cities</option>
                                 {% for city in cities %}
-                                    <option value="{{ city.city_name }}">{{ city.city_name }}</option>
+                                <option value="{{ city.city_name }}">{{ city.city_name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -168,270 +230,277 @@
                             <select class="form-control" id="zone-filter">
                                 <option value="">All zones</option>
                                 {% for zone in zones %}
-                                    <option value="{{ zone.zone_name }}">{{ zone.zone_name }}</option>
+                                <option value="{{ zone.zone_name }}">{{ zone.zone_name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                     </div>
                     <div id="refresh-button-container">
-                        <button class="btn btn-primary btn-custom" onclick="refreshData()">↻</button>
+                        <button class="btn btn-primary btn-custom" onclick="refreshData()">↻ Refresh</button>
                     </div>
-                    <div id="cabinet-list-view">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Box ID</th>
-                                    <th>City</th>
-                                    <th>Zone</th>
-                                    <th>Address</th>
-                                    <th>Locker ID</th>
-                                    <th>Additional info</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="cabinet-list">
-                                {% for cabinet in cabinets %}
-                                <tr>
-                                    <td>{{ cabinet.shkaf_id }}</td>
-                                    <td>{{ cabinet.city.city_name }}</td>
-                                    <td>{{ cabinet.zone.zone_name }}</td>
-                                    <td>{{ cabinet.street }}</td>
-                                    <td>{{ cabinet.extra_inf }}</td>
-                                    <td>{{ cabinet.location }}</td>
-                                    <td><button class="btn btn-primary" onclick="showCabinetDetails('{{ cabinet.shkaf_id }}')">Check slots</button></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div id="details-view" style="display: none;">
-                    <div class="row my-4 filter-container">
-    <div class="col-md-3">
-        <select class="form-control" id="status-filter">
-            <option value="">All statuses</option>
-        </select>
-    </div>
-    <div class="col-md-3">
-        <select class="form-control" id="swver-filter">
-            <option value="">All SW ver</option>
-        </select>
-    </div>
-    <div class="col-md-3">
-        <select class="form-control" id="marked-filter">
-            <option value="">All Marked</option>
-        </select>
-    </div>
-</div>
-
-                    <div class="button-container">
-                        <button class="btn btn-secondary btn-custom" onclick="showMainView()">←</button>
-                        <button class="btn btn-primary btn-custom" onclick="refreshData()">↻</button>
-                    </div>
-                    <div id="cabinet-details"></div>
-                    <input type="hidden" id="cabinet-id-hidden">
+                </footer>
+                <div id="cabinet-list-view">
                     <table class="table table-striped">
                         <thead>
-                            <tr>
-                                <th>Slot id</th>
-                                <th>Status</th>
-                                <th>Charge in %</th>
-                                <th>VID</th>
-                                <th>SW Ver</th>
-                                <th>SN</th>
-                                <th>Marked</th>
-                            </tr>
+                        <tr>
+                            <th>Box ID</th>
+                            <th>City</th>
+                            <th>Zone</th>
+                            <th>Address</th>
+                            <th>Locker ID</th>
+                            <th>Additional info</th>
+                            <th>Action</th>
+                        </tr>
                         </thead>
-                        <tbody id="cell-list"></tbody>
+                        <tbody id="cabinet-list">
+                        {% for cabinet in cabinets %}
+                        <tr>
+                            <td>{{ cabinet.shkaf_id }}</td>
+                            <td>{{ cabinet.city.city_name }}</td>
+                            <td>{{ cabinet.zone.zone_name }}</td>
+                            <td>{{ cabinet.street }}</td>
+                            <td>{{ cabinet.extra_inf }}</td>
+                            <td>{{ cabinet.location }}</td>
+                            <td>
+                                <button class="btn btn-primary" onclick="showCabinetDetails('{{ cabinet.shkaf_id }}')">
+                                    Check slots
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
                     </table>
                 </div>
             </div>
+            <div id="details-view" style="display: none;">
+                <footer class="fixed-header">
+                    <div class="row filter-container">
+                        <div class="col-md-3">
+                            <select class="form-control" id="status-filter">
+                                <option value="">All statuses</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-control" id="swver-filter">
+                                <option value="">All SW ver</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-control" id="marked-filter">
+                                <option value="">All Marked</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="button-container">
+                        <button class="btn btn-secondary btn-custom" onclick="showMainView()">← Back</button>
+                        <button class="btn btn-primary btn-custom" onclick="refreshData()">↻ Refresh</button>
+                    </div>
+                </footer>
+                <div id="cabinet-details"></div>
+                <input type="hidden" id="cabinet-id-hidden">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>Slot id</th>
+                        <th>Status</th>
+                        <th>Charge in %</th>
+                        <th>VID</th>
+                        <th>SW Ver</th>
+                        <th>SN</th>
+                        <th>Marked</th>
+                    </tr>
+                    </thead>
+                    <tbody id="cell-list"></tbody>
+                </table>
+            </div>
         </div>
     </div>
-    <div id="loading-indicator"></div>
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script>
-        function sendCommand(endpoint_id, cabinet_id) {
-    const cmd_number = prompt("Введите номер команды :");
-    if (!cmd_number) {
-        alert("Команда не введена!");
-        return;
-    }
+</div>
+<div id="loading-indicator"></div>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
 
-    $.ajax({
-        url: "{% url 'send_command' %}",
-        type: "POST",
-        data: {
-            'cabinet_id': cabinet_id,
-            'endpoint_id': endpoint_id,
-            'cmd_number': cmd_number,
-            'csrfmiddlewaretoken': '{{ csrf_token }}'
-        },
-        success: function(response) {
-            alert(response.message);
-        },
-        error: function() {
-            alert("Ошибка при отправке команды.");
-        }
-    });
+    function sendCommand(endpoint_id, cabinet_id) {
+const cmd_number = prompt("Введите номер команды :");
+if (!cmd_number) {
+    alert("Команда не введена!");
+    return;
 }
-        function refreshData() {
-    const isDetailsViewVisible = $('#details-view').is(':visible');
-    $('#loading-indicator').show();
 
-    if (isDetailsViewVisible) {
-        const currentCabinetId = $("#cabinet-id-hidden").val();
-        if (currentCabinetId) {
-            $.get("/new_eng_cabinet/" + currentCabinetId + "/", function(data) {
-                $("#cabinet-details").html($(data).find("#cabinet-details").html());
-                $("#cell-list").html($(data).find("#cell-list").html());
-                updateStatusFilter();
-                updateSwVerFilter();
-                updateMarkedFilter();
-                applyStatusFilter();
-                applySwVerFilter();
-                applyMarkedFilter();
-            }).fail(function() {
-                console.error("Ошибка при загрузке данных.");
-            }).always(function() {
-                $('#loading-indicator').hide();
-            });
-        } else {
-            console.error("Ошибка: ID шкафа не найден.");
-            $('#loading-indicator').hide();
-        }
-    } else {
-        $.get("{% url 'new_eng' %}", function(data) {
-            $("#cabinet-list").html($(data).find("#cabinet-list").html());
+$.ajax({
+    url: "{% url 'send_command' %}",
+    type: "POST",
+    data: {
+        'cabinet_id': cabinet_id,
+        'endpoint_id': endpoint_id,
+        'cmd_number': cmd_number,
+        'csrfmiddlewaretoken': '{{ csrf_token }}'
+    },
+    success: function(response) {
+        alert(response.message);
+    },
+    error: function() {
+        alert("Ошибка при отправке команды.");
+    }
+});
+}
+    function refreshData() {
+const isDetailsViewVisible = $('#details-view').is(':visible');
+$('#loading-indicator').show();
+
+if (isDetailsViewVisible) {
+    const currentCabinetId = $("#cabinet-id-hidden").val();
+    if (currentCabinetId) {
+        $.get("/new_eng_cabinet/" + currentCabinetId + "/", function(data) {
+            $("#cabinet-details").html($(data).find("#cabinet-details").html());
+            $("#cell-list").html($(data).find("#cell-list").html());
+            updateStatusFilter();
+            updateSwVerFilter();
+            updateMarkedFilter();
+            applyStatusFilter();
+            applySwVerFilter();
+            applyMarkedFilter();
         }).fail(function() {
             console.error("Ошибка при загрузке данных.");
         }).always(function() {
             $('#loading-indicator').hide();
         });
+    } else {
+        console.error("Ошибка: ID шкафа не найден.");
+        $('#loading-indicator').hide();
     }
-}
-
-function showCabinetDetails(shkaf_id) {
-    $('#loading-indicator').show();
-
-    $.get("/new_eng_cabinet/" + shkaf_id + "/", function(data) {
-        $("#cabinet-details").html($(data).find("#cabinet-details").html());
-        $("#cell-list").html($(data).find("#cell-list").html());
-        $("#cabinet-id-hidden").val(shkaf_id);
-        $("#main-view").hide();
-        $("#details-view").show();
-        updateStatusFilter();
-        updateSwVerFilter();
-        updateMarkedFilter();
-        applyStatusFilter();
-        applySwVerFilter();
-        applyMarkedFilter();
+} else {
+    $.get("{% url 'new_eng' %}", function(data) {
+        $("#cabinet-list").html($(data).find("#cabinet-list").html());
     }).fail(function() {
         console.error("Ошибка при загрузке данных.");
     }).always(function() {
         $('#loading-indicator').hide();
     });
 }
+}
 
-        function showMainView() {
-            $("#details-view").hide();
-            $("#main-view").show();
-        }
+function showCabinetDetails(shkaf_id) {
+$('#loading-indicator').show();
 
-        function updateStatusFilter() {
-            const statuses = new Set();
-            $("#cell-list tr").each(function() {
-                const status = $(this).find("td:nth-child(2)").text().trim();
-                statuses.add(status);
-            });
-            const $statusFilter = $("#status-filter");
-            $statusFilter.find('option:not(:first)').remove();
-            statuses.forEach(status => {
-                $statusFilter.append(`<option value="${status}">${status}</option>`);
-            });
-        }
+$.get("/new_eng_cabinet/" + shkaf_id + "/", function(data) {
+    $("#cabinet-details").html($(data).find("#cabinet-details").html());
+    $("#cell-list").html($(data).find("#cell-list").html());
+    $("#cabinet-id-hidden").val(shkaf_id);
+    $("#main-view").hide();
+    $("#details-view").show();
+    updateStatusFilter();
+    updateSwVerFilter();
+    updateMarkedFilter();
+    applyStatusFilter();
+    applySwVerFilter();
+    applyMarkedFilter();
+}).fail(function() {
+    console.error("Ошибка при загрузке данных.");
+}).always(function() {
+    $('#loading-indicator').hide();
+});
+}
 
-        function applyStatusFilter() {
-            const selectedStatus = $("#status-filter").val();
-            $("#cell-list tr").filter(function() {
-                $(this).toggle(!selectedStatus || $(this).children("td:nth-child(2)").text() === selectedStatus);
-            });
-        }
+    function showMainView() {
+        $("#details-view").hide();
+        $("#main-view").show();
+    }
 
-        $("#search-input").on("input", function() {
-            var value = $(this).val().toLowerCase();
-            $("#cabinet-list tr").filter(function() {
-                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-            });
+    function updateStatusFilter() {
+        const statuses = new Set();
+        $("#cell-list tr").each(function() {
+            const status = $(this).find("td:nth-child(2)").text().trim();
+            statuses.add(status);
         });
-
-        $("#city-filter").on("change", function() {
-            var value = $(this).val();
-            $("#cabinet-list tr").filter(function() {
-                $(this).toggle(!value || $(this).children("td:nth-child(2)").text() === value)
-            });
+        const $statusFilter = $("#status-filter");
+        $statusFilter.find('option:not(:first)').remove();
+        statuses.forEach(status => {
+            $statusFilter.append(`<option value="${status}">${status}</option>`);
         });
+    }
 
-        $("#zone-filter").on("change", function() {
-            var value = $(this).val();
-            $("#cabinet-list tr").filter(function() {
-                $(this).toggle(!value || $(this).children("td:nth-child(3)").text() === value)
-            });
+    function applyStatusFilter() {
+        const selectedStatus = $("#status-filter").val();
+        $("#cell-list tr").filter(function() {
+            $(this).toggle(!selectedStatus || $(this).children("td:nth-child(2)").text() === selectedStatus);
         });
+    }
+
+    $("#search-input").on("input", function() {
+        var value = $(this).val().toLowerCase();
+        $("#cabinet-list tr").filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        });
+    });
+
+    $("#city-filter").on("change", function() {
+        var value = $(this).val();
+        $("#cabinet-list tr").filter(function() {
+            $(this).toggle(!value || $(this).children("td:nth-child(2)").text() === value)
+        });
+    });
+
+    $("#zone-filter").on("change", function() {
+        var value = $(this).val();
+        $("#cabinet-list tr").filter(function() {
+            $(this).toggle(!value || $(this).children("td:nth-child(3)").text() === value)
+        });
+    });
 
 function updateSwVerFilter() {
-    const swVers = new Set();
-    $("#cell-list tr").each(function() {
-        const swVer = $(this).find("td:nth-child(5)").text().trim();
-        swVers.add(swVer);
-    });
-    const $swVerFilter = $("#swver-filter");
-    $swVerFilter.find('option:not(:first)').remove();
-    swVers.forEach(swVer => {
-        $swVerFilter.append(`<option value="${swVer}">${swVer}</option>`);
-    });
+const swVers = new Set();
+$("#cell-list tr").each(function() {
+    const swVer = $(this).find("td:nth-child(5)").text().trim();
+    swVers.add(swVer);
+});
+const $swVerFilter = $("#swver-filter");
+$swVerFilter.find('option:not(:first)').remove();
+swVers.forEach(swVer => {
+    $swVerFilter.append(`<option value="${swVer}">${swVer}</option>`);
+});
 }
 
 function applySwVerFilter() {
-    const selectedSwVer = $("#swver-filter").val();
-    $("#cell-list tr").filter(function() {
-        $(this).toggle(!selectedSwVer || $(this).children("td:nth-child(5)").text() === selectedSwVer);
-    });
+const selectedSwVer = $("#swver-filter").val();
+$("#cell-list tr").filter(function() {
+    $(this).toggle(!selectedSwVer || $(this).children("td:nth-child(5)").text() === selectedSwVer);
+});
 }
 
 function updateMarkedFilter() {
-    const markedValues = new Set();
-    $("#cell-list tr").each(function() {
-        const marked = $(this).find("td:nth-child(7)").text().trim();
-        markedValues.add(marked);
-    });
-    const $markedFilter = $("#marked-filter");
-    $markedFilter.find('option:not(:first)').remove();
-    markedValues.forEach(marked => {
-        $markedFilter.append(`<option value="${marked}">${marked}</option>`);
-    });
+const markedValues = new Set();
+$("#cell-list tr").each(function() {
+    const marked = $(this).find("td:nth-child(7) input").is(':checked') ? "true" : "false";
+    markedValues.add(marked);
+});
+const $markedFilter = $("#marked-filter");
+$markedFilter.find('option:not(:first)').remove();
+markedValues.forEach(marked => {
+    $markedFilter.append(`<option value="${marked}">${marked === "true" ? "Marked" : "Not Marked"}</option>`);
+});
 }
 
 function applyMarkedFilter() {
-    const selectedMarked = $("#marked-filter").val();
-    $("#cell-list tr").filter(function() {
-        $(this).toggle(!selectedMarked || $(this).children("td:nth-child(7)").text() === selectedMarked);
-    });
+const selectedMarked = $("#marked-filter").val();
+$("#cell-list tr").filter(function() {
+    const isChecked = $(this).find("td:nth-child(7) input").is(':checked') ? "true" : "false";
+    $(this).toggle(!selectedMarked || isChecked === selectedMarked);
+});
 }
 
-
-        $("#status-filter").on("change", function() {
-            applyStatusFilter();
-        });
-        $("#swver-filter").on("change", function() {
-    applySwVerFilter();
+    $("#status-filter").on("change", function() {
+        applyStatusFilter();
+    });
+    $("#swver-filter").on("change", function() {
+applySwVerFilter();
 });
 
 $("#marked-filter").on("change", function() {
-    applyMarkedFilter();
+applyMarkedFilter();
 });
-    </script>
+</script>
 </body>
 </html>
