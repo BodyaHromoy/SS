@@ -436,11 +436,14 @@ def cabinet_details(request, shkaf_id):
     average_charge = cells.annotate(cap_percent_as_float=Cast('cap_percent', FloatField())).aggregate(
         average_charge=Avg('cap_percent_as_float'))['average_charge']
 
+    error_slots = cells.filter(is_error=True)
+
     context = {
         'cabinet': cabinet,
         'status_counts': json.dumps(list(status_counts)),
         'status_slots': json.dumps(status_slots),
         'average_charge': average_charge,
+        'error_slots': error_slots,
     }
     return render(request, 'ss_main/cabinet_details.html', context)
 
@@ -453,7 +456,6 @@ def update_cabinet_data(request, shkaf_id):
         cells = Cell.objects.filter(cabinet_id=cabinet)
 
         status_counts = cells.values('status').annotate(count=Count('status'))
-
         average_charge = cells.annotate(cap_percent_as_float=Cast('cap_percent', FloatField())).aggregate(
             average_charge=Avg('cap_percent_as_float'))['average_charge']
 
@@ -464,10 +466,15 @@ def update_cabinet_data(request, shkaf_id):
                 status_slots[status] = []
             status_slots[status].append({'sn': cell.endpointid, 'charge': cell.cap_percent})
 
+        # Fetch the error slots
+        error_slots = cells.filter(is_error=True)
+        error_slots_list = [{'endpointid': slot.endpointid, 'message': slot.message} for slot in error_slots]
+
         return JsonResponse({
             'status_counts': list(status_counts),
             'status_slots': status_slots,
-            'average_charge': average_charge,
+            'average_charge': average_charge,  # Ensure average charge is returned
+            'error_slots': error_slots_list,
         })
     else:
         return JsonResponse({'error': 'Invalid request'}, status=400)

@@ -95,193 +95,217 @@
     </style>
 </head>
 <body>
-    <div class="info-header">
-        <p><strong>Номер шкафа:</strong> <span id="cabinet-name">{{ cabinet.shkaf_id|default:"-" }}</span></p>
-        <p><strong>Зона:</strong> <span id="zone-name">{{ cabinet.zone.zone_name|default:"-" }}</span></p>
-        <p><strong>Локация:</strong> <span id="street">{{ cabinet.street|default:"-" }}</span></p>
-        <p><strong>Дополнительно:</strong> <span id="location">{{ cabinet.location|default:"-" }}</span></p>
-        <p><strong>ID Замка:</strong> <span id="extra-info">{{ cabinet.extra_inf|default:"-" }}</span></p>
-        <p><strong>Состояние двери:</strong> <span id="door-info">Не назначено</span></p>
-    </div>
+<div class="info-header">
+    <p><strong>Номер шкафа:</strong> <span id="cabinet-name">{{ cabinet.shkaf_id|default:"-" }}</span></p>
+    <p><strong>Зона:</strong> <span id="zone-name">{{ cabinet.zone.zone_name|default:"-" }}</span></p>
+    <p><strong>Локация:</strong> <span id="street">{{ cabinet.street|default:"-" }}</span></p>
+    <p><strong>Дополнительно:</strong> <span id="location">{{ cabinet.location|default:"-" }}</span></p>
+    <p><strong>ID Замка:</strong> <span id="extra-info">{{ cabinet.extra_inf|default:"-" }}</span></p>
+    <p><strong>Состояние двери:</strong> <span id="door-info">Не назначено</span></p>
+</div>
 
-    <div class="main-content">
-        <canvas id="statusPieChart"></canvas>
-        <p class="average-charge">Средний заряд по шкафу: {{ average_charge|floatformat:2 }}%</p>
+<div class="main-content">
+    <canvas id="statusPieChart"></canvas>
+    <p class="average-charge">Средний заряд по шкафу: {{ average_charge|floatformat:2 }}%</p>
+    <div class="error-slots">
+        <h3>Слоты с ошибками</h3>
+        <ul>
+            {% for slot in error_slots %}
+            <li>Slot ID: {{ slot.endpointid }} - {{ slot.message|default:"N/A" }}</li>
+            {% endfor %}
+        </ul>
     </div>
+</div>
 
-    <div class="footer">
-        <button class="btn btn-secondary" onclick="goBack()">Назад</button>
-        <button class="btn btn-primary" onclick="updateData()">Обновить данные</button>
-    </div>
+<div class="footer">
+    <button class="btn btn-secondary" onclick="goBack()">Назад</button>
+    <button class="btn btn-primary" onclick="updateData()">Обновить данные</button>
+</div>
 
-    <script>
-        function goBack() {
-            window.history.back();
+<script>
+    function goBack() {
+        window.history.back();
+    }
+
+    function adjustTooltipPosition(tooltipEl, position, tooltipModel) {
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        const tooltipWidth = tooltipEl.offsetWidth;
+        const tooltipHeight = tooltipEl.offsetHeight;
+
+        let left = position.left + tooltipModel.caretX;
+        let top = position.top + tooltipModel.caretY;
+
+        if (left + tooltipWidth > windowWidth) {
+            left = windowWidth - tooltipWidth - 10; // 10px отступ
+        } else if (left < 0) {
+            left = 10; // 10px отступ
         }
 
-        function adjustTooltipPosition(tooltipEl, position, tooltipModel) {
-            const windowWidth = window.innerWidth;
-            const windowHeight = window.innerHeight;
-            const tooltipWidth = tooltipEl.offsetWidth;
-            const tooltipHeight = tooltipEl.offsetHeight;
-
-            let left = position.left + tooltipModel.caretX;
-            let top = position.top + tooltipModel.caretY;
-
-            if (left + tooltipWidth > windowWidth) {
-                left = windowWidth - tooltipWidth - 10; // 10px отступ
-            } else if (left < 0) {
-                left = 10; // 10px отступ
-            }
-
-            if (top + tooltipHeight > windowHeight) {
-                top = windowHeight - tooltipHeight - 10; // 10px отступ
-            } else if (top < 0) {
-                top = 10; // 10px отступ
-            }
-
-            tooltipEl.style.left = left + 'px';
-            tooltipEl.style.top = top + 'px';
+        if (top + tooltipHeight > windowHeight) {
+            top = windowHeight - tooltipHeight - 10; // 10px отступ
+        } else if (top < 0) {
+            top = 10; // 10px отступ
         }
 
-        let statusPieChart;
+        tooltipEl.style.left = left + 'px';
+        tooltipEl.style.top = top + 'px';
+    }
 
-        function createPieChart(data) {
-            const ctx = document.getElementById('statusPieChart').getContext('2d');
-            if (statusPieChart) {
-                statusPieChart.destroy();
-            }
+    let statusPieChart;
 
-            statusPieChart = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: data.status_counts.map(item => item.status || 'Неизвестно'),
-                    datasets: [{
-                        label: 'Количество',
-                        data: data.status_counts.map(item => item.count),
-                        backgroundColor: data.status_counts.map(item => {
-                            switch (item.status) {
-                                case 'ready': return '#57fa98';
-                                case 'charging': return '#687df7';
-                                case 'Inactive': return '#ff4545';
-                                case 'empty': return 'gray';
-                                default: return '#FF6384';
+    function createPieChart(data) {
+        const ctx = document.getElementById('statusPieChart').getContext('2d');
+        if (statusPieChart) {
+            statusPieChart.destroy();
+        }
+
+        statusPieChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: data.status_counts.map(item => item.status || 'Неизвестно'),
+                datasets: [{
+                    label: 'Количество',
+                    data: data.status_counts.map(item => item.count),
+                    backgroundColor: data.status_counts.map(item => {
+                        switch (item.status) {
+                            case 'ready': return '#57fa98';
+                            case 'charging': return '#687df7';
+                            case 'Inactive': return '#ff4545';
+                            case 'empty': return 'gray';
+                            default: return '#FF6384';
+                        }
+                    })
+                }]
+            },
+            options: {
+                plugins: {
+                    tooltip: {
+                        enabled: false,
+                        external: function(context) {
+                            let tooltipEl = document.getElementById('chartjs-tooltip');
+                            if (!tooltipEl) {
+                                tooltipEl = document.createElement('div');
+                                tooltipEl.id = 'chartjs-tooltip';
+                                document.body.appendChild(tooltipEl);
                             }
-                        })
-                    }]
-                },
-                options: {
-                    plugins: {
-                        tooltip: {
-                            enabled: false,
-                            external: function(context) {
-                                let tooltipEl = document.getElementById('chartjs-tooltip');
-                                if (!tooltipEl) {
-                                    tooltipEl = document.createElement('div');
-                                    tooltipEl.id = 'chartjs-tooltip';
-                                    document.body.appendChild(tooltipEl);
-                                }
-                                const tooltipModel = context.tooltip;
+                            const tooltipModel = context.tooltip;
 
-                                if (tooltipModel.opacity === 0) {
-                                    tooltipEl.style.opacity = 0;
-                                    return;
-                                }
-
-                                if (tooltipModel.body) {
-                                    const status = tooltipModel.dataPoints[0].label;
-                                    let slots = data.status_slots[status] || [];
-
-                                    slots.sort((a, b) => {
-                                        return parseInt(a.sn) - parseInt(b.sn);
-                                    });
-
-                                    const innerHtml = slots.map(slot => `
-                                        <div class="tooltip-column">
-                                            <div>Slot: ${slot.sn}</div>
-                                            <div>Charge: ${slot.charge}%</div>
-                                        </div>
-                                    `).join('');
-
-                                    tooltipEl.innerHTML = innerHtml;
-                                }
-
-                                const position = context.chart.canvas.getBoundingClientRect();
-                                tooltipEl.style.opacity = 1;
-                                adjustTooltipPosition(tooltipEl, position, tooltipModel);
+                            if (tooltipModel.opacity === 0) {
+                                tooltipEl.style.opacity = 0;
+                                return;
                             }
-                        },
-                        datalabels: {
-                            display: true,
-                            color: '#fff',
-                            formatter: (value, context) => {
-                                let sum = 0;
-                                const dataArr = context.chart.data.datasets[0].data;
-                                dataArr.map(data => {
-                                    sum += data;
+
+                            if (tooltipModel.body) {
+                                const status = tooltipModel.dataPoints[0].label;
+                                let slots = data.status_slots[status] || [];
+
+                                slots.sort((a, b) => {
+                                    return parseInt(a.sn) - parseInt(b.sn);
                                 });
-                                const percentage = (value * 100 / sum).toFixed(2) + "%";
-                                return `${value}`;
-                            },
-                            anchor: 'center',
-                            align: 'center',
-                            font: {
-                                weight: 'bold',
-                                size: 14
+
+                                const innerHtml = slots.map(slot => `
+                                    <div class="tooltip-column">
+                                        <div>Slot: ${slot.sn}</div>
+                                        <div>Charge: ${slot.charge}%</div>
+                                    </div>
+                                `).join('');
+
+                                tooltipEl.innerHTML = innerHtml;
                             }
+
+                            const position = context.chart.canvas.getBoundingClientRect();
+                            tooltipEl.style.opacity = 1;
+                            adjustTooltipPosition(tooltipEl, position, tooltipModel);
                         }
                     },
-                    hover: {
-                        mode: 'nearest',
-                        intersect: true,
-                        animationDuration: 400,
-                        onHover: function(event, chartElement) {
-                            if (chartElement.length) {
-                                const segment = chartElement[0];
-                                segment._model.borderColor = '#000';
-                                segment._model.borderWidth = 4;
-                                segment._model.hoverBackgroundColor = '#6e6b6b'; // Цвет фона при наведении
-                            }
+                    datalabels: {
+                        display: true,
+                        color: '#fff',
+                        formatter: (value, context) => {
+                            let sum = 0;
+                            const dataArr = context.chart.data.datasets[0].data;
+                            dataArr.map(data => {
+                                sum += data;
+                            });
+                            const percentage = (value * 100 / sum).toFixed(2) + "%";
+                            return `${value}`;
                         },
-                        onLeave: function(event, chartElement) {
-                            if (chartElement.length) {
-                                const segment = chartElement[0];
-                                segment._model.borderColor = null;
-                                segment._model.borderWidth = null;
-                                segment._model.hoverBackgroundColor = null;
-                            }
+                        anchor: 'center',
+                        align: 'center',
+                        font: {
+                            weight: 'bold',
+                            size: 14
                         }
-                    },
-                    animation: {
-                        duration: 1000,
-                        easing: 'easeOutQuart'
                     }
                 },
-                plugins: [ChartDataLabels]
-            });
-        }
+                hover: {
+                    mode: 'nearest',
+                    intersect: true,
+                    animationDuration: 400,
+                    onHover: function(event, chartElement) {
+                        if (chartElement.length) {
+                            const segment = chartElement[0];
+                            segment._model.borderColor = '#000';
+                            segment._model.borderWidth = 4;
+                            segment._model.hoverBackgroundColor = '#6e6b6b'; // Цвет фона при наведении
+                        }
+                    },
+                    onLeave: function(event, chartElement) {
+                        if (chartElement.length) {
+                            const segment = chartElement[0];
+                            segment._model.borderColor = null;
+                            segment._model.borderWidth = null;
+                            segment._model.hoverBackgroundColor = null;
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart'
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+    }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            createPieChart({
-                status_counts: JSON.parse('{{ status_counts|escapejs }}'),
-                status_slots: JSON.parse('{{ status_slots|escapejs }}')
-            });
+    document.addEventListener('DOMContentLoaded', () => {
+        createPieChart({
+            status_counts: JSON.parse('{{ status_counts|escapejs }}'),
+            status_slots: JSON.parse('{{ status_slots|escapejs }}')
+        });
+    });
+
+    function updateData() {
+    const cabinetId = "{{ cabinet.shkaf_id }}";
+    fetch(`/cabinet/${cabinetId}/update/`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Update the chart with the new data
+        createPieChart(data);
+
+        // Update the error slots list
+        const errorSlotsContainer = document.querySelector('.error-slots ul');
+        errorSlotsContainer.innerHTML = '';  // Clear the current list
+        data.error_slots.forEach(slot => {
+            const listItem = document.createElement('li');
+            listItem.textContent = `Slot ID: ${slot.endpointid} - ${slot.message || 'N/A'}`;
+            errorSlotsContainer.appendChild(listItem);
         });
 
-        function updateData() {
-            const cabinetId = "{{ cabinet.shkaf_id }}";
-            fetch(`/cabinet/${cabinetId}/update/`, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                createPieChart(data);
-            })
-            .catch(error => console.error('Error updating data:', error));
-        }
-    </script>
+        // Update the average charge
+        const averageChargeElement = document.querySelector('.average-charge');
+        averageChargeElement.textContent = `Средний заряд по шкафу: ${data.average_charge.toFixed(2)}%`;
+    })
+    .catch(error => console.error('Error updating data:', error));
+}
+
+
+</script>
 </body>
 </html>
