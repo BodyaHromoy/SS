@@ -21,11 +21,11 @@
         }
 
         .sidebar h1 {
-    font-size: 10.5px;
-    white-space: pre;
-    font-family: monospace;
-    line-height: 1.1;
-}
+            font-size: 10.5px;
+            white-space: pre;
+            font-family: monospace;
+            line-height: 1.1;
+        }
 
         .sidebar .nav-link {
             font-size: 16px;
@@ -123,60 +123,60 @@
             100% { transform: rotate(360deg); }
         }
 
-.checkbox-custom {
-    width: 20px;
-    height: 20px;
-    cursor: not-allowed;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    background-color: #fff;
-    border: 2px solid #007bff;
-    border-radius: 3px;
-    display: inline-block;
-    position: relative;
-}
+        .checkbox-custom {
+            width: 20px;
+            height: 20px;
+            cursor: not-allowed;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-color: #fff;
+            border: 2px solid #007bff;
+            border-radius: 3px;
+            display: inline-block;
+            position: relative;
+        }
 
-.checkbox-custom:checked {
-    background-color: #007bff;
-    border-color: #007bff;
-}
+        .checkbox-custom:checked {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
 
-.checkbox-custom:checked::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 6px;
-    width: 6px;
-    height: 12px;
-    border: solid #fff;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
-}
+        .checkbox-custom:checked::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 6px;
+            width: 6px;
+            height: 12px;
+            border: solid #fff;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
 
-.fixed-header {
-    position: fixed;
-    top: 0;
-    left: 200px;
-    width: calc(100% - 200px);
-    background-color: #f1f5f9;
-    padding: 10px 20px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-}
+        .fixed-header {
+            position: fixed;
+            top: 0;
+            left: 200px;
+            width: calc(100% - 200px);
+            background-color: #f1f5f9;
+            padding: 10px 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
 
-.fixed-header .filter-container {
-    margin-top: 20px;
-    margin-bottom: 10px;
-}
+        .fixed-header .filter-container {
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
 
-.fixed-header .button-container {
-    margin-top: 20px;
-}
+        .fixed-header .button-container {
+            margin-top: 20px;
+        }
 
-.fixed-header .btn {
-    margin: 5px;
-}
+        .fixed-header .btn {
+            margin: 5px;
+        }
 
     </style>
 </head>
@@ -236,7 +236,7 @@
                         </div>
                     </div>
                     <div id="refresh-button-container">
-                        <button class="btn btn-primary btn-custom" onclick="refreshData()">↻ Refresh</button>
+                        <button class="btn btn-primary btn-custom" onclick="refreshData()">↻</button>
                     </div>
                 </footer>
                 <div id="cabinet-list-view">
@@ -255,12 +255,12 @@
                         <tbody id="cabinet-list">
                         {% for cabinet in cabinets %}
                         <tr>
-                            <td>{{ cabinet.shkaf_id }}</td>
-                            <td>{{ cabinet.city.city_name }}</td>
-                            <td>{{ cabinet.zone.zone_name }}</td>
-                            <td>{{ cabinet.street }}</td>
-                            <td>{{ cabinet.extra_inf }}</td>
-                            <td>{{ cabinet.location }}</td>
+                            <td>{{ cabinet.shkaf_id|default:"-" }}</td>
+                            <td>{{ cabinet.city.city_name|default:"-" }}</td>
+                            <td>{{ cabinet.zone.zone_name|default:"-" }}</td>
+                            <td>{{ cabinet.street|default:"-" }}</td>
+                            <td>{{ cabinet.extra_inf|default:"-" }}</td>
+                            <td>{{ cabinet.location|default:"-" }}</td>
                             <td>
                                 <button class="btn btn-primary" onclick="showCabinetDetails('{{ cabinet.shkaf_id }}')">
                                     Check slots
@@ -282,12 +282,12 @@
                         </div>
                         <div class="col-md-3">
                             <select class="form-control" id="swver-filter">
-                                <option value="">All SW ver</option>
+                                <option value="">All SW versions</option>
                             </select>
                         </div>
                         <div class="col-md-3">
                             <select class="form-control" id="marked-filter">
-                                <option value="">All Marked</option>
+                                <option value="">All</option>
                             </select>
                         </div>
                     </div>
@@ -308,6 +308,7 @@
                         <th>SW Ver</th>
                         <th>SN</th>
                         <th>Marked</th>
+                        <th>Message</th>
                     </tr>
                     </thead>
                     <tbody id="cell-list"></tbody>
@@ -323,86 +324,83 @@
 <script>
 
     function sendCommand(endpoint_id, cabinet_id) {
-const cmd_number = prompt("Введите номер команды :");
-if (!cmd_number) {
-    alert("Команда не введена!");
-    return;
-}
+        const cmd_number = prompt("Введите номер команды :");
+        if (!cmd_number) {
+            alert("Команда не введена!");
+            return;
+        }
 
-$.ajax({
-    url: "{% url 'send_command' %}",
-    type: "POST",
-    data: {
-        'cabinet_id': cabinet_id,
-        'endpoint_id': endpoint_id,
-        'cmd_number': cmd_number,
-        'csrfmiddlewaretoken': '{{ csrf_token }}'
-    },
-    success: function(response) {
-        alert(response.message);
-    },
-    error: function() {
-        alert("Ошибка при отправке команды.");
+        $.ajax({
+            url: "{% url 'send_command' %}",
+            type: "POST",
+            data: {
+                'cabinet_id': cabinet_id,
+                'endpoint_id': endpoint_id,
+                'cmd_number': cmd_number,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                alert(response.message);
+            },
+            error: function() {
+                alert("Ошибка при отправке команды.");
+            }
+        });
     }
-});
-}
-    function refreshData() {
-const isDetailsViewVisible = $('#details-view').is(':visible');
-$('#loading-indicator').show();
 
-if (isDetailsViewVisible) {
-    const currentCabinetId = $("#cabinet-id-hidden").val();
-    if (currentCabinetId) {
-        $.get("/new_eng_cabinet/" + currentCabinetId + "/", function(data) {
+    function refreshData() {
+        const isDetailsViewVisible = $('#details-view').is(':visible');
+        $('#loading-indicator').show();
+
+        if (isDetailsViewVisible) {
+            const currentCabinetId = $("#cabinet-id-hidden").val();
+            if (currentCabinetId) {
+                $.get("/new_eng_cabinet/" + currentCabinetId + "/", function(data) {
+                    $("#cabinet-details").html($(data).find("#cabinet-details").html());
+                    $("#cell-list").html($(data).find("#cell-list").html());
+                    updateStatusFilter();
+                    updateSwVerFilter();
+                    updateMarkedFilter();
+                    restoreFilters();
+                }).fail(function() {
+                    console.error("Ошибка при загрузке данных.");
+                }).always(function() {
+                    $('#loading-indicator').hide();
+                });
+            } else {
+                console.error("Ошибка: ID шкафа не найден.");
+                $('#loading-indicator').hide();
+            }
+        } else {
+            $.get("{% url 'new_eng' %}", function(data) {
+                $("#cabinet-list").html($(data).find("#cabinet-list").html());
+            }).fail(function() {
+                console.error("Ошибка при загрузке данных.");
+            }).always(function() {
+                $('#loading-indicator').hide();
+            });
+        }
+    }
+
+    function showCabinetDetails(shkaf_id) {
+        $('#loading-indicator').show();
+
+        $.get("/new_eng_cabinet/" + shkaf_id + "/", function(data) {
             $("#cabinet-details").html($(data).find("#cabinet-details").html());
             $("#cell-list").html($(data).find("#cell-list").html());
+            $("#cabinet-id-hidden").val(shkaf_id);
+            $("#main-view").hide();
+            $("#details-view").show();
             updateStatusFilter();
             updateSwVerFilter();
             updateMarkedFilter();
-            applyStatusFilter();
-            applySwVerFilter();
-            applyMarkedFilter();
+            restoreFilters();
         }).fail(function() {
             console.error("Ошибка при загрузке данных.");
         }).always(function() {
             $('#loading-indicator').hide();
         });
-    } else {
-        console.error("Ошибка: ID шкафа не найден.");
-        $('#loading-indicator').hide();
     }
-} else {
-    $.get("{% url 'new_eng' %}", function(data) {
-        $("#cabinet-list").html($(data).find("#cabinet-list").html());
-    }).fail(function() {
-        console.error("Ошибка при загрузке данных.");
-    }).always(function() {
-        $('#loading-indicator').hide();
-    });
-}
-}
-
-function showCabinetDetails(shkaf_id) {
-$('#loading-indicator').show();
-
-$.get("/new_eng_cabinet/" + shkaf_id + "/", function(data) {
-    $("#cabinet-details").html($(data).find("#cabinet-details").html());
-    $("#cell-list").html($(data).find("#cell-list").html());
-    $("#cabinet-id-hidden").val(shkaf_id);
-    $("#main-view").hide();
-    $("#details-view").show();
-    updateStatusFilter();
-    updateSwVerFilter();
-    updateMarkedFilter();
-    applyStatusFilter();
-    applySwVerFilter();
-    applyMarkedFilter();
-}).fail(function() {
-    console.error("Ошибка при загрузке данных.");
-}).always(function() {
-    $('#loading-indicator').hide();
-});
-}
 
     function showMainView() {
         $("#details-view").hide();
@@ -424,6 +422,7 @@ $.get("/new_eng_cabinet/" + shkaf_id + "/", function(data) {
 
     function applyStatusFilter() {
         const selectedStatus = $("#status-filter").val();
+        saveFilter("status-filter", selectedStatus);
         $("#cell-list tr").filter(function() {
             $(this).toggle(!selectedStatus || $(this).children("td:nth-child(2)").text() === selectedStatus);
         });
@@ -438,6 +437,7 @@ $.get("/new_eng_cabinet/" + shkaf_id + "/", function(data) {
 
     $("#city-filter").on("change", function() {
         var value = $(this).val();
+        saveFilter("city-filter", value);
         $("#cabinet-list tr").filter(function() {
             $(this).toggle(!value || $(this).children("td:nth-child(2)").text() === value)
         });
@@ -445,62 +445,84 @@ $.get("/new_eng_cabinet/" + shkaf_id + "/", function(data) {
 
     $("#zone-filter").on("change", function() {
         var value = $(this).val();
+        saveFilter("zone-filter", value);
         $("#cabinet-list tr").filter(function() {
             $(this).toggle(!value || $(this).children("td:nth-child(3)").text() === value)
         });
     });
 
-function updateSwVerFilter() {
-const swVers = new Set();
-$("#cell-list tr").each(function() {
-    const swVer = $(this).find("td:nth-child(5)").text().trim();
-    swVers.add(swVer);
-});
-const $swVerFilter = $("#swver-filter");
-$swVerFilter.find('option:not(:first)').remove();
-swVers.forEach(swVer => {
-    $swVerFilter.append(`<option value="${swVer}">${swVer}</option>`);
-});
-}
+    function updateSwVerFilter() {
+        const swVers = new Set();
+        $("#cell-list tr").each(function() {
+            const swVer = $(this).find("td:nth-child(5)").text().trim();
+            swVers.add(swVer);
+        });
+        const $swVerFilter = $("#swver-filter");
+        $swVerFilter.find('option:not(:first)').remove();
+        swVers.forEach(swVer => {
+            $swVerFilter.append(`<option value="${swVer}">${swVer}</option>`);
+        });
+    }
 
-function applySwVerFilter() {
-const selectedSwVer = $("#swver-filter").val();
-$("#cell-list tr").filter(function() {
-    $(this).toggle(!selectedSwVer || $(this).children("td:nth-child(5)").text() === selectedSwVer);
-});
-}
+    function applySwVerFilter() {
+        const selectedSwVer = $("#swver-filter").val();
+        saveFilter("swver-filter", selectedSwVer);
+        $("#cell-list tr").filter(function() {
+            $(this).toggle(!selectedSwVer || $(this).children("td:nth-child(5)").text() === selectedSwVer);
+        });
+    }
 
-function updateMarkedFilter() {
-const markedValues = new Set();
-$("#cell-list tr").each(function() {
-    const marked = $(this).find("td:nth-child(7) input").is(':checked') ? "true" : "false";
-    markedValues.add(marked);
-});
-const $markedFilter = $("#marked-filter");
-$markedFilter.find('option:not(:first)').remove();
-markedValues.forEach(marked => {
-    $markedFilter.append(`<option value="${marked}">${marked === "true" ? "Marked" : "Not Marked"}</option>`);
-});
-}
+    function updateMarkedFilter() {
+        const markedValues = new Set();
+        $("#cell-list tr").each(function() {
+            const marked = $(this).find("td:nth-child(7) input").is(':checked') ? "true" : "false";
+            markedValues.add(marked);
+        });
+        const $markedFilter = $("#marked-filter");
+        $markedFilter.find('option:not(:first)').remove();
+        markedValues.forEach(marked => {
+            $markedFilter.append(`<option value="${marked}">${marked === "true" ? "Marked" : "Not Marked"}</option>`);
+        });
+    }
 
-function applyMarkedFilter() {
-const selectedMarked = $("#marked-filter").val();
-$("#cell-list tr").filter(function() {
-    const isChecked = $(this).find("td:nth-child(7) input").is(':checked') ? "true" : "false";
-    $(this).toggle(!selectedMarked || isChecked === selectedMarked);
-});
-}
+    function applyMarkedFilter() {
+        const selectedMarked = $("#marked-filter").val();
+        saveFilter("marked-filter", selectedMarked);
+        $("#cell-list tr").filter(function() {
+            const isChecked = $(this).find("td:nth-child(7) input").is(':checked') ? "true" : "false";
+            $(this).toggle(!selectedMarked || isChecked === selectedMarked);
+        });
+    }
 
     $("#status-filter").on("change", function() {
         applyStatusFilter();
     });
-    $("#swver-filter").on("change", function() {
-applySwVerFilter();
-});
 
-$("#marked-filter").on("change", function() {
-applyMarkedFilter();
-});
+    $("#swver-filter").on("change", function() {
+        applySwVerFilter();
+    });
+
+    $("#marked-filter").on("change", function() {
+        applyMarkedFilter();
+    });
+
+    function saveFilter(filterId, value) {
+        localStorage.setItem(filterId, value);
+    }
+
+    function restoreFilters() {
+        const filters = ["status-filter", "swver-filter", "marked-filter", "city-filter", "zone-filter"];
+        filters.forEach(function(filterId) {
+            const savedValue = localStorage.getItem(filterId);
+            if (savedValue) {
+                $(`#${filterId}`).val(savedValue).trigger("change");
+            }
+        });
+    }
+
+    $(document).ready(function() {
+        restoreFilters();
+    });
 </script>
 </body>
 </html>

@@ -24,6 +24,7 @@
             <th>SW Ver</th>
             <th>SN</th>
             <th>Marked</th>
+            <th>Message</th>
             <th>Действие</th>
         </tr>
     </thead>
@@ -31,12 +32,13 @@
         {% for cell in cells %}
         <tr>
             <td>{{ cell.endpointid }}</td>
-            <td>{{ cell.status }}</td>
-            <td>{{ cell.cap_percent }}%</td>
-            <td>{{ cell.vid }}</td>
-            <td>{{ cell.sw_ver }}</td>
-            <td>{{ cell.sn }}</td>
+            <td>{{ cell.status|default:"-" }}</td>
+            <td>{{ cell.cap_percent|default:"-" }}%</td>
+            <td>{{ cell.vid|default:"-" }}</td>
+            <td>{{ cell.sw_ver|default:"-" }}</td>
+            <td>{{ cell.sn|default:"-" }}</td>
             <td><input type="checkbox" class="checkbox-custom" {% if cell.is_error %}checked{% endif %} disabled></td>
+            <td>{{ cell.message|default:"-" }}</td>
             <td>
                 <button class="btn btn-primary btn-sm" onclick="sendCommand('{{ cell.endpointid }}', '{{ cell.cabinet_id.shkaf_id }}')">Send command</button>
             </td>

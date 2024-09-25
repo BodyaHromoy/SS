@@ -51,8 +51,12 @@ def send_command(request):
 
             if cmd_number == '1':
                 record.is_error = True
+                record.last_sn_is_error = True
+                Marked.objects.create(sn=record.sn)
             elif cmd_number == '0':
                 record.is_error = False
+                record.last_sn_is_error = False
+                Marked.objects.filter(sn=record.sn).delete()
             record.save()
 
             json_data = {
@@ -67,6 +71,8 @@ def send_command(request):
             client.connect("192.168.1.15", 1883, 60)
             client.publish("test/back", json.dumps(json_data))
             client.disconnect()
+
+
 
             return JsonResponse({"success": True, "message": "Команда отправлена успешно!"})
         except Cell.DoesNotExist:
@@ -296,7 +302,8 @@ def cabinet_list(request, zone_id):
     return render(request, 'ss_main/cabinet_list.html', {
         'zone': zone,
         'cabinets_count': cabinets_count,
-        'total_cells_count': total_cells_count,  # Добавляем общее количество ячеек в контекст
+        'total_cells_count': total_cells_count,
+
         'cabinets_status_counts': cabinets_status_counts,
     })
 
@@ -443,7 +450,6 @@ def update_cabinet_data(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
 
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        # Logic to update data
         cells = Cell.objects.filter(cabinet_id=cabinet)
 
         status_counts = cells.values('status').annotate(count=Count('status'))
@@ -528,7 +534,7 @@ def report(request):
 
             # Проверяем, выбраны ли все фильтры
             if not all([station_id, city, zone, time_from, time_to]):
-                return HttpResponse("Пожалуйста, выберите все фильтры.")
+                return HttpResponse("Пожалуйста, выберитpе все фильтры.")
 
             reports = Report.objects.using('new_db').all()
 

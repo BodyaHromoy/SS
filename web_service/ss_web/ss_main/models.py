@@ -130,6 +130,7 @@ class Cell(models.Model):
     time = models.DateTimeField(null=True, verbose_name='time')
     vir_sn_eid = models.TextField(null=True, verbose_name='VIR_SN_EID')
     is_error = models.BooleanField(default=False, verbose_name='IS_ERROR')
+    message = models.CharField(max_length=255, null=True, verbose_name='MESSAGE')
 
     def __str__(self):
         return self.vir_sn_eid
@@ -172,3 +173,16 @@ class Report(models.Model):
 
     class Meta:
         app_label = 'ss_main'
+
+
+class Marked(models.Model):
+    sn = models.CharField(max_length=255, null=True, verbose_name='SN')
+
+
+class big_battary_list(models.Model):
+    sn = models.CharField(max_length=255, null=True, verbose_name='SN')
+    year = models.CharField(max_length=255, null=True, verbose_name='YEAR')
+    cycle_times = models.CharField(max_length=255, null=True, verbose_name='CYCLE_TIMES')
+    is_tired = models.BooleanField(default=False, verbose_name='IS_TIRED')
+
+

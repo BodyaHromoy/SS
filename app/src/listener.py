@@ -5,7 +5,7 @@ import json
 from paho.mqtt.client import Client
 import pytz
 
-from app.database.models.modules import ss_main_cell
+from app.database.models.modules import ss_main_cell, ss_main_marked, ss_main_big_battary_list
 from app.database.models.report import Ss_main_report
 from app.database.models.cabinets import Ss_main_cabinet
 
@@ -65,9 +65,51 @@ def initialize_active_v_sn():
 
 def sanitize(value):
     if value and '\x00' in value:
-        print(f"Найден нулевой байт в значении:   {value}")
-        return "ERROR"
+        print(f"Найден нулевой байт в значении: {value}")
+        sanitized_value = value.replace('\x00', '')
+        if not ss_main_marked.select().where(ss_main_marked.sn == sanitized_value).exists():
+            ss_main_marked.create(sn=sanitized_value)
+        else:
+            existing_entry = ss_main_marked.get(ss_main_marked.sn == sanitized_value)
+            existing_entry.is_error = True
+            existing_entry.save()
+        return sanitized_value
     return value
+
+
+def extract_year_from_sn(sn):
+    if sn[5:7].isdigit():
+        return "20" + sn[5:7]
+    else:
+        print(f"Не удалось извлечь год из серийного номера: {sn}")
+        return None
+
+
+def update_or_add_big_battery_list(sn, cycle_times):
+    year = extract_year_from_sn(sn)
+    if not year:
+        print(f"Не удалось обновить запись: неверный серийный номер {sn}")
+        return
+
+    existing_entry = ss_main_big_battary_list.select().where(ss_main_big_battary_list.sn == sn).first()
+
+    if existing_entry:
+        if existing_entry.cycle_times != cycle_times or existing_entry.year != year:
+            print(f"Обновление записи для SN: {sn}")
+            existing_entry.year = year
+            existing_entry.cycle_times = cycle_times
+            existing_entry.is_tired = (int(cycle_times) > 50)
+            existing_entry.save()
+        else:
+            print(f"Запись для SN: {sn} уже актуальна")
+    else:
+        print(f"Добавление новой записи для SN: {sn}")
+        ss_main_big_battary_list.create(
+            sn=sn,
+            year=year,
+            cycle_times=cycle_times,
+            is_tired=(int(cycle_times) > 50)
+        )
 
 
 def update_entry(existing_entry, stat_id, status_data):
@@ -121,6 +163,9 @@ def update_entry(existing_entry, stat_id, status_data):
     existing_entry.time = current_time
     existing_entry.sn = sanitize(status_data.get("SN"))
 
+    if ss_main_marked.select().where(ss_main_marked.sn == existing_entry.sn).exists():
+        existing_entry.is_error = True
+
     if not existing_entry.session_start:
         existing_entry.session_start = current_time
     existing_entry.session_end = current_time
@@ -130,6 +175,18 @@ def update_entry(existing_entry, stat_id, status_data):
         existing_entry.status = "charging"
     else:
         existing_entry.status = "not_charging"
+
+    sn = sanitize(status_data.get("SN"))
+    cycle_times = status_data.get("CYCLE_TIMES")
+    update_or_add_big_battery_list(sn, cycle_times)
+
+    if ss_main_big_battary_list.select().where((ss_main_big_battary_list.sn == existing_entry.sn) & (ss_main_big_battary_list.is_tired == True)).exists():
+        existing_entry.message = "Tired"
+    elif ss_main_marked.select().where(ss_main_marked.sn == existing_entry.sn).exists():
+        existing_entry.message = "SN Error"
+    else:
+        existing_entry.message = None
+
 
     existing_entry.save()
     print(f"Информация для {existing_entry.vir_sn_eid} обновлена.")
@@ -238,7 +295,7 @@ async def sort(msg):
     data = json.loads(msg.payload.decode('utf-8'))
     message_type = data.get('Type')
 
-    if message_type == 'Ping':
+    if message_type == 'Ping' or message_type == 'Report':
 
         v_end_id = data.get("EndpointID")
         v_stat_id = data.get("StationID")
@@ -287,6 +344,8 @@ async def sort(msg):
                 existing_entry.session_end = None
                 existing_entry.time = None
                 existing_entry.status = "empty"
+                existing_entry.is_error = False
+                existing_entry.message = None
                 existing_entry.save()
                 print("Обнулены поля существующей записи.")
             else:
@@ -321,6 +380,8 @@ async def sort(msg):
                 existing_entry.session_end = None
                 existing_entry.time = None
                 existing_entry.status = "empty"
+                existing_entry.is_error = False
+                existing_entry.message = None
                 existing_entry.save()
         else:
             create_new_entry(end_id, stat_id, status="empty", vir_sn_eid=vir_sn)
@@ -334,7 +395,7 @@ async def sort(msg):
         delimiter = "-"
         vir_sn = str(v_stat_id) + str(delimiter) + str(v_end_id)
 
-        sn = data.get("Status", {}).get("SN")  # Получаем SN из поля "Status"
+        sn = data.get("Status", {}).get("SN")
         existing_entry = ss_main_cell.select().where(ss_main_cell.vir_sn_eid == vir_sn).first()
 
         if existing_entry:
@@ -414,6 +475,7 @@ async def check_inactive_endpoints():
                     entry.session_start = None
                     entry.session_end = None
                     entry.time = None
+                    entry.is_error = False
                     entry.status = "Inactive"
                     entry.save()
 

@@ -37,6 +37,18 @@ class ss_main_cell(BaseModel):
     status = CharField(null=True, verbose_name='status')
     time = CharField(null=True, column_name='time')
     vir_sn_eid = TextField(null=True, verbose_name='VIR_SN_EID')
+    is_error = BooleanField(null=True, verbose_name='is_error', default=False)
+    message = CharField(null=True, verbose_name='MESSAGE')
+
+
+class ss_main_marked(BaseModel):
+    sn = CharField(null=True, verbose_name='SN')
+
+class ss_main_big_battary_list(BaseModel):
+    sn = CharField(max_length=255, null=True, verbose_name='SN')
+    year = CharField(max_length=255, null=True, verbose_name='YEAR')
+    cycle_times = CharField(max_length=255, null=True, verbose_name='CYCLE_TIMES')
+    is_tired = BooleanField(default=False, verbose_name='IS_TIRED')
 
 
 # Создание таблицы

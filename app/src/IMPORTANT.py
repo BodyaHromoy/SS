@@ -40,6 +40,7 @@ def neko():
     ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢿⣿⣿⣿⠏ 
     
     
+    
     """
 
     label = tk.Label(kot, text=neko_art, font=("Courier", 8))
