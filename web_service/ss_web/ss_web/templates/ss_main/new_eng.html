@@ -265,6 +265,7 @@
                                 <button class="btn btn-primary" onclick="showCabinetDetails('{{ cabinet.shkaf_id }}')">
                                     Check slots
                                 </button>
+                               <button class="btn btn-secondary" data-toggle="modal" data-target="#cabinetSettingsModal" onclick="loadCabinetSettings('{{ cabinet.shkaf_id }}')">Settings</button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -294,6 +295,7 @@
                     <div class="button-container">
                         <button class="btn btn-secondary btn-custom" onclick="showMainView()">← Back</button>
                         <button class="btn btn-primary btn-custom" onclick="refreshData()">↻ Refresh</button>
+
                     </div>
                 </footer>
                 <div id="cabinet-details"></div>
@@ -317,11 +319,55 @@
         </div>
     </div>
 </div>
+
+<!-- Modal for Cabinet Settings -->
+<div class="modal fade" id="cabinetSettingsModal" tabindex="-1" role="dialog" aria-labelledby="cabinetSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cabinetSettingsModalLabel">Cabinet Settings</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Content for cabinet settings will be dynamically loaded here -->
+                <div id="cabinet-settings-content">
+                    <p>Loading settings...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveCabinetSettings()">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="loading-indicator"></div>
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script>
+
+    function loadCabinetSettings(cabinetId) {
+        // Сделаем AJAX запрос для получения настроек шкафа
+        $.ajax({
+            url: `/cabinet_settings/${cabinetId}/`,  // Этот URL должен указывать на ваш view для загрузки настроек
+            method: 'GET',
+            success: function (data) {
+                $('#cabinet-settings-content').html(data);
+            },
+            error: function () {
+                $('#cabinet-settings-content').html('<p>Error loading settings</p>');
+            }
+        });
+    }
+
+    function saveCabinetSettings() {
+        // Здесь можно добавить код для сохранения изменений настроек
+        alert('Changes saved!');
+    }
 
     function sendCommand(endpoint_id, cabinet_id) {
         const cmd_number = prompt("Введите номер команды :");

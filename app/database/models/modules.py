@@ -4,7 +4,7 @@ from app.database.models.cabinets import Ss_main_cabinet
 
 class ss_main_cell(BaseModel):
     endpointid = IntegerField(column_name='endpointid')
-    cabinet_id_id = ForeignKeyField(Ss_main_cabinet, field=Ss_main_cabinet.shkaf_id, related_name='shkaf_id', on_delete='CASCADE')
+    cabinet_id_id = ForeignKeyField(Ss_main_cabinet, field=Ss_main_cabinet.shkaf_id, on_delete='CASCADE')
     balance_status = CharField(null=True, column_name='balance_status')
     capacity = CharField(null=True, column_name='capacity')
     cap_coulo = CharField(null=True, column_name='cap_coulo')
@@ -32,7 +32,7 @@ class ss_main_cell(BaseModel):
     total_capacity = CharField(null=True, column_name='total_capacity')
     vid = CharField(null=True, column_name='vid')
     voltage_cur = CharField(null=True, column_name='voltage_cur')
-    session_start = CharField(null=True, column_name='session_start')
+    session_start = CharField(null=True, verbose_name='session_start')
     session_end = CharField(null=True, verbose_name='session_end')
     status = CharField(null=True, verbose_name='status')
     time = CharField(null=True, column_name='time')
@@ -44,6 +44,7 @@ class ss_main_cell(BaseModel):
 class ss_main_marked(BaseModel):
     sn = CharField(null=True, verbose_name='SN')
 
+
 class ss_main_big_battary_list(BaseModel):
     sn = CharField(max_length=255, null=True, verbose_name='SN')
     year = CharField(max_length=255, null=True, verbose_name='YEAR')
@@ -51,5 +52,17 @@ class ss_main_big_battary_list(BaseModel):
     is_tired = BooleanField(default=False, verbose_name='IS_TIRED')
 
 
-# Создание таблицы
-db.create_tables([ss_main_cell])
+class ss_main_cabinet_settings_for_auto_marking(BaseModel):
+    cabinet_id_id = ForeignKeyField(Ss_main_cabinet, field=Ss_main_cabinet.shkaf_id, on_delete='CASCADE')
+    sn_error = BooleanField(default=False, verbose_name='SN_ERROR')
+    year_of_manufacture = CharField(max_length=255, null=True)
+    max_cycle_times = IntegerField(null=True)
+    vid = CharField(max_length=255, null=True)
+    sw_ver = CharField(max_length=255, null=True)
+    critical_temp = IntegerField(null=True)
+    lock_status = BooleanField(default=False, verbose_name='LOCK_STATUS')
+    temp_inside = IntegerField(null=True)
+    fan_status = BooleanField(default=False, verbose_name='FAN_STATUS')
+    mains_voltage = CharField(max_length=255, null=True)
+    reserve_voltage = CharField(max_length=255, null=True)
+

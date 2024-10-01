@@ -37,6 +37,7 @@ urlpatterns = [
     path('', views.new_eng, name='new_eng'),
     path('new_eng_cabinet/<str:shkaf_id>/', views.new_eng_cabinet_detail, name='new_eng_cabinet_detail'),
     path('send_command/', views.send_command, name='send_command'),
+    path('cabinet_settings/<int:shkaf_id>/', views.cabinet_settings, name='cabinet_settings'),
 
     # старая инженерка
     path('123/', main, name='main'),

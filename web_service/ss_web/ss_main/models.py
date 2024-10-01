@@ -186,3 +186,20 @@ class big_battary_list(models.Model):
     is_tired = models.BooleanField(default=False, verbose_name='IS_TIRED')
 
 
+class Cabinet_settings_for_auto_marking (models.Model):
+    cabinet_id = models.ForeignKey(to=Cabinet, on_delete=models.CASCADE, null=False, to_field='shkaf_id')
+    sn_error = models.BooleanField(default=False, verbose_name='SN_ERROR')
+    year_of_manufacture = models.CharField(max_length=255, null=True)
+    max_cycle_times = models.IntegerField(null=True)
+    vid = models.CharField(max_length=255, null=True)
+    sw_ver = models.CharField(max_length=255, null=True)
+    critical_temp = models.IntegerField(null=True)
+    lock_status = models.BooleanField(default=False, verbose_name='LOCK_STATUS')
+    temp_inside = models.IntegerField(null=True)
+    fan_status = models.BooleanField(default=False, verbose_name='FAN_STATUS')
+    mains_voltage = models.CharField(max_length=255, null=True)
+    reserve_voltage = models.CharField(max_length=255, null=True)
+
+
+
+

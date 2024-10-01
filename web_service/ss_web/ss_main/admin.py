@@ -32,4 +32,5 @@ class CityAdmin(admin.ModelAdmin):
 
 admin.site.register(Zone, ZoneAdmin)
 admin.site.register(City, CityAdmin)
+admin.site.register(Cabinet_settings_for_auto_marking)
 admin.site.register(CustomUser, CustomUserAdmin)

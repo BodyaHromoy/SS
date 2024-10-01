@@ -51,11 +51,9 @@ def send_command(request):
 
             if cmd_number == '1':
                 record.is_error = True
-                record.last_sn_is_error = True
                 Marked.objects.create(sn=record.sn)
             elif cmd_number == '0':
                 record.is_error = False
-                record.last_sn_is_error = False
                 Marked.objects.filter(sn=record.sn).delete()
             record.save()
 
@@ -71,7 +69,6 @@ def send_command(request):
             client.connect("192.168.1.15", 1883, 60)
             client.publish("test/back", json.dumps(json_data))
             client.disconnect()
-
 
 
             return JsonResponse({"success": True, "message": "Команда отправлена успешно!"})
@@ -95,6 +92,15 @@ def new_eng_cabinet_detail(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
     cells = Cell.objects.filter(cabinet_id=cabinet).order_by('endpointid')
     return render(request, 'ss_main/new_eng_cabinet_detail.html', {'cabinet': cabinet, 'cells': cells})
+
+
+@user_passes_test(is_engineer)
+def cabinet_settings(request, shkaf_id):
+    cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
+    settings = Cabinet_settings_for_auto_marking.objects.filter(cabinet_id=cabinet).first()
+    return render(request, 'ss_main/cabinet_settings_partial.html', {'settings': settings})
+
+
 
 
 @user_passes_test(is_engineer)
