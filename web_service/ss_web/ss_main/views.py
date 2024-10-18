@@ -19,7 +19,7 @@ import paho.mqtt.client as mqtt
 
 from .decorators.auth_decorators import staff_required
 from .forms.auth_form import CustomAuthenticationForm
-from .forms.forms import ReportFilterForm, CourierCreationForm, LogicCreationForm
+from .forms.forms import ReportFilterForm, CourierCreationForm, LogicCreationForm, CabinetSettingsForm
 from .models import *
 
 
@@ -98,8 +98,20 @@ def new_eng_cabinet_detail(request, shkaf_id):
 def cabinet_settings(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
     settings = Cabinet_settings_for_auto_marking.objects.filter(cabinet_id=cabinet).first()
-    return render(request, 'ss_main/cabinet_settings_partial.html', {'settings': settings})
 
+    if request.method == 'POST':
+        form = CabinetSettingsForm(request.POST, instance=settings)
+        if form.is_valid():
+            form.save()
+
+            Cell.objects.filter(cabinet_id=cabinet).update(is_error=False)
+
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'errors': form.errors})
+
+    form = CabinetSettingsForm(instance=settings)
+    return render(request, 'ss_main/cabinet_settings_partial.html', {'form': form, 'cabinet': cabinet})
 
 
 

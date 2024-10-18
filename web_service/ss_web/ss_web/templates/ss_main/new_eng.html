@@ -331,7 +331,6 @@
                 </button>
             </div>
             <div class="modal-body">
-                <!-- Content for cabinet settings will be dynamically loaded here -->
                 <div id="cabinet-settings-content">
                     <p>Loading settings...</p>
                 </div>
@@ -351,7 +350,6 @@
 <script>
 
     function loadCabinetSettings(cabinetId) {
-        // Сделаем AJAX запрос для получения настроек шкафа
         $.ajax({
             url: `/cabinet_settings/${cabinetId}/`,  // Этот URL должен указывать на ваш view для загрузки настроек
             method: 'GET',
@@ -364,10 +362,39 @@
         });
     }
 
-    function saveCabinetSettings() {
-        // Здесь можно добавить код для сохранения изменений настроек
-        alert('Changes saved!');
-    }
+    function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+function saveCabinetSettings() {
+    var formData = $('#cabinet-settings-form').serialize();
+    var csrfToken = getCSRFToken();
+
+    $.ajax({
+        url: $('#cabinet-settings-form').attr('action'),
+        method: 'POST',
+        data: formData,
+        headers: {
+            'X-CSRFToken': csrfToken  // Adding CSRF token to the header
+        },
+        success: function(response) {
+            console.log(response);  // Log the entire response for debugging
+            if (response.success) {
+    alert('Settings saved successfully!');
+    $('#cabinetSettingsModal').modal('hide');
+} else {
+    console.log(response.errors);  // Лог ошибок для проверки
+    alert('Error saving settings: ' + JSON.stringify(response.errors));
+}
+
+        },
+        error: function(xhr, status, error) {
+            console.log(xhr.responseText);  // Log the error response for debugging
+            alert('Error saving settings');
+        }
+    });
+}
+
 
     function sendCommand(endpoint_id, cabinet_id) {
         const cmd_number = prompt("Введите номер команды :");

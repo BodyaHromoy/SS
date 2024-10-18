@@ -5,7 +5,8 @@ import json
 from paho.mqtt.client import Client
 import pytz
 
-from app.database.models.modules import ss_main_cell, ss_main_marked, ss_main_big_battary_list
+from app.database.models.modules import ss_main_cell, ss_main_marked, ss_main_big_battary_list, \
+    ss_main_cabinet_settings_for_auto_marking
 from app.database.models.report import Ss_main_report
 from app.database.models.cabinets import Ss_main_cabinet
 
@@ -14,47 +15,36 @@ active_v_sn = {}
 
 def initialize_cells():
     try:
-        for cell in ss_main_cell.select():
-            cell.sn = None
-            cell.balance_status = None
-            cell.capacity = None
-            cell.cap_coulo = None
-            cell.cap_percent = None
-            cell.cap_vol = None
-            cell.charge_cap_h = None
-            cell.charge_cap_l = None
-            cell.charge_times = None
-            cell.core_volt = None
-            cell.current_cur = None
-            cell.cycle_times = None
-            cell.design_voltage = None
-            cell.fun_boolean = None
-            cell.healthy = None
-            cell.ochg_state = None
-            cell.odis_state = None
-            cell.over_discharge_times = None
-            cell.pcb_ver = None
-            cell.remaining_cap = None
-            cell.remaining_cap_percent = None
-            cell.sw_ver = None
-            cell.temp_cur1 = None
-            cell.temp_cur2 = None
-            cell.total_capacity = None
-            cell.vid = None
-            cell.voltage_cur = None
-            cell.session_start = None
-            cell.session_end = None
-            cell.time = None
-            cell.status = "initialization"
+        cells = list(ss_main_cell.select())
+        for cell in cells:
+            reset_cell_fields(cell)
             cell.save()
         print("Все записи обнулены успешно.")
     except Exception as e:
         print(f"Ошибка при инициализации ячеек: {e}")
 
 
+def reset_cell_fields(cell):
+    """ Reset fields to default values. """
+    fields_to_reset = [
+        "sn", "balance_status", "capacity", "cap_coulo", "cap_percent",
+        "cap_vol", "charge_cap_h", "charge_cap_l", "charge_times",
+        "core_volt", "current_cur", "cycle_times", "design_voltage",
+        "fun_boolean", "healthy", "ochg_state", "odis_state",
+        "over_discharge_times", "pcb_ver", "remaining_cap",
+        "remaining_cap_percent", "sw_ver", "temp_cur1", "temp_cur2",
+        "total_capacity", "vid", "voltage_cur", "session_start",
+        "session_end", "time", "status", "message"
+    ]
+    for field in fields_to_reset:
+        setattr(cell, field, None)
+    cell.status = "initialization"
+
+
 def initialize_active_v_sn():
     try:
-        for cell in ss_main_cell.select():
+        cells = list(ss_main_cell.select())
+        for cell in cells:
             vir_sn_eid = cell.vir_sn_eid
             if vir_sn_eid:
                 active_v_sn[vir_sn_eid] = datetime.datetime.now()
@@ -85,7 +75,12 @@ def extract_year_from_sn(sn):
         return None
 
 
-def update_or_add_big_battery_list(sn, cycle_times):
+def update_or_add_big_battery_list(sn, cycle_times, stat_id):
+
+    cabinet_setting = ss_main_cabinet_settings_for_auto_marking.get(
+        ss_main_cabinet_settings_for_auto_marking.cabinet_id_id == stat_id
+    )
+
     year = extract_year_from_sn(sn)
     if not year:
         print(f"Не удалось обновить запись: неверный серийный номер {sn}")
@@ -98,7 +93,7 @@ def update_or_add_big_battery_list(sn, cycle_times):
             print(f"Обновление записи для SN: {sn}")
             existing_entry.year = year
             existing_entry.cycle_times = cycle_times
-            existing_entry.is_tired = (int(cycle_times) > 50)
+            existing_entry.is_tired = (int(cycle_times) > cabinet_setting.max_cycle_times)
             existing_entry.save()
         else:
             print(f"Запись для SN: {sn} уже актуальна")
@@ -108,23 +103,25 @@ def update_or_add_big_battery_list(sn, cycle_times):
             sn=sn,
             year=year,
             cycle_times=cycle_times,
-            is_tired=(int(cycle_times) > 50)
+            is_tired=(int(cycle_times) > cabinet_setting.max_cycle_times)
         )
 
 
 def update_entry(existing_entry, stat_id, status_data):
-    import datetime
-
     almaty_timezone = pytz.timezone('Asia/Almaty')
-    time_wth_tzinfo = datetime.datetime.now(almaty_timezone)
-    current_time = time_wth_tzinfo.replace(tzinfo=None)
+    current_time = datetime.datetime.now(almaty_timezone).replace(tzinfo=None)
+
+
+    cabinet_setting = ss_main_cabinet_settings_for_auto_marking.get(
+        ss_main_cabinet_settings_for_auto_marking.cabinet_id_id == stat_id
+    )
+    print("Получены настройки для шкафа", cabinet_setting.cabinet_id_id.shkaf_id)
 
     existing_entry.cabinet_id_id = stat_id
     existing_entry.balance_status = status_data.get("BALANCE_STATUS")
     existing_entry.capacity = status_data.get("CAPACITY")
     existing_entry.cap_coulo = status_data.get("CAP_COULO")
-    cap_percent = int(status_data.get("CAP_PERCENT", "0")) if status_data.get("CAP_PERCENT") else 0
-    existing_entry.cap_percent = cap_percent
+    existing_entry.cap_percent = int(status_data.get("CAP_PERCENT", "0")) if status_data.get("CAP_PERCENT") else 0
     existing_entry.cap_vol = status_data.get("CAP_VOL")
     existing_entry.charge_cap_h = status_data.get("CHARGE_CAP_H")
     existing_entry.charge_cap_l = status_data.get("CHARGE_CAP_L")
@@ -132,6 +129,16 @@ def update_entry(existing_entry, stat_id, status_data):
     existing_entry.core_volt = status_data.get("CORE_VOLT")
     existing_entry.current_cur = status_data.get("CURRENT_CUR")
     existing_entry.cycle_times = status_data.get("CYCLE_TIMES")
+
+
+    if int(status_data.get("CYCLE_TIMES")) >= cabinet_setting.max_cycle_times:
+        print(status_data.get("CYCLE_TIMES"), "", cabinet_setting.max_cycle_times)
+        existing_entry.is_error = True
+        print("применены настройки максимального количества циклов")
+    else:
+        print("количество циклов не превышает максимальное значение")
+
+
     existing_entry.design_voltage = status_data.get("DESIGN_VOLTAGE")
     existing_entry.fun_boolean = status_data.get("FUN_BOOLEAN")
     existing_entry.healthy = status_data.get("HEALTHY")
@@ -142,34 +149,54 @@ def update_entry(existing_entry, stat_id, status_data):
     existing_entry.remaining_cap = status_data.get("REMAINING_CAP")
     existing_entry.remaining_cap_percent = status_data.get("REMAINING_CAP_PERCENT")
     existing_entry.sw_ver = status_data.get("SW_VER")
+
+    if existing_entry.sw_ver == cabinet_setting.sw_ver:
+        print("версия ПО совпадает с разрешенной")
+    else:
+        print("версия ПО не совпадает с настройками")
+        existing_entry.is_error = True
+
     existing_entry.temp_cur1 = status_data.get("TEMP_CUR1")
     existing_entry.temp_cur2 = status_data.get("TEMP_CUR2")
     existing_entry.total_capacity = status_data.get("TOTAL_CAPACITY")
 
-    if "4e344007" in str(status_data.get("VID")):
-        existing_entry.vid = "JET"
-    elif "4e34300e" in str(status_data.get("VID")):
-        existing_entry.vid = "WHOOSH"
-    elif "4e34400d" in str(status_data.get("VID")):
-        existing_entry.vid = "YANDEX"
-    elif "4e34400a" in str(status_data.get("VID")):
-        existing_entry.vid = "SVING"
-    elif "4e34300c" in str(status_data.get("VID")):
-        existing_entry.vid = "VOI"
+    vid_mapping = {
+        "4e344007": "JET",
+        "4e34300e": "WHOOSH",
+        "4e34400d": "YANDEX",
+        "4e34400a": "SWING",
+        "4e34300c": "VOI"
+    }
+
+    existing_entry.vid = next((vid for key, vid in vid_mapping.items() if key in str(status_data.get("VID"))),
+                              status_data.get("VID"))
+
+    if existing_entry.vid == cabinet_setting.vid:
+        print("вендор cовпадает с настройками")
     else:
-        existing_entry.vid = status_data.get("VID")
+        print("вендор не совпадает с настройками")
+        existing_entry.is_error = True
 
     existing_entry.voltage_cur = status_data.get("VOLTAGE_CUR")
     existing_entry.time = current_time
     existing_entry.sn = sanitize(status_data.get("SN"))
 
-    if ss_main_marked.select().where(ss_main_marked.sn == existing_entry.sn).exists():
+
+    print("Проверка года")
+    if extract_year_from_sn(existing_entry.sn) == cabinet_setting.year_of_manufacture:
+        print(extract_year_from_sn(existing_entry.sn), "", cabinet_setting.year_of_manufacture)
         existing_entry.is_error = True
+        print("Проверка не пройдена")
+    else:
+        print("Проверка пройдена")
+
+
 
     if not existing_entry.session_start:
         existing_entry.session_start = current_time
     existing_entry.session_end = current_time
-    if cap_percent >= 91:
+
+    if existing_entry.cap_percent >= 91:
         existing_entry.status = "ready"
     elif "4" in str(status_data.get("FUN_BOOLEAN")):
         existing_entry.status = "charging"
@@ -178,14 +205,12 @@ def update_entry(existing_entry, stat_id, status_data):
 
     sn = sanitize(status_data.get("SN"))
     cycle_times = status_data.get("CYCLE_TIMES")
-    update_or_add_big_battery_list(sn, cycle_times)
+    update_or_add_big_battery_list(sn, cycle_times, stat_id)
 
-    if ss_main_big_battary_list.select().where((ss_main_big_battary_list.sn == existing_entry.sn) & (ss_main_big_battary_list.is_tired == True)).exists():
-        existing_entry.message = "Tired"
-    elif ss_main_marked.select().where(ss_main_marked.sn == existing_entry.sn).exists():
-        existing_entry.message = "SN Error"
-    else:
-        existing_entry.message = None
+    existing_entry.message = "Tired" if ss_main_big_battary_list.select().where(
+        (ss_main_big_battary_list.sn == existing_entry.sn) & (ss_main_big_battary_list.is_tired == True)).exists() else \
+        "SN Error" if ss_main_marked.select().where(ss_main_marked.sn == existing_entry.sn).exists() else \
+            None
 
 
     existing_entry.save()
@@ -193,11 +218,8 @@ def update_entry(existing_entry, stat_id, status_data):
 
 
 def move_to_report(existing_entry, reason):
-    import datetime
-
     almaty_timezone = pytz.timezone('Asia/Almaty')
-    current_time_with_tz = datetime.datetime.now(almaty_timezone)
-    current_time = current_time_with_tz.replace(tzinfo=None).strftime('%Y-%m-%d %H:%M:%S')
+    current_time = datetime.datetime.now(almaty_timezone).replace(tzinfo=None).strftime('%Y-%m-%d %H:%M:%S')
     print(f"Время: {current_time}")
 
     report_entry = Ss_main_report.create(
@@ -222,21 +244,17 @@ def move_to_report(existing_entry, reason):
         pcb_ver=existing_entry.pcb_ver,
         remaining_cap=existing_entry.remaining_cap,
         remaining_cap_percent=existing_entry.remaining_cap_percent,
-        sn=existing_entry.sn,
         sw_ver=existing_entry.sw_ver,
         temp_cur1=existing_entry.temp_cur1,
         temp_cur2=existing_entry.temp_cur2,
         total_capacity=existing_entry.total_capacity,
         vid=existing_entry.vid,
         voltage_cur=existing_entry.voltage_cur,
-        session_start=existing_entry.session_start,
-        session_end=existing_entry.session_end,
         time=current_time,
-        reason=reason,
-        city=find_city_name(existing_entry.cabinet_id_id.city.city_name),
-        zone=find_zone_name(existing_entry.cabinet_id_id.zone.zone_name)
+        reason=reason
     )
-    print(f"Перемещена строка с Endpoint ID {existing_entry.vir_sn_eid} в отчет из-за {reason}.")
+    report_entry.save()
+    print(f"Запись перенесена в отчет: {report_entry.stationid}")
 
 
 def find_city_name(city_name):
@@ -294,6 +312,9 @@ def create_new_entry(end_id, stat_id, sn=None, status_data=None, status="empty",
 async def sort(msg):
     data = json.loads(msg.payload.decode('utf-8'))
     message_type = data.get('Type')
+    topic = msg.topic
+    print("получено сообщение с топика", topic)
+
 
     if message_type == 'Ping' or message_type == 'Report':
 
@@ -406,6 +427,7 @@ async def sort(msg):
         active_v_sn[vir_sn] = datetime.datetime.now()
         return
 
+
     print("Неизвестный тип сообщения:", message_type)
 
 
@@ -445,7 +467,6 @@ async def check_inactive_endpoints():
                 inactive_entries = ss_main_cell.select().where(ss_main_cell.vir_sn_eid == vir_sn)
                 for entry in inactive_entries:
                     move_to_report(entry, reason="inactive")
-                    entry.sn = None
                     entry.balance_status = None
                     entry.capacity = None
                     entry.cap_coulo = None
@@ -477,6 +498,7 @@ async def check_inactive_endpoints():
                     entry.time = None
                     entry.is_error = False
                     entry.status = "Inactive"
+                    entry.message = None
                     entry.save()
 
                 del active_v_sn[vir_sn]
