@@ -10,6 +10,19 @@ class CabinetSettingsForm(forms.ModelForm):
             'sw_ver', 'critical_temp', 'temp_inside', 'mains_voltage',
             'reserve_voltage', 'lock_status', 'fan_status'
         ]
+        labels = {
+            'sn_error': 'Error',
+            'year_of_manufacture': 'Catch years',
+            'max_cycle_times': 'Max Cycle Times',
+            'vid': 'Allow Vendor',
+            'sw_ver': 'Allow SW Ver',
+            'critical_temp': 'Critical Temp',
+            'temp_inside': 'Temp Inside',
+            'mains_voltage': 'Grid Voltage',
+            'reserve_voltage': 'Reserve Voltage',
+            'lock_status': 'Door Status',
+            'fan_status': 'Fan Status',
+        }
 
 
 class ReportFilterForm(forms.Form):
