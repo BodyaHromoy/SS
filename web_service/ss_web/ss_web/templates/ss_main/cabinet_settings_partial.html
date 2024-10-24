@@ -4,19 +4,19 @@
     <hr>
     <h3 class="section-title">BMS</h3>
     <div class="form-group">
-        {{ form.sn_error.label_tag }} {{ form.sn_error }}
+                {{ form.sn_error.label_tag }} {{ form.sn_error }}
     </div>
     <div class="form-group">
-        {{ form.year_of_manufacture.label_tag }} {{ form.year_of_manufacture }}
+        {{ settings_for_form.year_of_manufacture }} {{ form.year_of_manufacture.label_tag }} {{ form.year_of_manufacture }}
     </div>
     <div class="form-group">
-        {{ form.max_cycle_times.label_tag }} {{ form.max_cycle_times }}
+        {{ settings_for_form.max_cycle_times }} {{ form.max_cycle_times.label_tag }} {{ form.max_cycle_times }}
     </div>
     <div class="form-group">
-        {{ form.vid.label_tag }} {{ form.vid }}
+        {{ settings_for_form.vid }} {{ form.vid.label_tag }} {{ form.vid }}
     </div>
     <div class="form-group">
-        {{ form.sw_ver.label_tag }} {{ form.sw_ver }}
+        {{ settings_for_form.sw_ver }} {{ form.sw_ver.label_tag }} {{ form.sw_ver }}
     </div>
     <div class="form-group">
         {{ form.critical_temp.label_tag }} {{ form.critical_temp }}

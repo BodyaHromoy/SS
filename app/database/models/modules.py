@@ -53,6 +53,7 @@ class ss_main_big_battary_list(BaseModel):
 
 
 class ss_main_cabinet_settings_for_auto_marking(BaseModel):
+    settings_for = CharField(max_length=255, null=True, verbose_name='SETTINGS_FOR', unique=True)
     cabinet_id_id = ForeignKeyField(Ss_main_cabinet, field=Ss_main_cabinet.shkaf_id, on_delete='CASCADE')
     sn_error = BooleanField(default=False, verbose_name='SN_ERROR')
     year_of_manufacture = CharField(max_length=255, null=True)
@@ -66,3 +67,11 @@ class ss_main_cabinet_settings_for_auto_marking(BaseModel):
     mains_voltage = CharField(max_length=255, null=True)
     reserve_voltage = CharField(max_length=255, null=True)
 
+
+class ss_main_settings_for_settings(BaseModel):
+    settings_for_id = ForeignKeyField(ss_main_cabinet_settings_for_auto_marking, field=ss_main_cabinet_settings_for_auto_marking.settings_for, on_delete='CASCADE')
+    sn_error = BooleanField(default=False, verbose_name='SN_ERROR')
+    year_of_manufacture = BooleanField(default=False, verbose_name='YEAR_OF_MANUFACTURE')
+    max_cycle_times = BooleanField(default=False, verbose_name='MAX_CYCLE_TIMES')
+    vid = BooleanField(default=False, verbose_name='VID')
+    sw_ver = BooleanField(default=False, verbose_name='SW_VER')

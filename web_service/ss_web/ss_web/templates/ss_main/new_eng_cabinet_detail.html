@@ -23,7 +23,8 @@
             <th>SW Ver</th>
             <th>SN</th>
             <th>Marked</th>
-            <th>Message</th>
+            <th>Marked</th>
+            <th>Cycles</th>
             <th>Действие</th>
         </tr>
     </thead>
@@ -36,6 +37,7 @@
             <td>{{ cell.vid|default:"-" }}</td>
             <td>{{ cell.sw_ver|default:"-" }}</td>
             <td>{{ cell.sn|default:"-" }}</td>
+            <td>{{ cell.cycle_times|default:"-" }}</td>
             <td><input type="checkbox" class="checkbox-custom" {% if cell.is_error %}checked{% endif %} disabled></td>
             <td>{{ cell.message|default:"-" }}</td>
             <td>

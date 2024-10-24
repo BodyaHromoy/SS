@@ -2,6 +2,24 @@ from django import forms
 from ..models import *
 
 
+class SettingsForSettingsForm(forms.ModelForm):
+    class Meta:
+        model = Settings_for_settings
+        fields = ['year_of_manufacture', 'max_cycle_times', 'vid', 'sw_ver']
+        labels = {
+            'year_of_manufacture': '',
+            'max_cycle_times': 'Max Cycle Times',
+            'vid': 'Vendor ID',
+            'sw_ver': 'SW Version',
+        }
+        widgets = {
+            'year_of_manufacture': forms.CheckboxInput(),
+            'max_cycle_times': forms.CheckboxInput(),
+            'vid': forms.CheckboxInput(),
+            'sw_ver': forms.CheckboxInput(),
+        }
+
+
 class CabinetSettingsForm(forms.ModelForm):
     class Meta:
         model = Cabinet_settings_for_auto_marking
@@ -11,7 +29,7 @@ class CabinetSettingsForm(forms.ModelForm):
             'reserve_voltage', 'lock_status', 'fan_status'
         ]
         labels = {
-            'sn_error': 'Error',
+            'sn_error': 'Sn Error',
             'year_of_manufacture': 'Catch years',
             'max_cycle_times': 'Max Cycle Times',
             'vid': 'Allow Vendor',

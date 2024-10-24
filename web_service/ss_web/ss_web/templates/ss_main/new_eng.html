@@ -309,6 +309,7 @@
                         <th>VID</th>
                         <th>SW Ver</th>
                         <th>SN</th>
+                        <th>Cycles</th>
                         <th>Marked</th>
                         <th>Message</th>
                     </tr>
@@ -367,7 +368,26 @@
 }
 
 function saveCabinetSettings() {
-    var formData = $('#cabinet-settings-form').serialize();
+    var formDataArray = $('#cabinet-settings-form').serializeArray();
+    var formData = {};
+
+    // Преобразуем значения полей, которые должны быть числами
+    formDataArray.forEach(function (item) {
+        if (item.name === 'max_cycle_times' || item.name === 'year_of_manufacture') {
+            formData[item.name] = parseInt(item.value);  // Преобразуем в целое число
+        } else if (item.name === 'sn_error' || item.name === 'allow_vendor' || item.name === 'allow_sw_ver') {
+            // Учитываем значение чекбоксов: если есть в массиве, значит true
+            formData[item.name] = true;
+        } else {
+            formData[item.name] = item.value;  // Для остальных полей сохраняем строки
+        }
+    });
+
+    // Добавляем значения для неотмеченных чекбоксов (они не отправляются по умолчанию)
+    $('input[type="checkbox"]:not(:checked)').each(function () {
+        formData[this.name] = false;  // Если чекбокс не выбран, сохраняем как false
+    });
+
     var csrfToken = getCSRFToken();
 
     $.ajax({
@@ -375,21 +395,20 @@ function saveCabinetSettings() {
         method: 'POST',
         data: formData,
         headers: {
-            'X-CSRFToken': csrfToken  // Adding CSRF token to the header
+            'X-CSRFToken': csrfToken  // Добавляем CSRF токен в заголовок
         },
         success: function(response) {
-            console.log(response);  // Log the entire response for debugging
+            console.log(response);  // Лог ответа для отладки
             if (response.success) {
-    alert('Settings saved successfully!');
-    $('#cabinetSettingsModal').modal('hide');
-} else {
-    console.log(response.errors);  // Лог ошибок для проверки
-    alert('Error saving settings: ' + JSON.stringify(response.errors));
-}
-
+                alert('Settings saved successfully!');
+                $('#cabinetSettingsModal').modal('hide');
+            } else {
+                console.log(response.errors);  // Лог ошибок для отладки
+                alert('Error saving settings: ' + JSON.stringify(response.errors));
+            }
         },
         error: function(xhr, status, error) {
-            console.log(xhr.responseText);  // Log the error response for debugging
+            console.log(xhr.responseText);  // Лог ошибок для отладки
             alert('Error saving settings');
         }
     });

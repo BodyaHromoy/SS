@@ -187,6 +187,7 @@ class big_battary_list(models.Model):
 
 
 class Cabinet_settings_for_auto_marking (models.Model):
+    settings_for = models.CharField(max_length=255, null=True, verbose_name='SETTINGS_FOR', unique=True)
     cabinet_id = models.ForeignKey(to=Cabinet, on_delete=models.CASCADE, null=False, to_field='shkaf_id')
     sn_error = models.BooleanField(default=False, verbose_name='SN_ERROR')
     year_of_manufacture = models.CharField(max_length=255, null=True)
@@ -199,6 +200,22 @@ class Cabinet_settings_for_auto_marking (models.Model):
     fan_status = models.BooleanField(default=False, verbose_name='FAN_STATUS')
     mains_voltage = models.CharField(max_length=255, null=True)
     reserve_voltage = models.CharField(max_length=255, null=True)
+
+    def __str__(self):
+        return self.settings_for
+
+
+class Settings_for_settings (models.Model):
+    settings_for = models.ForeignKey(to=Cabinet_settings_for_auto_marking, on_delete=models.CASCADE, null=False, to_field='settings_for')
+    sn_error = models.BooleanField(default=False, verbose_name='SN_ERROR')
+    year_of_manufacture = models.BooleanField(default=False, verbose_name='YEAR_OF_MANUFACTURE')
+    max_cycle_times = models.BooleanField(default=False, verbose_name='MAX_CYCLE_TIMES')
+    vid = models.BooleanField(default=False, verbose_name='VID')
+    sw_ver = models.BooleanField(default=False, verbose_name='SW_VER')
+
+    def __str__(self):
+        return self.settings_for
+
 
 
 
