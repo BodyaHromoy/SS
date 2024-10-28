@@ -137,6 +137,12 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
         if int(status_data.get("CYCLE_TIMES")) >= cabinet_setting.max_cycle_times:
             print(status_data.get("CYCLE_TIMES"), "", cabinet_setting.max_cycle_times)
             existing_entry.is_error = True
+            if existing_entry.message:
+                if "-Cycle Times " not in existing_entry.message:
+                    existing_entry.message += ",-Cycle Times "
+            else:
+                existing_entry.message = "-Cycle Times "
+
             print("применены настройки максимального количества циклов")
         else:
             print("количество циклов не превышает максимальное значение")
@@ -161,6 +167,11 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
         else:
             print("версия ПО не совпадает с настройками")
             existing_entry.is_error = True
+            if existing_entry.message:
+                if "-SW version " not in existing_entry.message:
+                    existing_entry.message += ",-SW version "
+            else:
+                existing_entry.message = "-SW version "
     else:
         print("проверка версии ПО отключена")
 
@@ -186,18 +197,38 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
         else:
             print("вендор не совпадает с настройками")
             existing_entry.is_error = True
+            if existing_entry.message:
+                if "-Vendor " not in existing_entry.message:
+                    existing_entry.message += ",-Vendor "
+            else:
+                existing_entry.message = "-Vendor "
     else:
         print("проверка вендора отключена")
 
     existing_entry.voltage_cur = status_data.get("VOLTAGE_CUR")
     existing_entry.time = current_time
-    existing_entry.sn = sanitize(status_data.get("SN"))
+
+    sanitized_sn = sanitize(status_data.get("SN"))
+    existing_entry.sn = sanitized_sn
+
+    if sanitized_sn != status_data.get("SN"):
+        existing_entry.is_error = True
+        if existing_entry.message:
+            if "-SN Error" not in existing_entry.message:
+                existing_entry.message += ",-SN Error"
+        else:
+            existing_entry.message = "-SN Error"
 
     if settings_for_settings.year_of_manufacture:
         print("Проверка года включена")
         if extract_year_from_sn(existing_entry.sn) == cabinet_setting.year_of_manufacture:
             print(extract_year_from_sn(existing_entry.sn), "", cabinet_setting.year_of_manufacture)
             existing_entry.is_error = True
+            if existing_entry.message:
+                if "-Catch Year" not in existing_entry.message:
+                    existing_entry.message += ",-Catch Year"
+            else:
+                existing_entry.message = "-Catch Year"
             print("Проверка не пройдена")
         else:
             print("Проверка пройдена")
@@ -215,9 +246,9 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
     else:
         existing_entry.status = "not_charging"
 
-    sn = sanitize(status_data.get("SN"))
-    cycle_times = status_data.get("CYCLE_TIMES")
-    update_or_add_big_battery_list(sn, cycle_times, stat_id)
+    #sn = sanitize(status_data.get("SN"))
+    #cycle_times = status_data.get("CYCLE_TIMES")
+    #update_or_add_big_battery_list(sn, cycle_times, stat_id)
 
     if en_error == existing_entry.is_error:
         print("статусы ошибок совпадают")
@@ -249,8 +280,11 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
 
 
 def move_to_report(existing_entry, reason):
+    import datetime
+
     almaty_timezone = pytz.timezone('Asia/Almaty')
-    current_time = datetime.datetime.now(almaty_timezone).replace(tzinfo=None).strftime('%Y-%m-%d %H:%M:%S')
+    current_time_with_tz = datetime.datetime.now(almaty_timezone)
+    current_time = current_time_with_tz.replace(tzinfo=None).strftime('%Y-%m-%d %H:%M:%S')
     print(f"Время: {current_time}")
 
     report_entry = Ss_main_report.create(
@@ -275,17 +309,21 @@ def move_to_report(existing_entry, reason):
         pcb_ver=existing_entry.pcb_ver,
         remaining_cap=existing_entry.remaining_cap,
         remaining_cap_percent=existing_entry.remaining_cap_percent,
+        sn=existing_entry.sn,
         sw_ver=existing_entry.sw_ver,
         temp_cur1=existing_entry.temp_cur1,
         temp_cur2=existing_entry.temp_cur2,
         total_capacity=existing_entry.total_capacity,
         vid=existing_entry.vid,
         voltage_cur=existing_entry.voltage_cur,
+        session_start=existing_entry.session_start,
+        session_end=existing_entry.session_end,
         time=current_time,
-        reason=reason
+        reason=reason,
+        city=find_city_name(existing_entry.cabinet_id_id.city.city_name),
+        zone=find_zone_name(existing_entry.cabinet_id_id.zone.zone_name)
     )
-    report_entry.save()
-    print(f"Запись перенесена в отчет: {report_entry.stationid}")
+    print(f"Перемещена строка с Endpoint ID {existing_entry.vir_sn_eid} в отчет из-за {reason}.")
 
 
 def find_city_name(city_name):

@@ -191,7 +191,7 @@ class Cabinet_settings_for_auto_marking (models.Model):
     cabinet_id = models.ForeignKey(to=Cabinet, on_delete=models.CASCADE, null=False, to_field='shkaf_id')
     sn_error = models.BooleanField(default=False, verbose_name='SN_ERROR')
     year_of_manufacture = models.CharField(max_length=255, null=True)
-    max_cycle_times = models.IntegerField(null=True)
+    max_cycle_times = models.CharField(null=True)
     vid = models.CharField(max_length=255, null=True)
     sw_ver = models.CharField(max_length=255, null=True)
     critical_temp = models.IntegerField(null=True)

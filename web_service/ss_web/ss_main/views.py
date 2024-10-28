@@ -110,6 +110,7 @@ def cabinet_settings(request, shkaf_id):
             settings_for_form.save()
 
             Cell.objects.filter(cabinet_id=cabinet).update(is_error=False)
+            Cell.objects.filter(cabinet_id=cabinet).update(message=None)
 
             return JsonResponse({'success': True})
         else:
@@ -123,9 +124,6 @@ def cabinet_settings(request, shkaf_id):
         'settings_for_form': settings_for_form,
         'cabinet': cabinet
     })
-
-
-
 
 
 @user_passes_test(is_engineer)

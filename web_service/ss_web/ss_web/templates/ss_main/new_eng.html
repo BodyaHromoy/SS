@@ -311,7 +311,7 @@
                         <th>SN</th>
                         <th>Cycles</th>
                         <th>Marked</th>
-                        <th>Message</th>
+                        <th>Ban Message</th>
                     </tr>
                     </thead>
                     <tbody id="cell-list"></tbody>
@@ -564,28 +564,27 @@ function saveCabinetSettings() {
         });
     }
 
-    function updateMarkedFilter() {
-        const markedValues = new Set();
-        $("#cell-list tr").each(function() {
-            const marked = $(this).find("td:nth-child(7) input").is(':checked') ? "true" : "false";
-            markedValues.add(marked);
-        });
-        const $markedFilter = $("#marked-filter");
-        $markedFilter.find('option:not(:first)').remove();
-        markedValues.forEach(marked => {
-            $markedFilter.append(`<option value="${marked}">${marked === "true" ? "Marked" : "Not Marked"}</option>`);
-        });
-    }
+function updateMarkedFilter() {
+    const markedValues = new Set();
+    $("#cell-list tr").each(function() {
+        const marked = $(this).find("td:nth-child(8) input").is(':checked') ? "true" : "false";
+        markedValues.add(marked);
+    });
+    const $markedFilter = $("#marked-filter");
+    $markedFilter.find('option:not(:first)').remove();
+    markedValues.forEach(marked => {
+        $markedFilter.append(`<option value="${marked}">${marked === "true" ? "Marked" : "Not Marked"}</option>`);
+    });
+}
 
-    function applyMarkedFilter() {
-        const selectedMarked = $("#marked-filter").val();
-        saveFilter("marked-filter", selectedMarked);
-        $("#cell-list tr").filter(function() {
-            const isChecked = $(this).find("td:nth-child(7) input").is(':checked') ? "true" : "false";
-            $(this).toggle(!selectedMarked || isChecked === selectedMarked);
-        });
-    }
-
+function applyMarkedFilter() {
+    const selectedMarked = $("#marked-filter").val();
+    saveFilter("marked-filter", selectedMarked);
+    $("#cell-list tr").filter(function() {
+        const isChecked = $(this).find("td:nth-child(8) input").is(':checked') ? "true" : "false";
+        $(this).toggle(!selectedMarked || isChecked === selectedMarked);
+    });
+}
     $("#status-filter").on("change", function() {
         applyStatusFilter();
     });
