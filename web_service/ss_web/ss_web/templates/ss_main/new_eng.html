@@ -57,7 +57,7 @@
         }
 
         .filter-container .form-control {
-            margin-right: 10px;
+            margin-right: 7px;
         }
 
         .filter-container .btn {
@@ -73,7 +73,7 @@
         }
 
         .btn-custom {
-            margin: 5px;
+            margin: 0;
         }
 
         .table tbody tr:hover {
@@ -160,23 +160,56 @@
             left: 200px;
             width: calc(100% - 200px);
             background-color: #f1f5f9;
-            padding: 10px 20px;
+            padding: 15px 20px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             z-index: 1000;
         }
 
         .fixed-header .filter-container {
-            margin-top: 20px;
-            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
         }
 
-        .fixed-header .button-container {
-            margin-top: 20px;
+        .fixed-header .filter-container .form-control,
+        .fixed-header .filter-container .cabinet-info {
+            height: 40px;
+            font-size: 16px;
+            padding: 0 px;
         }
 
-        .fixed-header .btn {
-            margin: 5px;
+        .fixed-header .button-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
         }
+
+        .fixed-header .button-row .btn {
+            font-size: 16px;
+            padding: 10px 15px;
+        }
+
+
+        .cabinet-info {
+    display: flex;
+    align-items: center;       /* Центровка по вертикали */
+    justify-content: center;    /* Центровка по горизонтали */
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    padding: 10px;
+    width: 80px;
+    height: 100%;              /* Убедитесь, что этот блок занимает всю высоту */
+    box-sizing: border-box;
+    text-align: center;
+    flex-direction: column;     /* Убедитесь, что текст выровнен как столбец */
+
+    /* Добавьте отступы между элементами */
+}
+
+.cabinet-info p {
+    margin: 0;                  /* Уберите внешние отступы */
+    width: 100%;                /* Параграф занимает всю ширину */
+}
 
     </style>
 </head>
@@ -215,7 +248,7 @@
             <div id="main-view">
                 <footer class="fixed-header">
                     <div class="row my-4 filter-container">
-                        <div class="col-md-6">
+                        <div class="col-md-3">
                             <input type="text" class="form-control" placeholder="Поиск" id="search-input">
                         </div>
                         <div class="col-md-3">
@@ -265,7 +298,6 @@
                                 <button class="btn btn-primary" onclick="showCabinetDetails('{{ cabinet.shkaf_id }}')">
                                     Check slots
                                 </button>
-                               <button class="btn btn-secondary" data-toggle="modal" data-target="#cabinetSettingsModal" onclick="loadCabinetSettings('{{ cabinet.shkaf_id }}')">Settings</button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -276,6 +308,9 @@
             <div id="details-view" style="display: none;">
                 <footer class="fixed-header">
                     <div class="row filter-container">
+                        <div class="col-md-3 cabinet-info">
+                            <p>Cabinet № <span id="cabinet-number"></span></p>
+                        </div>
                         <div class="col-md-3">
                             <select class="form-control" id="status-filter">
                                 <option value="">All statuses</option>
@@ -294,8 +329,8 @@
                     </div>
                     <div class="button-container">
                         <button class="btn btn-secondary btn-custom" onclick="showMainView()">← Back</button>
+                        <button class="btn btn-secondary" data-toggle="modal" data-target="#cabinetSettingsModal" onclick="loadCabinetSettings(document.getElementById('cabinet-number').innerText)">Settings</button>
                         <button class="btn btn-primary btn-custom" onclick="refreshData()">↻ Refresh</button>
-
                     </div>
                 </footer>
                 <div id="cabinet-details"></div>
@@ -321,7 +356,7 @@
     </div>
 </div>
 
-<!-- Modal for Cabinet Settings -->
+<!-- Settings -->
 <div class="modal fade" id="cabinetSettingsModal" tabindex="-1" role="dialog" aria-labelledby="cabinetSettingsModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -350,20 +385,20 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script>
 
-    function loadCabinetSettings(cabinetId) {
-        $.ajax({
-            url: `/cabinet_settings/${cabinetId}/`,  // Этот URL должен указывать на ваш view для загрузки настроек
-            method: 'GET',
-            success: function (data) {
-                $('#cabinet-settings-content').html(data);
-            },
-            error: function () {
-                $('#cabinet-settings-content').html('<p>Error loading settings</p>');
-            }
-        });
-    }
+function loadCabinetSettings(cabinetId) {
+    $.ajax({
+        url: `/cabinet_settings/${cabinetId}/`,  // Ensure this URL correctly includes the cabinetId
+        method: 'GET',
+        success: function (data) {
+            $('#cabinet-settings-content').html(data);
+        },
+        error: function () {
+            $('#cabinet-settings-content').html('<p>Error loading settings</p>');
+        }
+    });
+}
 
-    function getCSRFToken() {
+function getCSRFToken() {
     return document.querySelector('[name=csrfmiddlewaretoken]').value;
 }
 
@@ -475,24 +510,25 @@ function saveCabinetSettings() {
     }
 
     function showCabinetDetails(shkaf_id) {
-        $('#loading-indicator').show();
+    $('#loading-indicator').show();
 
-        $.get("/new_eng_cabinet/" + shkaf_id + "/", function(data) {
-            $("#cabinet-details").html($(data).find("#cabinet-details").html());
-            $("#cell-list").html($(data).find("#cell-list").html());
-            $("#cabinet-id-hidden").val(shkaf_id);
-            $("#main-view").hide();
-            $("#details-view").show();
-            updateStatusFilter();
-            updateSwVerFilter();
-            updateMarkedFilter();
-            restoreFilters();
-        }).fail(function() {
-            console.error("Ошибка при загрузке данных.");
-        }).always(function() {
-            $('#loading-indicator').hide();
-        });
-    }
+    $.get("/new_eng_cabinet/" + shkaf_id + "/", function(data) {
+        $("#cabinet-details").html($(data).find("#cabinet-details").html());
+        $("#cell-list").html($(data).find("#cell-list").html());
+        $("#cabinet-id-hidden").val(shkaf_id);
+        $("#cabinet-number").text(shkaf_id);  // Set the cabinet number
+        $("#main-view").hide();
+        $("#details-view").show();
+        updateStatusFilter();
+        updateSwVerFilter();
+        updateMarkedFilter();
+        restoreFilters();
+    }).fail(function() {
+        console.error("Ошибка при загрузке данных.");
+    }).always(function() {
+        $('#loading-indicator').hide();
+    });
+}
 
     function showMainView() {
         $("#details-view").hide();

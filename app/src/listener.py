@@ -26,7 +26,6 @@ def initialize_cells():
 
 
 def reset_cell_fields(cell):
-    """ Reset fields to default values. """
     fields_to_reset = [
         "sn", "balance_status", "capacity", "cap_coulo", "cap_percent",
         "cap_vol", "charge_cap_h", "charge_cap_l", "charge_times",
@@ -538,6 +537,7 @@ async def check_inactive_endpoints():
                     move_to_report(entry, reason="inactive")
                     entry.balance_status = None
                     entry.capacity = None
+                    entry.sn = None
                     entry.cap_coulo = None
                     entry.cap_percent = None
                     entry.cap_vol = None
