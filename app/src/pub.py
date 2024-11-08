@@ -3,10 +3,10 @@ import threading
 import time
 
 
-BROKER = '192.168.1.15'
+BROKER = '192.168.1.98'
 PORT = 1883
-TOPIC_SUB = 'test/topic/pub'
-TOPIC_PUB = 'test/topic/pub'
+TOPIC_SUB = 'test'
+TOPIC_PUB = 'test'
 CLIENT_ID = 'python-mqtt-client'
 
 
@@ -23,10 +23,11 @@ def on_message(client, userdata, msg):
 
 
 def publish(client):
+    while True:
         message = f"Сообщение отправлено в {time.ctime()}"
         client.publish(TOPIC_PUB, message)
         print(f"Отправлено сообщение: {message}")
-        time.sleep(5)
+        time.sleep(1)
 
 
 def run():
