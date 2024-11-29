@@ -16,12 +16,15 @@ from django.shortcuts import redirect
 from django.shortcuts import render, get_object_or_404
 from django.db.models import F, FloatField
 import paho.mqtt.client as mqtt
-
+import logging
 from .decorators.auth_decorators import staff_required
 from .forms.auth_form import CustomAuthenticationForm
 from .forms.forms import ReportFilterForm, CourierCreationForm, LogicCreationForm, CabinetSettingsForm, \
     SettingsForSettingsForm
 from .models import *
+
+
+logger = logging.getLogger(__name__)
 
 
 def is_courier(user):
@@ -136,8 +139,8 @@ def main(request):
 @login_required
 @user_passes_test(is_logistician)
 def create_courier(request):
-    if not request.user.role == 'logistician':
-        return HttpResponseForbidden()
+    #if not request.user.role == 'logistician':
+     #   return HttpResponseForbidden()
 
     if request.method == 'POST':
         form = CourierCreationForm(request.POST)
@@ -456,11 +459,11 @@ def cabinet_details(request, shkaf_id):
 
     for cell in cells:
         status = cell.status
-        sn = cell.endpointid
+        endpointid = cell.endpointid
         cap_percent = cell.cap_percent or "N/A"
         if status not in status_slots:
             status_slots[status] = []
-        status_slots[status].append({'sn': sn, 'charge': cap_percent})
+        status_slots[status].append({'endpointid': endpointid, 'charge': cap_percent})
 
     average_charge = cells.annotate(cap_percent_as_float=Cast('cap_percent', FloatField())).aggregate(
         average_charge=Avg('cap_percent_as_float'))['average_charge']
@@ -474,11 +477,13 @@ def cabinet_details(request, shkaf_id):
         'average_charge': average_charge,
         'error_slots': error_slots,
     }
-    return render(request, 'ss_main/cabinet_details.html', context)
+    return render(request, 'ss_main/scout_v2.html', context)
 
 
 # Обновление деталей шкафа
 def update_cabinet_data(request, shkaf_id):
+    logger.debug(f"Headers: {request.headers}")
+    logger.debug(f"Method: {request.method}")
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
 
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -493,7 +498,7 @@ def update_cabinet_data(request, shkaf_id):
             status = cell.status
             if status not in status_slots:
                 status_slots[status] = []
-            status_slots[status].append({'sn': cell.endpointid, 'charge': cell.cap_percent})
+            status_slots[status].append({'endpointid': cell.endpointid, 'charge': cell.cap_percent})
 
         # Fetch the error slots
         error_slots = cells.filter(is_error=True)

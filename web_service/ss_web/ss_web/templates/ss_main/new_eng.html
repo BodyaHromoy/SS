@@ -85,7 +85,17 @@
         }
 
         .button-container {
+            display: flex;
+            align-items: center;
             margin-top: 20px;
+        }
+
+        .back-button {
+            margin-right: 10px;
+        }
+
+        .settings-button {
+            margin-left: auto;
         }
 
         .logout-button {
@@ -207,7 +217,6 @@
     margin: 0;
     width: 100%;
 }
-
     </style>
 </head>
 <body>
@@ -227,6 +236,8 @@
                                         href="{% url 'new_eng' %}">Main</a></li>
                 <li class="nav-item"><a class="nav-link btn btn-primary btn-sm btn-narrow mt-2"
                                         href="{% url 'report' %}">Reports</a></li>
+                <li class="nav-item"><a class="nav-link btn btn-primary btn-sm btn-narrow mt-2"
+                                        href= "http://192.168.1.98:8080" >TOP SECRET!!!</a></li>
                 <form method="post" action="{% url 'logout' %}" class="logout-form">
                     {% csrf_token %}
                     <button class="btn btn-danger logout-button">Exit</button>
@@ -306,7 +317,7 @@
                 <footer class="fixed-header">
                     <div class="row filter-container">
                         <div class="col-md-3 cabinet-info">
-                            <p>Cabinet № <span id="cabinet-number"></span></p>
+                            <p>Box № <span id="cabinet-number"></span></p>
                         </div>
                         <div class="col-md-3">
                             <select class="form-control" id="status-filter">
@@ -325,9 +336,9 @@
                         </div>
                     </div>
                     <div class="button-container">
-                        <button class="btn btn-secondary btn-custom" onclick="showMainView()">← Back</button>
-                        <button class="btn btn-secondary" data-toggle="modal" data-target="#cabinetSettingsModal" onclick="loadCabinetSettings(document.getElementById('cabinet-number').innerText)">Settings</button>
-                        <button class="btn btn-primary btn-custom" onclick="refreshData()">↻ Refresh</button>
+                            <button class="btn btn-secondary btn-custom back-button" onclick="showMainView()">← Back</button>
+                            <button class="btn btn-primary btn-custom" onclick="refreshData()">↻ Refresh</button>
+                            <button class="btn btn-secondary settings-button" data-toggle="modal" data-target="#cabinetSettingsModal" onclick="loadCabinetSettings(document.getElementById('cabinet-number').innerText)">Settings</button>
                     </div>
                 </footer>
                 <div id="cabinet-details"></div>

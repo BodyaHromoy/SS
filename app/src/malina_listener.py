@@ -1,19 +1,21 @@
 import asyncio
 import datetime
 import json
-from peewee import *
-from paho.mqtt.client import Client
+import paho.mqtt.publish as publish
 import pytz
+
+from paho.mqtt.client import Client
+from peewee import *
 
 
 try:
-    db = PostgresqlDatabase('testik6', user='bogdanafter', password='bogdanafter', host='192.168.1.206', port=5432)
+    db = PostgresqlDatabase('test1', user='postgres', password='1337', host='localhost', port=5432)
     print(":)")
 except:
     print(":(")
 
 try:
-    db2 = PostgresqlDatabase('testik7', user='bogdanafter', password='bogdanafter', host='192.168.1.206', port=5432)
+    db2 = PostgresqlDatabase('test2', user='postgres', password='1337', host='localhost', port=5432)
     print(":)")
 except:
     print(":(")
@@ -58,7 +60,7 @@ class Ss_main_cabinet(BaseModel):
 
 class ss_main_cell(BaseModel):
     endpointid = IntegerField(column_name='endpointid')
-    cabinet_id_id = ForeignKeyField(Ss_main_cabinet, field=Ss_main_cabinet.shkaf_id, related_name='shkaf_id', on_delete='CASCADE')
+    cabinet_id_id = ForeignKeyField(Ss_main_cabinet, field=Ss_main_cabinet.shkaf_id, on_delete='CASCADE')
     balance_status = CharField(null=True, column_name='balance_status')
     capacity = CharField(null=True, column_name='capacity')
     cap_coulo = CharField(null=True, column_name='cap_coulo')
@@ -86,11 +88,49 @@ class ss_main_cell(BaseModel):
     total_capacity = CharField(null=True, column_name='total_capacity')
     vid = CharField(null=True, column_name='vid')
     voltage_cur = CharField(null=True, column_name='voltage_cur')
-    session_start = CharField(null=True, column_name='session_start')
+    session_start = CharField(null=True, verbose_name='session_start')
     session_end = CharField(null=True, verbose_name='session_end')
     status = CharField(null=True, verbose_name='status')
     time = CharField(null=True, column_name='time')
     vir_sn_eid = TextField(null=True, verbose_name='VIR_SN_EID')
+    is_error = BooleanField(null=True, verbose_name='is_error', default=False)
+    message = CharField(null=True, verbose_name='MESSAGE')
+
+
+class ss_main_marked(BaseModel):
+    sn = CharField(null=True, verbose_name='SN')
+
+
+class ss_main_big_battary_list(BaseModel):
+    sn = CharField(max_length=255, null=True, verbose_name='SN')
+    year = CharField(max_length=255, null=True, verbose_name='YEAR')
+    cycle_times = CharField(max_length=255, null=True, verbose_name='CYCLE_TIMES')
+    is_tired = BooleanField(default=False, verbose_name='IS_TIRED')
+
+
+class ss_main_cabinet_settings_for_auto_marking(BaseModel):
+    settings_for = CharField(max_length=255, null=True, verbose_name='SETTINGS_FOR', unique=True)
+    cabinet_id_id = ForeignKeyField(Ss_main_cabinet, field=Ss_main_cabinet.shkaf_id, on_delete='CASCADE')
+    sn_error = BooleanField(default=False, verbose_name='SN_ERROR')
+    year_of_manufacture = CharField(max_length=255, null=True)
+    max_cycle_times = IntegerField(null=True)
+    vid = CharField(max_length=255, null=True)
+    sw_ver = CharField(max_length=255, null=True)
+    critical_temp = IntegerField(null=True)
+    lock_status = BooleanField(default=False, verbose_name='LOCK_STATUS')
+    temp_inside = IntegerField(null=True)
+    fan_status = BooleanField(default=False, verbose_name='FAN_STATUS')
+    mains_voltage = CharField(max_length=255, null=True)
+    reserve_voltage = CharField(max_length=255, null=True)
+
+
+class ss_main_settings_for_settings(BaseModel):
+    settings_for_id = ForeignKeyField(ss_main_cabinet_settings_for_auto_marking, field=ss_main_cabinet_settings_for_auto_marking.settings_for, on_delete='CASCADE')
+    sn_error = BooleanField(default=False, verbose_name='SN_ERROR')
+    year_of_manufacture = BooleanField(default=False, verbose_name='YEAR_OF_MANUFACTURE')
+    max_cycle_times = BooleanField(default=False, verbose_name='MAX_CYCLE_TIMES')
+    vid = BooleanField(default=False, verbose_name='VID')
+    sw_ver = BooleanField(default=False, verbose_name='SW_VER')
 
 
 class Ss_main_report(BaseModel2):
@@ -134,47 +174,35 @@ active_v_sn = {}
 
 def initialize_cells():
     try:
-        for cell in ss_main_cell.select():
-            cell.sn = None
-            cell.balance_status = None
-            cell.capacity = None
-            cell.cap_coulo = None
-            cell.cap_percent = None
-            cell.cap_vol = None
-            cell.charge_cap_h = None
-            cell.charge_cap_l = None
-            cell.charge_times = None
-            cell.core_volt = None
-            cell.current_cur = None
-            cell.cycle_times = None
-            cell.design_voltage = None
-            cell.fun_boolean = None
-            cell.healthy = None
-            cell.ochg_state = None
-            cell.odis_state = None
-            cell.over_discharge_times = None
-            cell.pcb_ver = None
-            cell.remaining_cap = None
-            cell.remaining_cap_percent = None
-            cell.sw_ver = None
-            cell.temp_cur1 = None
-            cell.temp_cur2 = None
-            cell.total_capacity = None
-            cell.vid = None
-            cell.voltage_cur = None
-            cell.session_start = None
-            cell.session_end = None
-            cell.time = None
-            cell.status = "initialization"
+        cells = list(ss_main_cell.select())
+        for cell in cells:
+            reset_cell_fields(cell)
             cell.save()
         print("Все записи обнулены успешно.")
     except Exception as e:
         print(f"Ошибка при инициализации ячеек: {e}")
 
 
+def reset_cell_fields(cell):
+    fields_to_reset = [
+        "sn", "balance_status", "capacity", "cap_coulo", "cap_percent",
+        "cap_vol", "charge_cap_h", "charge_cap_l", "charge_times",
+        "core_volt", "current_cur", "cycle_times", "design_voltage",
+        "fun_boolean", "healthy", "ochg_state", "odis_state",
+        "over_discharge_times", "pcb_ver", "remaining_cap",
+        "remaining_cap_percent", "sw_ver", "temp_cur1", "temp_cur2",
+        "total_capacity", "vid", "voltage_cur", "session_start",
+        "session_end", "time", "status", "message"
+    ]
+    for field in fields_to_reset:
+        setattr(cell, field, None)
+    cell.status = "initialization"
+
+
 def initialize_active_v_sn():
     try:
-        for cell in ss_main_cell.select():
+        cells = list(ss_main_cell.select())
+        for cell in cells:
             vir_sn_eid = cell.vir_sn_eid
             if vir_sn_eid:
                 active_v_sn[vir_sn_eid] = datetime.datetime.now()
@@ -185,24 +213,74 @@ def initialize_active_v_sn():
 
 def sanitize(value):
     if value and '\x00' in value:
-        print(f"Найден нулевой байт в значении:   {value}")
-        return "ERROR"
+        print(f"Найден нулевой байт в значении: {value}")
+        sanitized_value = value.replace('\x00', '')
+        if not ss_main_marked.select().where(ss_main_marked.sn == sanitized_value).exists():
+            ss_main_marked.create(sn=sanitized_value)
+        else:
+            existing_entry = ss_main_marked.get(ss_main_marked.sn == sanitized_value)
+            existing_entry.is_error = True
+            existing_entry.save()
+        return sanitized_value
     return value
 
 
-def update_entry(existing_entry, stat_id, status_data):
-    import datetime
+def extract_year_from_sn(sn):
+    if sn[5:7].isdigit():
+        return "20" + sn[5:7]
+    else:
+        print(f"Не удалось извлечь год из серийного номера: {sn}")
+        return None
 
+
+def update_or_add_big_battery_list(sn, cycle_times, stat_id):
+    cabinet_setting = ss_main_cabinet_settings_for_auto_marking.get(
+        ss_main_cabinet_settings_for_auto_marking.cabinet_id_id == stat_id
+    )
+
+    year = extract_year_from_sn(sn)
+    if not year:
+        print(f"Не удалось обновить запись: неверный серийный номер {sn}")
+        return
+
+    existing_entry = ss_main_big_battary_list.select().where(ss_main_big_battary_list.sn == sn).first()
+
+    if existing_entry:
+        if existing_entry.cycle_times != cycle_times or existing_entry.year != year:
+            print(f"Обновление записи для SN: {sn}")
+            existing_entry.year = year
+            existing_entry.cycle_times = cycle_times
+            existing_entry.is_tired=False                       # (int(cycle_times) > cabinet_setting.max_cycle_times)
+            existing_entry.save()
+        else:
+            print(f"Запись для SN: {sn} уже актуальна")
+    else:
+        print(f"Добавление новой записи для SN: {sn}")
+        ss_main_big_battary_list.create(
+            sn=sn,
+            year=year,
+            cycle_times=cycle_times,
+            is_tired=False                                      # (int(cycle_times) > cabinet_setting.max_cycle_times)
+        )
+
+
+def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
     almaty_timezone = pytz.timezone('Asia/Almaty')
-    time_wth_tzinfo = datetime.datetime.now(almaty_timezone)
-    current_time = time_wth_tzinfo.replace(tzinfo=None)
+    current_time = datetime.datetime.now(almaty_timezone).replace(tzinfo=None)
+
+    cabinet_setting = ss_main_cabinet_settings_for_auto_marking.get(
+        ss_main_cabinet_settings_for_auto_marking.cabinet_id_id == stat_id
+    )
+    print("Получены настройки для шкафа", cabinet_setting.cabinet_id_id.shkaf_id)
+
+    settings_for_settings = ss_main_settings_for_settings.get(ss_main_settings_for_settings.settings_for_id == stat_id)
+    print("Получены настройки для блять настроек", settings_for_settings.settings_for_id.settings_for)
 
     existing_entry.cabinet_id_id = stat_id
     existing_entry.balance_status = status_data.get("BALANCE_STATUS")
     existing_entry.capacity = status_data.get("CAPACITY")
     existing_entry.cap_coulo = status_data.get("CAP_COULO")
-    cap_percent = int(status_data.get("CAP_PERCENT", "0")) if status_data.get("CAP_PERCENT") else 0
-    existing_entry.cap_percent = cap_percent
+    existing_entry.cap_percent = int(status_data.get("CAP_PERCENT", "0")) if status_data.get("CAP_PERCENT") else 0
     existing_entry.cap_vol = status_data.get("CAP_VOL")
     existing_entry.charge_cap_h = status_data.get("CHARGE_CAP_H")
     existing_entry.charge_cap_l = status_data.get("CHARGE_CAP_L")
@@ -210,6 +288,24 @@ def update_entry(existing_entry, stat_id, status_data):
     existing_entry.core_volt = status_data.get("CORE_VOLT")
     existing_entry.current_cur = status_data.get("CURRENT_CUR")
     existing_entry.cycle_times = status_data.get("CYCLE_TIMES")
+
+    if settings_for_settings.max_cycle_times:
+        print("включена проверка циклов")
+        if int(status_data.get("CYCLE_TIMES")) >= cabinet_setting.max_cycle_times:
+            print(status_data.get("CYCLE_TIMES"), "", cabinet_setting.max_cycle_times)
+            existing_entry.is_error = True
+            if existing_entry.message:
+                if "-Cycle Times " not in existing_entry.message:
+                    existing_entry.message += ",-Cycle Times "
+            else:
+                existing_entry.message = "-Cycle Times "
+
+            print("применены настройки максимального количества циклов")
+        else:
+            print("количество циклов не превышает максимальное значение")
+    else:
+        print("проверка циклов отключена")
+
     existing_entry.design_voltage = status_data.get("DESIGN_VOLTAGE")
     existing_entry.fun_boolean = status_data.get("FUN_BOOLEAN")
     existing_entry.healthy = status_data.get("HEALTHY")
@@ -220,36 +316,123 @@ def update_entry(existing_entry, stat_id, status_data):
     existing_entry.remaining_cap = status_data.get("REMAINING_CAP")
     existing_entry.remaining_cap_percent = status_data.get("REMAINING_CAP_PERCENT")
     existing_entry.sw_ver = status_data.get("SW_VER")
+
+    if settings_for_settings.sw_ver:
+        print("включена проверка версии ПО")
+        if existing_entry.sw_ver == cabinet_setting.sw_ver:
+            print("версия ПО совпадает с разрешенной")
+        else:
+            print("версия ПО не совпадает с настройками")
+            existing_entry.is_error = True
+            if existing_entry.message:
+                if "-SW version " not in existing_entry.message:
+                    existing_entry.message += ",-SW version "
+            else:
+                existing_entry.message = "-SW version "
+    else:
+        print("проверка версии ПО отключена")
+
     existing_entry.temp_cur1 = status_data.get("TEMP_CUR1")
     existing_entry.temp_cur2 = status_data.get("TEMP_CUR2")
     existing_entry.total_capacity = status_data.get("TOTAL_CAPACITY")
 
-    if "4e344007" in str(status_data.get("VID")):
-        existing_entry.vid = "JET"
-    elif "4e34300e" in str(status_data.get("VID")):
-        existing_entry.vid = "WHOOSH"
-    elif "4e34400d" in str(status_data.get("VID")):
-        existing_entry.vid = "YANDEX"
-    elif "4e34400a" in str(status_data.get("VID")):
-        existing_entry.vid = "SVING"
-    elif "4e34300c" in str(status_data.get("VID")):
-        existing_entry.vid = "VOI"
+    vid_mapping = {
+        "4e344007": "JET",
+        "4e34300e": "WHOOSH",
+        "4e34400d": "YANDEX",
+        "4e34400a": "SWING",
+        "4e34300c": "VOI"
+    }
+
+    existing_entry.vid = next((vid for key, vid in vid_mapping.items() if key in str(status_data.get("VID"))),
+                              status_data.get("VID"))
+
+    if settings_for_settings.vid:
+        print("включена проверка вендора")
+        if existing_entry.vid == cabinet_setting.vid:
+            print("вендор cовпадает с настройками")
+        else:
+            print("вендор не совпадает с настройками")
+            existing_entry.is_error = True
+            if existing_entry.message:
+                if "-Vendor " not in existing_entry.message:
+                    existing_entry.message += ",-Vendor "
+            else:
+                existing_entry.message = "-Vendor "
     else:
-        existing_entry.vid = status_data.get("VID")
+        print("проверка вендора отключена")
 
     existing_entry.voltage_cur = status_data.get("VOLTAGE_CUR")
     existing_entry.time = current_time
-    existing_entry.sn = sanitize(status_data.get("SN"))
+
+    sanitized_sn = sanitize(status_data.get("SN"))
+    existing_entry.sn = sanitized_sn
+
+    if sanitized_sn != status_data.get("SN"):
+        existing_entry.is_error = True
+        if existing_entry.message:
+            if "-SN Error" not in existing_entry.message:
+                existing_entry.message += ",-SN Error"
+        else:
+            existing_entry.message = "-SN Error"
+
+    if settings_for_settings.year_of_manufacture:
+        print("Проверка года включена")
+        if extract_year_from_sn(existing_entry.sn) == cabinet_setting.year_of_manufacture:
+            print(extract_year_from_sn(existing_entry.sn), "", cabinet_setting.year_of_manufacture)
+            existing_entry.is_error = True
+            if existing_entry.message:
+                if "-Catch Year" not in existing_entry.message:
+                    existing_entry.message += ",-Catch Year"
+            else:
+                existing_entry.message = "-Catch Year"
+            print("Проверка не пройдена")
+        else:
+            print("Проверка пройдена")
+    else:
+        print("Проверка года отключена")
 
     if not existing_entry.session_start:
         existing_entry.session_start = current_time
     existing_entry.session_end = current_time
-    if cap_percent >= 91:
+
+    if existing_entry.cap_percent >= 91:
         existing_entry.status = "ready"
     elif "4" in str(status_data.get("FUN_BOOLEAN")):
         existing_entry.status = "charging"
     else:
         existing_entry.status = "not_charging"
+
+
+    cycle_times = status_data.get("CYCLE_TIMES")
+    update_or_add_big_battery_list(sanitized_sn, cycle_times, stat_id)
+
+
+    if en_error == existing_entry.is_error:
+        print("статусы ошибок совпадают")
+    elif en_error == False and existing_entry.is_error == True:
+        print("слот фолс я тру")
+        json_data = {
+            "Type": "cmd",
+            "StationID": int(stat_id),
+            "EndpointID": int(end_id),
+            "CMD": int(1),
+            "SN": sanitize(status_data.get("SN"))
+        }
+        publish.single("test/back", json.dumps(json_data), hostname="192.168.1.15")
+    elif en_error == True and existing_entry.is_error == False:
+        print("слот тру я фолс")
+        json_data = {
+            "Type": "cmd",
+            "StationID": int(stat_id),
+            "EndpointID": int(end_id),
+            "CMD": int(0),
+            "SN": sanitize(status_data.get("SN"))
+        }
+        publish.single("test/back", json.dumps(json_data), hostname="192.168.1.15")
+    else:
+        print("ну хз выключи компьютер")
+
 
     existing_entry.save()
     print(f"Информация для {existing_entry.vir_sn_eid} обновлена.")
@@ -357,8 +540,10 @@ def create_new_entry(end_id, stat_id, sn=None, status_data=None, status="empty",
 async def sort(msg):
     data = json.loads(msg.payload.decode('utf-8'))
     message_type = data.get('Type')
+    topic = msg.topic
+    print("получено сообщение с топика", topic)
 
-    if message_type == 'Ping':
+    if message_type == 'Ping' or message_type == 'Report':
 
         v_end_id = data.get("EndpointID")
         v_stat_id = data.get("StationID")
@@ -407,6 +592,8 @@ async def sort(msg):
                 existing_entry.session_end = None
                 existing_entry.time = None
                 existing_entry.status = "empty"
+                existing_entry.is_error = False
+                existing_entry.message = None
                 existing_entry.save()
                 print("Обнулены поля существующей записи.")
             else:
@@ -441,12 +628,16 @@ async def sort(msg):
                 existing_entry.session_end = None
                 existing_entry.time = None
                 existing_entry.status = "empty"
+                existing_entry.is_error = False
+                existing_entry.message = None
                 existing_entry.save()
         else:
             create_new_entry(end_id, stat_id, status="empty", vir_sn_eid=vir_sn)
         return
 
     if message_type == 'Status':
+        status_on_error = data.get("Status", {}).get("onError")
+        en_error = status_on_error.lower() == "true" if isinstance(status_on_error, str) else bool(status_on_error)
         v_end_id = data.get("EndpointID")
         v_stat_id = data.get("StationID")
         end_id = data.get("EndpointID")
@@ -454,11 +645,11 @@ async def sort(msg):
         delimiter = "-"
         vir_sn = str(v_stat_id) + str(delimiter) + str(v_end_id)
 
-        sn = data.get("Status", {}).get("SN")  # Получаем SN из поля "Status"
+        sn = data.get("Status", {}).get("SN")
         existing_entry = ss_main_cell.select().where(ss_main_cell.vir_sn_eid == vir_sn).first()
 
         if existing_entry:
-            update_entry(existing_entry, stat_id, data["Status"])
+            update_entry(existing_entry, stat_id, data["Status"], en_error, end_id)
         else:
             create_new_entry(end_id, stat_id, sn, data["Status"], vir_sn_eid=vir_sn)
             print(f"Создана новая запись для {vir_sn}")
@@ -478,7 +669,7 @@ def on_message(client, userdata, msg):
         print({e})
 
 
-def on_publish(mosq, obj, mid):
+def on_publish(mosq, obj, mid, is_error_status):
     pass
 
 
@@ -486,7 +677,7 @@ async def start_mqtt_client():
     client = Client()
     client.on_message = on_message
     client.on_publish = on_publish
-    client.connect("192.168.1.15", 1883, 60)
+    client.connect("localhost", 1883, 60)
     client.subscribe("test", 0)
     client.subscribe("test/back", 0)
     client.subscribe("test1", 0)
@@ -504,9 +695,9 @@ async def check_inactive_endpoints():
                 inactive_entries = ss_main_cell.select().where(ss_main_cell.vir_sn_eid == vir_sn)
                 for entry in inactive_entries:
                     move_to_report(entry, reason="inactive")
-                    entry.sn = None
                     entry.balance_status = None
                     entry.capacity = None
+                    entry.sn = None
                     entry.cap_coulo = None
                     entry.cap_percent = None
                     entry.cap_vol = None
@@ -534,7 +725,9 @@ async def check_inactive_endpoints():
                     entry.session_start = None
                     entry.session_end = None
                     entry.time = None
+                    entry.is_error = False
                     entry.status = "Inactive"
+                    entry.message = None
                     entry.save()
 
                 del active_v_sn[vir_sn]

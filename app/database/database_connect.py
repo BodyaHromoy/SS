@@ -1,13 +1,13 @@
 from peewee import *
 
 try:
-    db = PostgresqlDatabase('testik6', user='bogdanafter', password='bogdanafter', host='192.168.1.206', port=5432)
+    db = PostgresqlDatabase('test1', user='postgres', password='1337', host='192.168.1.98', port=5432)
     print(":)")
 except:
     print(":(")
 
 try:
-    db2 = PostgresqlDatabase('testik7', user='bogdanafter', password='bogdanafter', host='192.168.1.206', port=5432)
+    db2 = PostgresqlDatabase('test2', user='postgres', password='1337', host='192.168.1.98', port=5432)
     print(":)")
 except:
     print(":(")

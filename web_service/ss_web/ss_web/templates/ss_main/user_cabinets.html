@@ -17,21 +17,39 @@
             box-sizing: border-box;
         }
         .info-header {
-            background-color: #007BFF;
+            background-color: #0056B3;
             color: white;
-            padding: 0.5em;
-            border-radius: 0.3em;
+            padding: 1em;
             position: fixed;
             width: 100%;
             top: 0;
             left: 0;
             z-index: 1000;
-            text-align: left;
-            border: 1px solid #ccc;
-            font-size: 0.9em;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .info-header p {
+            margin: 0;
+        }
+        .info-header .user-info {
+            display: flex;
+            align-items: center;
+        }
+        .info-header .user-info p {
+            margin-right: 1em;
+        }
+        .zones-list ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .zones-list li {
+            padding: 0.2em 0;
         }
         .main-content {
-            padding-top: 8.5em;
+            padding-top: 4em;
             padding-bottom: 5em;
         }
         h2 {
@@ -50,7 +68,7 @@
             border: 1px solid #CCC;
             border-radius: 1em;
             overflow: hidden;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             font-size: 0.9em;
         }
         th, td {
@@ -58,6 +76,9 @@
             text-align: left;
             border-bottom: 1px solid #CCC;
             box-sizing: border-box;
+        }
+        tr {
+            border-top: 1px solid #CCC;
         }
         th {
             background-color: #f9f9f9;
@@ -70,29 +91,6 @@
         .btn-container a {
             flex: 1;
             text-align: center;
-        }
-        .menu-container {
-            margin-bottom: 1em;
-            text-align: center;
-        }
-        .menu-btn {
-            background: #007BFF;
-            color: white;
-            border: none;
-            cursor: pointer;
-            padding: 0.75em;
-            border-radius: 0.3em;
-            font-size: 1em;
-            box-sizing: border-box;
-        }
-        .menu-btn:hover {
-            background: #0056b3;
-        }
-        .hidden-buttons {
-            display: none;
-            flex-direction: column;
-            gap: 0.5em;
-            margin-top: 0.5em;
         }
         .footer {
             text-align: center;
@@ -107,22 +105,34 @@
             display: flex;
             justify-content: center;
             gap: 0.5em;
+            box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
         }
         .footer button {
             margin: 0.5em;
         }
         @media (max-width: 768px) {
+            table {
+                border-collapse: separate;
+            }
+
+            table tr td:first-child {
+                background-color: #c6c6c6; /* Light gray color */
+            }
+
             thead {
                 display: none;
             }
+
             th, td {
                 display: block;
                 width: 100%;
                 text-align: right;
             }
+
             th {
                 text-align: left;
             }
+
             tr {
                 display: block;
                 margin-bottom: 1em;
@@ -165,7 +175,6 @@
             z-index: 2000;
             display: none;
         }
-
         @keyframes spin {
             0% { transform: translate(-50%, -50%) rotate(0deg); }
             100% { transform: translate(-50%, -50%) rotate(360deg); }
@@ -174,13 +183,17 @@
 </head>
 <body>
     <div class="info-header">
-        <p><strong>Логин:</strong> <span id="user-name">{{ user.username }}</span></p>
-        <p><strong>Зоны:</strong></p>
-        <ul>
-            {% for zone in zones %}
-            <li>{{ zone.zone_name }}</li>
-            {% endfor %}
-        </ul>
+        <div class="user-info">
+            <p><strong>Логин:</strong> <span id="user-name">{{ user.username }}</span></p>
+        </div>
+        <div class="zones-list">
+            <p><strong>Зоны:</strong></p>
+            <ul>
+                {% for zone in zones %}
+                    <li>{{ zone.zone_name }}</li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
 
     <div class="main-content">
@@ -225,7 +238,6 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
     <script>
         function goBack() {
             window.history.back();
@@ -255,11 +267,10 @@
                         <td data-label="Пусто">${cabinet_status.empty_count}</td>
                         <td data-label=""><a href="/cabinet/${cabinet_status.shkaf_id}/" class="btn btn-primary btn-sm">Детали</a></td>
                     `;
-
                     tableBody.appendChild(row);
                 });
             } catch (error) {
-                console.error('Error updating data:', error);
+                console.error('Error:', error);
             } finally {
                 loader.style.display = 'none';
             }

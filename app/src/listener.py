@@ -1,15 +1,14 @@
 import asyncio
 import datetime
 import json
-
 import paho.mqtt.publish as publish
 import pytz
 from paho.mqtt.client import Client
-
 from app.database.models.cabinets import Ss_main_cabinet
 from app.database.models.modules import ss_main_cell, ss_main_marked, ss_main_big_battary_list, \
     ss_main_cabinet_settings_for_auto_marking, ss_main_settings_for_settings
 from app.database.models.report import Ss_main_report
+
 
 active_v_sn = {}
 
@@ -92,7 +91,7 @@ def update_or_add_big_battery_list(sn, cycle_times, stat_id):
             print(f"Обновление записи для SN: {sn}")
             existing_entry.year = year
             existing_entry.cycle_times = cycle_times
-            existing_entry.is_tired = (int(cycle_times) > cabinet_setting.max_cycle_times)
+            existing_entry.is_tired=False                       # (int(cycle_times) > cabinet_setting.max_cycle_times)
             existing_entry.save()
         else:
             print(f"Запись для SN: {sn} уже актуальна")
@@ -102,7 +101,7 @@ def update_or_add_big_battery_list(sn, cycle_times, stat_id):
             sn=sn,
             year=year,
             cycle_times=cycle_times,
-            is_tired=(int(cycle_times) > cabinet_setting.max_cycle_times)
+            is_tired=False                                      # (int(cycle_times) > cabinet_setting.max_cycle_times)
         )
 
 
@@ -245,9 +244,10 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
     else:
         existing_entry.status = "not_charging"
 
-    #sn = sanitize(status_data.get("SN"))
-    #cycle_times = status_data.get("CYCLE_TIMES")
-    #update_or_add_big_battery_list(sn, cycle_times, stat_id)
+
+    cycle_times = status_data.get("CYCLE_TIMES")
+    update_or_add_big_battery_list(sanitized_sn, cycle_times, stat_id)
+
 
     if en_error == existing_entry.is_error:
         print("статусы ошибок совпадают")
@@ -260,7 +260,7 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
             "CMD": int(1),
             "SN": sanitize(status_data.get("SN"))
         }
-        publish.single("test/back", json.dumps(json_data), hostname="192.168.1.15")
+        publish.single("test/back", json.dumps(json_data), hostname="192.168.1.98")
     elif en_error == True and existing_entry.is_error == False:
         print("слот тру я фолс")
         json_data = {
@@ -270,9 +270,10 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
             "CMD": int(0),
             "SN": sanitize(status_data.get("SN"))
         }
-        publish.single("test/back", json.dumps(json_data), hostname="192.168.1.15")
+        publish.single("test/back", json.dumps(json_data), hostname="192.168.1.98")
     else:
         print("ну хз выключи компьютер")
+
 
     existing_entry.save()
     print(f"Информация для {existing_entry.vir_sn_eid} обновлена.")
@@ -517,7 +518,7 @@ async def start_mqtt_client():
     client = Client()
     client.on_message = on_message
     client.on_publish = on_publish
-    client.connect("192.168.1.15", 1883, 60)
+    client.connect("192.168.1.98", 1883, 60)
     client.subscribe("test", 0)
     client.subscribe("test/back", 0)
     client.subscribe("test1", 0)

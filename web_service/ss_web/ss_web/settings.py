@@ -92,18 +92,18 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'testik6',
-        'USER': 'bogdanafter',
-        'PASSWORD': 'bogdanafter',
-        'HOST': '192.168.1.206',
+        'NAME': 'test1',
+        'USER': 'postgres',
+        'PASSWORD': '1337',
+        'HOST': '192.168.1.98',
         'PORT': '5432',
     },
     'new_db': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'testik7',
-        'USER': 'bogdanafter',
-        'PASSWORD': 'bogdanafter',
-        'HOST': '192.168.1.206',
+        'NAME': 'test2',
+        'USER': 'postgres',
+        'PASSWORD': '1337',
+        'HOST': '192.168.1.98',
         'PORT': '5432',
     }
 }
