@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мониторинг Шкафа №{{ cabinet.shkaf_id }}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            box-sizing: border-box;
+        }
+
+        /* Шапка */
+        .header {
+            background-color: #0056B3;
+            color: white;
+            padding: 1em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .header .info {
+            font-size: 0.9em;
+        }
+        .header .info p {
+            margin: 0.2em 0;
+        }
+
+        /* Тумблер */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 0.8em;
+        }
+        .toggle-container label {
+            display: inline-block;
+            width: 50px;
+            height: 25px;
+            position: relative;
+        }
+        .toggle-container input {
+            display: none;
+        }
+        .toggle-container span {
+            font-size: 0.9em;
+            color: white;
+        }
+        .toggle-container .slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .toggle-container .slider:before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            left: 5px;
+            bottom: 2.5px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+        .toggle-container input:checked + .slider {
+            background-color: #28a745;
+        }
+        .toggle-container input:checked + .slider:before {
+            transform: translateX(25px);
+        }
+
+        /* Контент */
+        .main-content {
+            padding: 1em;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5em;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5em;
+        }
+        .table-view {
+            display: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 0.75em;
+            text-align: left;
+        }
+        table th {
+            background-color: #f2f2f2;
+        }
+
+        /* Закрепленный футер */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: white;
+            box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+            padding: 0.5em 1em;
+            display: flex;
+            justify-content: center; /* Центрируем кнопки */
+            align-items: center;
+            gap: 1em; /* Задаем расстояние между кнопками */
+            z-index: 1000;
+        }
+
+        .footer button {
+            font-size: 1em; /* Увеличиваем размер текста кнопок */
+            padding: 0.75em 1.5em; /* Увеличиваем внутренний отступ кнопок */
+        }
+
+        .loader {
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 16px solid #3498db;
+            width: 120px;
+            height: 120px;
+            animation: spin 2s linear infinite;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+            display: none;
+        }
+        .errors {
+            text-align: center;
+        }
+
+        .table-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+<div class="loader" id="loader"></div>
+
+<!-- Шапка -->
+<div class="header">
+    <div class="info">
+        <p><strong>Шкаф:</strong> {{ cabinet.shkaf_id }}</p>
+        <p><strong>Зона:</strong> {{ cabinet.zone.zone_name }}</p>
+        <p><strong>Локация:</strong> {{ cabinet.street }}</p>
+    </div>
+    <div class="toggle-container">
+        <span>Диаграмма</span>
+        <label>
+            <input type="checkbox" id="viewToggle" onchange="toggleView()">
+            <div class="slider"></div>
+        </label>
+        <span>Таблица</span>
+    </div>
+</div>
+
+<!-- Основной контент -->
+<div class="main-content">
+    <div id="chartView" class="card">
+        <h4>Диаграмма</h4>
+        <canvas id="statusPieChart"></canvas>
+        <h3 class="errors">Слоты с ошибками</h3>
+        <ul class="errors">
+            {% for slot in error_slots %}
+            <li>Slot ID: {{ slot.endpointid }} - {{ slot.message|default:"N/A" }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div id="tableView" class="card table-view">
+        <h4>Таблица</h4>
+        <table id="statusTable">
+            <thead>
+                <tr>
+                    <th>Слот</th>
+                    <th>Статус</th>
+                    <th>Уровень Заряда</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Закрепленный футер -->
+<div class="footer">
+    <button class="btn btn-secondary" onclick="goBack()">Назад</button>
+    <button class="btn btn-primary" onclick="updateData()">Обновить</button>
+</div>
+
+<script>
+    function goBack() {
+        window.history.back();
+    }
+
+    function showLoader() {
+        document.getElementById('loader').style.display = 'block';
+    }
+
+    function hideLoader() {
+        document.getElementById('loader').style.display = 'none';
+    }
+
+    const pieChart = new Chart(document.getElementById('statusPieChart').getContext('2d'), {
+        type: 'pie',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: ['#57fa98', '#687df7', '#ff4545', 'gray'],
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: { enabled: true },
+            }
+        }
+    });
+
+    function toggleView() {
+        const isTableView = document.getElementById('viewToggle').checked;
+        document.getElementById('chartView').style.display = isTableView ? 'none' : 'block';
+        document.getElementById('tableView').style.display = isTableView ? 'block' : 'none';
+    }
+
+    function updatePieChart(statusCounts) {
+        pieChart.data.labels = statusCounts.map(item => item.status);
+        pieChart.data.datasets[0].data = statusCounts.map(item => item.count);
+        pieChart.update();
+    }
+
+    function highlightErrorRows(errorEndpointIds) {
+        const rows = document.querySelectorAll('#statusTable tbody tr');
+        rows.forEach(row => {
+            const endpointId = parseInt(row.children[0].textContent.trim(), 10);
+            if (errorEndpointIds.includes(endpointId)) {
+                row.classList.add('table-danger');
+            }
+        });
+    }
+
+    function updateTable(statusSlots) {
+        const tbody = document.querySelector('#statusTable tbody');
+        tbody.innerHTML = '';
+        let allSlots = [];
+
+        for (const [status, slots] of Object.entries(statusSlots)) {
+            slots.forEach(slot => allSlots.push({ ...slot, status }));
+        }
+
+        allSlots.sort((a, b) => a.endpointid - b.endpointid);
+
+        allSlots.forEach(slot => {
+            const row = `<tr>
+                <td>${slot.endpointid}</td>
+                <td>${slot.status}</td>
+                <td>${slot.charge || '-'}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+
+        const errorEndpointIds = JSON.parse('{{ error_endpointids|default:"[]"|escapejs }}');
+        highlightErrorRows(errorEndpointIds);
+    }
+
+    function updateData() {
+        showLoader();
+        fetch(`/cabinet/{{ cabinet.shkaf_id }}/update/`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(response => {
+                if (!response.ok) throw new Error('Ошибка ответа от сервера');
+                return response.json();
+            })
+            .then(data => {
+                updatePieChart(data.status_counts);
+                updateTable(data.status_slots);
+            })
+            .catch(error => console.error('Ошибка обновления:', error))
+            .finally(hideLoader);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        try {
+            const statusCounts = JSON.parse('{{ status_counts|default:"[]"|escapejs }}');
+            const statusSlots = JSON.parse('{{ status_slots|default:"{}"|escapejs }}');
+            const errorEndpointIds = JSON.parse('{{ error_endpointids|default:"[]"|escapejs }}');
+
+            updatePieChart(statusCounts);
+            updateTable(statusSlots);
+            highlightErrorRows(errorEndpointIds);
+        } catch (error) {
+            console.error('Ошибка инициализации данных:', error);
+        }
+    });
+
+    updateData()
+</script>
+</body>
+</html>
