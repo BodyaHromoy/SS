@@ -161,7 +161,7 @@
     {% if messages %}
     <ul class="messages">
         {% for message in messages %}
-        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        <li>{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
         {% endfor %}
     </ul>
     {% endif %}
@@ -211,7 +211,9 @@
             </tbody>
         </table>
     </div>
+    <div class="fixed-footer">
     <a href="{% url 'zone_list' %}">Back to Zone List</a>
+        </div>
     <script>
         function deleteCourier(courierId) {
             const confirmation = confirm('You sure want to delete that user?');

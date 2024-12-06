@@ -17,17 +17,15 @@
             box-sizing: border-box;
         }
         .info-header {
-            background-color: #007BFF;
+            background-color: #0056B3;
             color: white;
             padding: 0.5em;
-            border-radius: 0.3em;
             position: fixed;
             width: 100%;
             top: 0;
             left: 0;
             z-index: 1000;
             text-align: left;
-            border: 1px solid #ccc;
             font-size: 0.85em;
         }
         .info-header p {
@@ -49,19 +47,20 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            background: #fff;
-            border: 1px solid #CCC;
             border-radius: 1em;
             overflow: hidden;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             font-size: 0.9em;
+            background-color: white; /* Ensures the entire table has a white background */
         }
+
         th, td {
             padding: 0.5em;
             text-align: left;
-            border-bottom: 1px solid #CCC;
             box-sizing: border-box;
+            background-color: white; /* Makes sure all cells are white */
         }
+
         th {
             background-color: #f9f9f9;
         }
@@ -98,23 +97,61 @@
             margin-top: 0.5em;
         }
         .footer {
-            text-align: center;
-            position: fixed;
-            width: 100%;
-            bottom: 0;
-            left: 0;
-            background-color: #f0f0f0;
-            padding: 1em;
-            border-top: 1px solid #CCC;
-            z-index: 1000;
-        }
-        .footer button {
-            margin: 0.5em;
-        }
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    background-color: #f0f0f0;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+    padding: 0.5em 1em;
+    display: flex;
+    justify-content: center;
+    align-items: center; /* Ensures both buttons are vertically centered */
+    gap: 1em;
+    z-index: 1000;
+}
+
+.footer a, .footer button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75em 1.5em; /* Ensures buttons are the same size */
+    font-size: 1em;
+    text-align: center;
+}
+
+.footer button {
+    background-color: #007bff; /* Add color if needed */
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.footer button:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
+
+.footer a {
+    text-decoration: none;
+    color: white;
+    background-color: #6c757d; /* Color for the back button */
+    border-radius: 0.3em;
+}
+
+.footer a:hover {
+    background-color: #5a6268; /* Darker color on hover */
+}
+
         @media (max-width: 768px) {
             thead {
                 display: none;
             }
+
+            table tr td:first-child {
+                background-color: #c6c6c6; /* Light gray color */
+            }
+
             th, td {
                 display: block;
                 width: 100%;
@@ -136,11 +173,17 @@
                 float: left;
                 font-weight: bold;
             }
+
             .btn-container {
                 flex-direction: column;
             }
             .btn-container a {
                 margin-top: 0.5em;
+            }
+            .btn-sm {
+                width: 100%;
+                padding: 1em;
+                box-sizing: border-box;
             }
         }
     </style>
@@ -159,10 +202,10 @@
                 <thead class="thead-dark">
                     <tr>
                         <th>Box</th>
-                        <th>☑</th>
-                        <th>↯</th>
-                        <th>◯</th>
-                        <th>!</th>
+                        <th>☑ - Ready</th>
+                        <th>↯ - Charging</th>
+                        <th>◯ - Empty</th>
+                        <th>! - Inactive</th>
                         <th>Door state</th>
                         <th></th>
                     </tr>
@@ -187,9 +230,10 @@
     </main>
 
     <footer class="footer">
-        <a class="btn btn-secondary" href="{% url 'zone_list' %}">Back</a>
-        <button class="btn btn-primary" onclick="updateData()">Update</button>
-    </footer>
+    <a href="{% url 'zone_list' %}" class="btn btn-secondary">Back</a>
+    <button class="btn btn-primary" onclick="updateData()">Update</button>
+</footer>
+
 
     <div id="loader" class="loader"></div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

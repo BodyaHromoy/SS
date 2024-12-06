@@ -130,11 +130,21 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
     existing_entry.current_cur = status_data.get("CURRENT_CUR")
     existing_entry.cycle_times = status_data.get("CYCLE_TIMES")
 
+
+    if existing_entry.cap_percent >= 91:
+        existing_entry.status = "ready"
+    elif "4" in str(status_data.get("FUN_BOOLEAN")):
+        existing_entry.status = "charging"
+    else:
+        existing_entry.status = "not_charging"
+
     if settings_for_settings.max_cycle_times:
         print("включена проверка циклов")
         if int(status_data.get("CYCLE_TIMES")) >= cabinet_setting.max_cycle_times:
             print(status_data.get("CYCLE_TIMES"), "", cabinet_setting.max_cycle_times)
+            existing_entry.status = "BAN"
             existing_entry.is_error = True
+            existing_entry.status = "BAN"
             if existing_entry.message:
                 if "-Cycle Times " not in existing_entry.message:
                     existing_entry.message += ",-Cycle Times "
@@ -165,6 +175,7 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
         else:
             print("версия ПО не совпадает с настройками")
             existing_entry.is_error = True
+            existing_entry.status = "BAN"
             if existing_entry.message:
                 if "-SW version " not in existing_entry.message:
                     existing_entry.message += ",-SW version "
@@ -195,6 +206,7 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
         else:
             print("вендор не совпадает с настройками")
             existing_entry.is_error = True
+            existing_entry.status = "BAN"
             if existing_entry.message:
                 if "-Vendor " not in existing_entry.message:
                     existing_entry.message += ",-Vendor "
@@ -211,6 +223,7 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
 
     if sanitized_sn != status_data.get("SN"):
         existing_entry.is_error = True
+        existing_entry.status = "BAN"
         if existing_entry.message:
             if "-SN Error" not in existing_entry.message:
                 existing_entry.message += ",-SN Error"
@@ -222,6 +235,7 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
         if extract_year_from_sn(existing_entry.sn) == cabinet_setting.year_of_manufacture:
             print(extract_year_from_sn(existing_entry.sn), "", cabinet_setting.year_of_manufacture)
             existing_entry.is_error = True
+            existing_entry.status = "BAN"
             if existing_entry.message:
                 if "-Catch Year" not in existing_entry.message:
                     existing_entry.message += ",-Catch Year"
@@ -237,12 +251,7 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
         existing_entry.session_start = current_time
     existing_entry.session_end = current_time
 
-    if existing_entry.cap_percent >= 91:
-        existing_entry.status = "ready"
-    elif "4" in str(status_data.get("FUN_BOOLEAN")):
-        existing_entry.status = "charging"
-    else:
-        existing_entry.status = "not_charging"
+
 
 
     cycle_times = status_data.get("CYCLE_TIMES")

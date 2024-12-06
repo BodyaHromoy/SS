@@ -13,91 +13,190 @@
             font-size: 16px;
             line-height: 1.6;
             color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
         }
+
+        .form-container {
+            max-width: 500px;
+            margin: 4em 0;
+            padding: 2em;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ddd;
+        }
+
         h2 {
             color: #333;
             text-align: center;
             font-size: 2em;
             margin-bottom: 1em;
         }
-        .form-container {
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 2em;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border: 1px solid #ddd;
+
+        .form {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          max-width: 350px;
+          background-color: #fff;
+          padding: 10px;
+          border-radius: 10px;
+          position: relative;
         }
-        form {
+        .title {
+            font-size: 28px;
+            color: royalblue;
+            font-weight: 600;
+            letter-spacing: -1px;
+            position: relative;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            padding-left: 30px;
         }
-        form div + div {
-            margin-top: 1.5em;
+        .title::before, .title::after {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            left: 0px;
+            background-color: royalblue;
+        }
+        .title::before {
+            width: 18px;
+            height: 18px;
+            background-color: royalblue;
+        }
+        .title::after {
+            width: 18px;
+            height: 18px;
+            animation: pulse 1s linear infinite;
+        }
+        .message {
+            color: rgba(88, 87, 87, 0.822);
+            font-size: 14px;
+        }
+        .flex {
+            display: flex;
+            width: 100%;
+            gap: 6px;
         }
         label {
-            font-weight: bold;
-            margin-bottom: 0.5em;
-            display: block;
+            position: relative;
         }
-        input[type="text"], input[type="password"], input[type="email"] {
+        .input {
             width: 100%;
-            padding: 0.75em;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 1em;
+            padding: 10px 10px 20px 10px;
+            outline: 0;
+            border: 1px solid rgba(105, 105, 105, 0.397);
+            border-radius: 10px;
         }
-        button {
-            background-color: #007BFF;
-            color: #fff;
-            padding: 0.75em;
+        .input + span {
+            position: absolute;
+            left: 10px;
+            top: 15px;
+            color: grey;
+            font-size: 0.9em;
+            cursor: text;
+            transition: 0.3s ease;
+        }
+        .input:placeholder-shown + span {
+            top: 15px;
+            font-size: 0.9em;
+        }
+        .input:focus + span, .input:valid + span {
+            top: 0px;
+            font-size: 0.7em;
+            font-weight: 600;
+        }
+        .input:valid + span {
+            color: green;
+        }
+        .submit {
             border: none;
-            border-radius: 4px;
-            font-size: 1em;
+            outline: none;
+            background-color: royalblue;
+            padding: 10px;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 16px;
+            transform: .3s ease;
+        }
+        .submit:hover {
+            background-color: rgb(56, 90, 194);
             cursor: pointer;
-            margin-top: 1.5em;
         }
-        button:hover {
-            background-color: #0056b3;
+
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: none;
+            border: none;
+            color: royalblue;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            text-decoration: none;
         }
-        .messages {
-            margin: 1em auto;
-            max-width: 500px;
-            padding: 1em;
-            border: 1px solid #007BFF;
-            background-color: #E9F5FF;
-            border-radius: 4px;
-            list-style: none;
+        .back-icon {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border: solid royalblue;
+            border-width: 0 2px 2px 0;
+            transform: rotate(135deg);
+            margin-right: 5px;
         }
-        .messages li {
-            margin-bottom: 0.5em;
-        }
-        .messages li:last-child {
-            margin-bottom: 0;
-        }
-        @media (min-width: 768px) {
-            body {
-                padding: 2em;
+
+        @keyframes pulse {
+            from {
+                transform: scale(0.9);
+                opacity: 1;
+            }
+            to {
+                transform: scale(1.8);
+                opacity: 0;
             }
         }
     </style>
 </head>
 <body>
-    {% if messages %}
-    <ul class="messages">
-        {% for message in messages %}
-        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-        {% endfor %}
-    </ul>
-    {% endif %}
-    <h2>Create Courier</h2>
+    <a href="javascript:history.back()" class="back-button">
+            <span class="back-icon"></span>
+            Back
+    </a>
     <div class="form-container">
-        <form method="post">
+        <form method="post" class="form">
             {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Create Courier</button>
+            <p class="title">Create Courier</p>
+            <div class="flex">
+                <label>
+                    <input class="input" type="text" name="first_name" required placeholder="">
+                    <span>First Name</span>
+                </label>
+                <label>
+                    <input class="input" type="text" name="last_name" required placeholder="">
+                    <span>Last Name</span>
+                </label>
+            </div>
+            <label>
+                <input class="input" type="email" name="email" required placeholder="">
+                <span>Email</span>
+            </label>
+            <label>
+                <input class="input" type="text" name="role" value="courier" disabled>
+                <span></span>
+            </label>
+            <button type="submit" class="submit">Create Courier</button>
         </form>
     </div>
+<script>
+</script>
 </body>
 </html>

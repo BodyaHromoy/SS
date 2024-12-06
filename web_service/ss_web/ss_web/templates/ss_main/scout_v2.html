@@ -12,14 +12,12 @@
             margin: 0;
             padding: 0;
             background-color: #f9f9f9;
-            box-sizing: border-box;
         }
 
-        /* Шапка */
         .header {
             background-color: #0056B3;
             color: white;
-            padding: 1em;
+            padding: 0.5em 1em;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -28,65 +26,70 @@
             z-index: 1000;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        .header .info {
-            font-size: 0.9em;
-        }
+
         .header .info p {
-            margin: 0.2em 0;
+            margin: 0;
+            font-size: 0.9em;
         }
 
-        /* Тумблер */
-        .toggle-container {
-            display: flex;
-            align-items: center;
-            gap: 0.8em;
-        }
-        .toggle-container label {
-            display: inline-block;
-            width: 50px;
-            height: 25px;
-            position: relative;
-        }
-        .toggle-container input {
-            display: none;
-        }
-        .toggle-container span {
-            font-size: 0.9em;
+        .header .menu-btn {
+            font-size: 1.5em;
+            background: none;
+            border: none;
             color: white;
+            cursor: pointer;
         }
-        .toggle-container .slider {
-            position: absolute;
+
+        .modal {
+            display: none;
+            position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .toggle-container .slider:before {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            left: 5px;
-            bottom: 2.5px;
-            background-color: white;
-            border-radius: 50%;
-            transition: transform 0.3s;
-        }
-        .toggle-container input:checked + .slider {
-            background-color: #28a745;
-        }
-        .toggle-container input:checked + .slider:before {
-            transform: translateX(25px);
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
         }
 
-        /* Контент */
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 1.5em;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .modal-content h5 {
+            margin-bottom: 1em;
+        }
+
+        .modal-content p {
+            margin: 0.5em 0;
+        }
+
+        .modal-close {
+            background: #0056B3;
+            color: white;
+            border: none;
+            padding: 0.5em 1em;
+            border-radius: 4px;
+            cursor: pointer;
+            float: right;
+        }
+
         .main-content {
+            max-width: 800px;
+            margin: 0 auto;
             padding: 1em;
         }
+
         .card {
             background: white;
             border-radius: 8px;
@@ -94,23 +97,22 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             margin-bottom: 1.5em;
         }
-        .table-view {
-            display: none;
-        }
+
         table {
             width: 100%;
             border-collapse: collapse;
         }
+
         table th, table td {
             border: 1px solid #ddd;
             padding: 0.75em;
             text-align: left;
         }
+
         table th {
             background-color: #f2f2f2;
         }
 
-        /* Закрепленный футер */
         .footer {
             position: fixed;
             bottom: 0;
@@ -119,15 +121,15 @@
             box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
             padding: 0.5em 1em;
             display: flex;
-            justify-content: center; /* Центрируем кнопки */
+            justify-content: center;
             align-items: center;
-            gap: 1em; /* Задаем расстояние между кнопками */
+            gap: 1em;
             z-index: 1000;
         }
 
         .footer button {
-            font-size: 1em; /* Увеличиваем размер текста кнопок */
-            padding: 0.75em 1.5em; /* Увеличиваем внутренний отступ кнопок */
+            font-size: 1em;
+            padding: 0.75em 1.5em;
         }
 
         .loader {
@@ -144,14 +146,6 @@
             z-index: 2000;
             display: none;
         }
-        .errors {
-            text-align: center;
-        }
-
-        .table-danger {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
 
         @keyframes spin {
             0% { transform: translate(-50%, -50%) rotate(0deg); }
@@ -162,37 +156,33 @@
 <body>
 <div class="loader" id="loader"></div>
 
-<!-- Шапка -->
 <div class="header">
     <div class="info">
-        <p><strong>Шкаф:</strong> {{ cabinet.shkaf_id }}</p>
-        <p><strong>Зона:</strong> {{ cabinet.zone.zone_name }}</p>
-        <p><strong>Локация:</strong> {{ cabinet.street }}</p>
+        <p><strong>Шкаф №:</strong> {{ cabinet.shkaf_id|default:"-" }}</p>
     </div>
-    <div class="toggle-container">
-        <span>Диаграмма</span>
-        <label>
-            <input type="checkbox" id="viewToggle" onchange="toggleView()">
-            <div class="slider"></div>
-        </label>
-        <span>Таблица</span>
+    <button class="menu-btn" id="menu-btn">☰</button>
+</div>
+
+<div class="modal" id="info-modal">
+    <div class="modal-content">
+        <p><strong>Зона:</strong> {{ cabinet.zone.zone_name|default:"-" }}</p>
+        <p><strong>Локация:</strong> {{ cabinet.street|default:"-" }}</p>
+        <p><strong>Дополнительно:</strong> {{ cabinet.location|default:"-" }}</p>
+        <p>
+            <strong>ID Замка:</strong>
+            <span id="lock-id">{{ cabinet.extra_inf|default:"-" }}</span>
+            <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('lock-id')">Копировать</button>
+        </p>
+        <p><strong>Состояние двери:</strong> Не назначено</p>
+        <button class="modal-close" id="modal-close">Закрыть</button>
     </div>
 </div>
 
-<!-- Основной контент -->
 <div class="main-content">
     <div id="chartView" class="card">
-        <h4>Диаграмма</h4>
-        <canvas id="statusPieChart"></canvas>
-        <h3 class="errors">Слоты с ошибками</h3>
-        <ul class="errors">
-            {% for slot in error_slots %}
-            <li>Slot ID: {{ slot.endpointid }} - {{ slot.message|default:"N/A" }}</li>
-            {% endfor %}
-        </ul>
+        <canvas id="statusBarChart"></canvas>
     </div>
-    <div id="tableView" class="card table-view">
-        <h4>Таблица</h4>
+    <div id="tableView" class="card">
         <table id="statusTable">
             <thead>
                 <tr>
@@ -206,13 +196,31 @@
     </div>
 </div>
 
-<!-- Закрепленный футер -->
 <div class="footer">
     <button class="btn btn-secondary" onclick="goBack()">Назад</button>
     <button class="btn btn-primary" onclick="updateData()">Обновить</button>
 </div>
 
 <script>
+
+    const menuBtn = document.getElementById('menu-btn');
+    const modal = document.getElementById('info-modal');
+    const modalClose = document.getElementById('modal-close');
+
+    menuBtn.addEventListener('click', () => {
+        modal.classList.add('active');
+    });
+
+    modalClose.addEventListener('click', () => {
+        modal.classList.remove('active');
+    });
+
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.classList.remove('active');
+        }
+    });
+
     function goBack() {
         window.history.back();
     }
@@ -225,79 +233,94 @@
         document.getElementById('loader').style.display = 'none';
     }
 
-    const pieChart = new Chart(document.getElementById('statusPieChart').getContext('2d'), {
-        type: 'pie',
+    function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        const text = element.textContent || element.innerText;
+
+        const tempInput = document.createElement('textarea');
+        tempInput.value = text;
+        document.body.appendChild(tempInput);
+
+        tempInput.select();
+        tempInput.setSelectionRange(0, 99999);
+        try {
+            document.execCommand('copy');
+        } catch (err) {
+            console.error('Ошибка копирования текста:', err);
+        }
+
+        document.body.removeChild(tempInput);
+    }
+}
+
+
+
+    const barChart = new Chart(document.getElementById('statusBarChart').getContext('2d'), {
+        type: 'bar',
         data: {
-            labels: [],
+            labels: ['BAN', 'Inactive', 'ready', 'empty'],
             datasets: [{
                 data: [],
-                backgroundColor: ['#57fa98', '#687df7', '#ff4545', 'gray'],
+                backgroundColor: function(context) {
+                    const statusColors = {
+                        'BAN': '#610606',
+                        'Inactive': 'black',
+                        'ready': 'green',
+                        'empty': 'gray',
+                    };
+                    return statusColors[context.chart.data.labels[context.dataIndex]] || 'blue';
+                }
             }]
         },
         options: {
             responsive: true,
             plugins: {
-                legend: { position: 'top' },
+                legend: { display: false },
                 tooltip: { enabled: true },
+            },
+            scales: {
+                x: { title: { display: true, text: '' } },
+                y: { title: { display: true, text: '' } }
             }
         }
     });
 
-    function toggleView() {
-        const isTableView = document.getElementById('viewToggle').checked;
-        document.getElementById('chartView').style.display = isTableView ? 'none' : 'block';
-        document.getElementById('tableView').style.display = isTableView ? 'block' : 'none';
-    }
-
-    function updatePieChart(statusCounts) {
-        pieChart.data.labels = statusCounts.map(item => item.status);
-        pieChart.data.datasets[0].data = statusCounts.map(item => item.count);
-        pieChart.update();
-    }
-
-    function highlightErrorRows(errorEndpointIds) {
-        const rows = document.querySelectorAll('#statusTable tbody tr');
-        rows.forEach(row => {
-            const endpointId = parseInt(row.children[0].textContent.trim(), 10);
-            if (errorEndpointIds.includes(endpointId)) {
-                row.classList.add('table-danger');
-            }
-        });
+    function updateBarChart(statusCounts) {
+        barChart.data.labels = statusCounts.map(item => item.status);
+        barChart.data.datasets[0].data = statusCounts.map(item => item.count);
+        barChart.update();
     }
 
     function updateTable(statusSlots) {
-        const tbody = document.querySelector('#statusTable tbody');
-        tbody.innerHTML = '';
-        let allSlots = [];
+    const tbody = document.querySelector('#statusTable tbody');
+    tbody.innerHTML = '';
+    let allSlots = [];
 
-        for (const [status, slots] of Object.entries(statusSlots)) {
-            slots.forEach(slot => allSlots.push({ ...slot, status }));
-        }
-
-        allSlots.sort((a, b) => a.endpointid - b.endpointid);
-
-        allSlots.forEach(slot => {
-            const row = `<tr>
-                <td>${slot.endpointid}</td>
-                <td>${slot.status}</td>
-                <td>${slot.charge || '-'}</td>
-            </tr>`;
-            tbody.innerHTML += row;
-        });
-
-        const errorEndpointIds = JSON.parse('{{ error_endpointids|default:"[]"|escapejs }}');
-        highlightErrorRows(errorEndpointIds);
+    for (const [status, slots] of Object.entries(statusSlots)) {
+        slots.forEach(slot => allSlots.push({ ...slot, status }));
     }
+
+    allSlots.sort((a, b) => a.endpointid - b.endpointid);
+
+    allSlots.forEach(slot => {
+        const isBanStatus = slot.status === 'BAN'; // Проверка статуса
+        const row = `<tr style="background-color: ${isBanStatus ? '#ffe6e6' : 'transparent'};">
+            <td>● ${slot.endpointid}</td>
+            <td>${slot.status}</td>
+            <td>${slot.charge || '-'}</td>
+        </tr>`;
+        tbody.innerHTML += row;
+    });
+}
+
 
     function updateData() {
         showLoader();
         fetch(`/cabinet/{{ cabinet.shkaf_id }}/update/`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-            .then(response => {
-                if (!response.ok) throw new Error('Ошибка ответа от сервера');
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                updatePieChart(data.status_counts);
+                updateBarChart(data.status_counts);
                 updateTable(data.status_slots);
             })
             .catch(error => console.error('Ошибка обновления:', error))
@@ -305,20 +328,11 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        try {
-            const statusCounts = JSON.parse('{{ status_counts|default:"[]"|escapejs }}');
-            const statusSlots = JSON.parse('{{ status_slots|default:"{}"|escapejs }}');
-            const errorEndpointIds = JSON.parse('{{ error_endpointids|default:"[]"|escapejs }}');
-
-            updatePieChart(statusCounts);
-            updateTable(statusSlots);
-            highlightErrorRows(errorEndpointIds);
-        } catch (error) {
-            console.error('Ошибка инициализации данных:', error);
-        }
+        const statusCounts = JSON.parse('{{ status_counts|default:"[]"|escapejs }}');
+        const statusSlots = JSON.parse('{{ status_slots|default:"{}"|escapejs }}');
+        updateBarChart(statusCounts);
+        updateTable(statusSlots);
     });
-
-    updateData()
 </script>
 </body>
 </html>

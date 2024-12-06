@@ -3,19 +3,17 @@ import datetime
 import json
 import paho.mqtt.publish as publish
 import pytz
-
 from paho.mqtt.client import Client
 from peewee import *
 
-
 try:
-    db = PostgresqlDatabase('test1', user='postgres', password='1337', host='localhost', port=5432)
+    db = PostgresqlDatabase('test1', user='postgres', password='1337', host='192.168.1.98', port=5432)
     print(":)")
 except:
     print(":(")
 
 try:
-    db2 = PostgresqlDatabase('test2', user='postgres', password='1337', host='localhost', port=5432)
+    db2 = PostgresqlDatabase('test2', user='postgres', password='1337', host='192.168.1.98', port=5432)
     print(":)")
 except:
     print(":(")
@@ -125,7 +123,8 @@ class ss_main_cabinet_settings_for_auto_marking(BaseModel):
 
 
 class ss_main_settings_for_settings(BaseModel):
-    settings_for_id = ForeignKeyField(ss_main_cabinet_settings_for_auto_marking, field=ss_main_cabinet_settings_for_auto_marking.settings_for, on_delete='CASCADE')
+    settings_for_id = ForeignKeyField(ss_main_cabinet_settings_for_auto_marking,
+                                      field=ss_main_cabinet_settings_for_auto_marking.settings_for, on_delete='CASCADE')
     sn_error = BooleanField(default=False, verbose_name='SN_ERROR')
     year_of_manufacture = BooleanField(default=False, verbose_name='YEAR_OF_MANUFACTURE')
     max_cycle_times = BooleanField(default=False, verbose_name='MAX_CYCLE_TIMES')
@@ -289,11 +288,21 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
     existing_entry.current_cur = status_data.get("CURRENT_CUR")
     existing_entry.cycle_times = status_data.get("CYCLE_TIMES")
 
+
+    if existing_entry.cap_percent >= 91:
+        existing_entry.status = "ready"
+    elif "4" in str(status_data.get("FUN_BOOLEAN")):
+        existing_entry.status = "charging"
+    else:
+        existing_entry.status = "not_charging"
+
     if settings_for_settings.max_cycle_times:
         print("включена проверка циклов")
         if int(status_data.get("CYCLE_TIMES")) >= cabinet_setting.max_cycle_times:
             print(status_data.get("CYCLE_TIMES"), "", cabinet_setting.max_cycle_times)
+            existing_entry.status = "BAN"
             existing_entry.is_error = True
+            existing_entry.status = "BAN"
             if existing_entry.message:
                 if "-Cycle Times " not in existing_entry.message:
                     existing_entry.message += ",-Cycle Times "
@@ -324,6 +333,7 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
         else:
             print("версия ПО не совпадает с настройками")
             existing_entry.is_error = True
+            existing_entry.status = "BAN"
             if existing_entry.message:
                 if "-SW version " not in existing_entry.message:
                     existing_entry.message += ",-SW version "
@@ -354,6 +364,7 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
         else:
             print("вендор не совпадает с настройками")
             existing_entry.is_error = True
+            existing_entry.status = "BAN"
             if existing_entry.message:
                 if "-Vendor " not in existing_entry.message:
                     existing_entry.message += ",-Vendor "
@@ -370,6 +381,7 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
 
     if sanitized_sn != status_data.get("SN"):
         existing_entry.is_error = True
+        existing_entry.status = "BAN"
         if existing_entry.message:
             if "-SN Error" not in existing_entry.message:
                 existing_entry.message += ",-SN Error"
@@ -381,6 +393,7 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
         if extract_year_from_sn(existing_entry.sn) == cabinet_setting.year_of_manufacture:
             print(extract_year_from_sn(existing_entry.sn), "", cabinet_setting.year_of_manufacture)
             existing_entry.is_error = True
+            existing_entry.status = "BAN"
             if existing_entry.message:
                 if "-Catch Year" not in existing_entry.message:
                     existing_entry.message += ",-Catch Year"
@@ -396,12 +409,7 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
         existing_entry.session_start = current_time
     existing_entry.session_end = current_time
 
-    if existing_entry.cap_percent >= 91:
-        existing_entry.status = "ready"
-    elif "4" in str(status_data.get("FUN_BOOLEAN")):
-        existing_entry.status = "charging"
-    else:
-        existing_entry.status = "not_charging"
+
 
 
     cycle_times = status_data.get("CYCLE_TIMES")
@@ -419,7 +427,7 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
             "CMD": int(1),
             "SN": sanitize(status_data.get("SN"))
         }
-        publish.single("test/back", json.dumps(json_data), hostname="192.168.1.15")
+        publish.single("test/back", json.dumps(json_data), hostname="192.168.1.98")
     elif en_error == True and existing_entry.is_error == False:
         print("слот тру я фолс")
         json_data = {
@@ -429,7 +437,7 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
             "CMD": int(0),
             "SN": sanitize(status_data.get("SN"))
         }
-        publish.single("test/back", json.dumps(json_data), hostname="192.168.1.15")
+        publish.single("test/back", json.dumps(json_data), hostname="192.168.1.98")
     else:
         print("ну хз выключи компьютер")
 
@@ -677,7 +685,7 @@ async def start_mqtt_client():
     client = Client()
     client.on_message = on_message
     client.on_publish = on_publish
-    client.connect("localhost", 1883, 60)
+    client.connect("192.168.1.98", 1883, 60)
     client.subscribe("test", 0)
     client.subscribe("test/back", 0)
     client.subscribe("test1", 0)

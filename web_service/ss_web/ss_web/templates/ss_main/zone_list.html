@@ -17,11 +17,11 @@
             box-sizing: border-box;
         }
         .info-header {
-            background-color: #007BFF;
+            background-color: #0056B3;
             color: white;
             padding: 1em;
             text-align: left;
-            border-radius: 0.3em;
+
             position: fixed;
             width: 100%;
             top: 0;
@@ -74,7 +74,7 @@
             text-align: center;
         }
         .menu-btn {
-            background: #007BFF;
+            background: #0056B3;
             color: white;
             border: none;
             cursor: pointer;
@@ -87,26 +87,41 @@
             background: #0056b3;
         }
         .footer {
-            text-align: center;
             position: fixed;
-            width: 100%;
             bottom: 0;
             left: 0;
-            background-color: #f0f0f0;
-            padding: 1em;
-            border-top: 1px solid #CCC;
-            z-index: 1000;
+            right: 0;
+            width: 100%;
+            background-color: white;
+            box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+            padding: 0.5em 1em;
             display: flex;
-            justify-content: center;
-            gap: 0.5em;
+            justify-content: center; /* Центрируем кнопки */
+            align-items: center;
+            gap: 1em; /* Задаем расстояние между кнопками */
+            z-index: 1000;
         }
+
         .footer button {
-            margin: 0.5em;
+            font-size: 1em; /* Увеличиваем размер текста кнопок */
+            padding: 0.75em 1.5em; /* Увеличиваем внутренний отступ кнопок */
         }
+
+        .footer button:hover {
+            background-color: #004085; /* Темно-синий при наведении */
+            color: #fff;
+            transform: translateY(-2px); /* Легкий подъем кнопки */
+        }
+
         @media (max-width: 768px) {
             thead {
                 display: none;
             }
+
+            table tr td:first-child {
+            background-color: #c6c6c6;
+        }
+
             th, td {
                 display: block;
                 width: 100%;
@@ -138,70 +153,71 @@
     </style>
 </head>
 <body>
-    <div class="info-header">
-        <p>Login: {{ user.username }}</p>
-        <p>City: {{ user_city.city_name }}</p>
+<div class="info-header">
+    <p>Login: {{ user.username }}</p>
+    <p>City: {{ user_city.city_name }}</p>
+</div>
+<div class="main-content">
+    <div class="menu-container">
+        <a href="{% url 'create_courier' %}" class="btn btn-primary">Scout registration</a>
+        <a href="{% url 'assign_zone_to_courier' %}" class="btn btn-primary">Scout management</a>
     </div>
-    <div class="main-content">
-        <div class="menu-container">
-            <a href="{% url 'create_courier' %}" class="btn btn-primary">Scout registration</a>
-            <a href="{% url 'assign_zone_to_courier' %}" class="btn btn-primary">Scout management</a>
-        </div>
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Zone</th>
-                        <th>☑</th>
-                        <th>↯</th>
-                        <th>◯</th>
-                        <th>!</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody id="cabinet-table-body">
-                {% for item in zone_data %}
-                <tr>
-                    <td data-label="Zone">{{ item.zone.zone_name }}</td>
-                    <td data-label="☑">{{ item.status_counts.ready }}</td>
-                    <td data-label="↯">{{ item.status_counts.charging }}</td>
-                    <td data-label="◯">{{ item.status_counts.empty }}</td>
-                    <td data-label="!">{{ item.status_counts.Inactive }}</td>
-                    <td data-label="">
-                        <div class="btn-container">
-                            <a href="{% url 'zone_detail' item.zone.id %}" class="btn btn-primary btn-sm">Scouts</a>
-                            <a href="{% url 'cabinet_list' item.zone.id %}" class="btn btn-primary btn-sm">Boxes</a>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <div class="table-container">
+        <table>
+            <thead>
+            <tr>
+                <th>Zone</th>
+                <th>☑</th>
+                <th>↯</th>
+                <th>◯</th>
+                <th>!</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody id="cabinet-table-body">
+            {% for item in zone_data %}
+            <tr>
+                <td data-label="Zone">{{ item.zone.zone_name }}</td>
+                <td data-label="☑">{{ item.status_counts.ready }}</td>
+                <td data-label="↯">{{ item.status_counts.charging }}</td>
+                <td data-label="◯">{{ item.status_counts.empty }}</td>
+                <td data-label="!">{{ item.status_counts.Inactive }}</td>
+                <td data-label="">
+                    <div class="btn-container">
+                        <a href="{% url 'zone_detail' item.zone.id %}" class="btn btn-primary btn-sm">Scouts</a>
+                        <a href="{% url 'cabinet_list' item.zone.id %}" class="btn btn-primary btn-sm">Boxes</a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </div>
-    <div class="footer">
-        <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit" class="nav-link btn btn-secondary mt-2">Exit</button>
-        </form>
-        <button class="btn btn-primary" onclick="updateData()">Update</button>
-    </div>
-    <div id="loader" class="loader"></div>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script>
-        function goBack() {
-            window.history.back();
-        }
+</div>
+<div class="footer">
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-secondary">Exit</button>
+    </form>
+    <button class="btn btn-primary" onclick="updateData()">Update</button>
+</div>
 
-        function goForvard() {
-            window.history.forward();
-        }
+<div id="loader" class="loader"></div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    function goBack() {
+        window.history.back();
+    }
 
-        function updateData() {
-            location.reload();
-        }
-    </script>
+    function goForvard() {
+        window.history.forward();
+    }
+
+    function updateData() {
+        location.reload();
+    }
+</script>
 </body>
 </html>
