@@ -33,7 +33,7 @@ def reset_cell_fields(cell):
         "over_discharge_times", "pcb_ver", "remaining_cap",
         "remaining_cap_percent", "sw_ver", "temp_cur1", "temp_cur2",
         "total_capacity", "vid", "voltage_cur", "session_start",
-        "session_end", "time", "status", "message"
+        "session_end", "time", "status", "message", "start_percent"
     ]
     for field in fields_to_reset:
         setattr(cell, field, None)
@@ -170,7 +170,8 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
 
     if settings_for_settings.sw_ver:
         print("включена проверка версии ПО")
-        if existing_entry.sw_ver == cabinet_setting.sw_ver:
+        allowed_versions = cabinet_setting.sw_ver.split("/")
+        if existing_entry.sw_ver in allowed_versions:
             print("версия ПО совпадает с разрешенной")
         else:
             print("версия ПО не совпадает с настройками")
@@ -201,8 +202,9 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
 
     if settings_for_settings.vid:
         print("включена проверка вендора")
-        if existing_entry.vid == cabinet_setting.vid:
-            print("вендор cовпадает с настройками")
+        allowed_vendors = cabinet_setting.vid.split("/")
+        if existing_entry.vid in allowed_vendors:
+            print("вендор совпадает с настройками")
         else:
             print("вендор не совпадает с настройками")
             existing_entry.is_error = True
@@ -214,6 +216,7 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
                 existing_entry.message = "-Vendor "
     else:
         print("проверка вендора отключена")
+
 
     existing_entry.voltage_cur = status_data.get("VOLTAGE_CUR")
     existing_entry.time = current_time
@@ -230,10 +233,19 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
         else:
             existing_entry.message = "-SN Error"
 
+
+    if not existing_entry.start_percent:
+        existing_entry.start_percent = status_data.get("CAP_PERCENT")
+        print("211112121")
+
     if settings_for_settings.year_of_manufacture:
         print("Проверка года включена")
-        if extract_year_from_sn(existing_entry.sn) == cabinet_setting.year_of_manufacture:
-            print(extract_year_from_sn(existing_entry.sn), "", cabinet_setting.year_of_manufacture)
+
+        allowed_years = cabinet_setting.year_of_manufacture.split("000")
+
+        extracted_year = extract_year_from_sn(existing_entry.sn)
+        if extracted_year in allowed_years:
+            print(f"Проверка не пройдена: {extracted_year} совпадает с одним из {allowed_years}")
             existing_entry.is_error = True
             existing_entry.status = "BAN"
             if existing_entry.message:
@@ -241,18 +253,14 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
                     existing_entry.message += ",-Catch Year"
             else:
                 existing_entry.message = "-Catch Year"
-            print("Проверка не пройдена")
         else:
-            print("Проверка пройдена")
+            print(f"Проверка пройдена: {extracted_year} не совпадает с {allowed_years}")
     else:
         print("Проверка года отключена")
 
     if not existing_entry.session_start:
         existing_entry.session_start = current_time
     existing_entry.session_end = current_time
-
-
-
 
     cycle_times = status_data.get("CYCLE_TIMES")
     update_or_add_big_battery_list(sanitized_sn, cycle_times, stat_id)
@@ -330,7 +338,8 @@ def move_to_report(existing_entry, reason):
         time=current_time,
         reason=reason,
         city=find_city_name(existing_entry.cabinet_id_id.city.city_name),
-        zone=find_zone_name(existing_entry.cabinet_id_id.zone.zone_name)
+        zone=find_zone_name(existing_entry.cabinet_id_id.zone.zone_name),
+        start_percent=existing_entry.start_percent
     )
     print(f"Перемещена строка с Endpoint ID {existing_entry.vir_sn_eid} в отчет из-за {reason}.")
 

@@ -36,6 +36,7 @@ class Ss_main_report(BaseModel2):
     reason = CharField(null=True, column_name='reason')
     city = CharField(max_length=255, null=True)
     zone = CharField(max_length=255, null=True)
+    start_percent = CharField(max_length=255, null=True)
 
 
 # Создание таблицы

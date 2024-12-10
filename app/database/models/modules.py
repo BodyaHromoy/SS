@@ -39,6 +39,7 @@ class ss_main_cell(BaseModel):
     vir_sn_eid = TextField(null=True, verbose_name='VIR_SN_EID')
     is_error = BooleanField(null=True, verbose_name='is_error', default=False)
     message = CharField(null=True, verbose_name='MESSAGE')
+    start_percent = CharField(max_length=255, null=True, verbose_name='START_PERCENT')
 
 
 class ss_main_marked(BaseModel):

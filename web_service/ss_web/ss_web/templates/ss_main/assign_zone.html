@@ -114,6 +114,7 @@
             background: #007BFF;
             color: white;
         }
+
         @media (max-width: 768px) {
             thead {
                 display: none;
@@ -152,105 +153,105 @@
     </style>
 </head>
 <body>
-    <h2>Scout managing tool</h2>
+<h2>Scout managing tool</h2>
 
-    <div class="search-wrapper">
-        <input type="text" id="searchInput" placeholder="Search..." onkeyup="filterTable()">
-    </div>
+<div class="search-wrapper">
+    <input type="text" id="searchInput" placeholder="Search..." onkeyup="filterTable()">
+</div>
 
-    {% if messages %}
-    <ul class="messages">
-        {% for message in messages %}
-        <li>{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li>{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<div class="table-wrapper">
+    <table id="courierTable">
+        <thead>
+        <tr>
+            <th>Scout</th>
+            <th>Current zone</th>
+            <th>New zone</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for courier in couriers %}
+        <tr>
+            <td data-label="Scout">{{ courier.username }}</td>
+            <td data-label="Current zone">
+                {% for zone in courier.zones.all %}
+                {{ zone.zone_name }}
+                {% empty %}
+                No Zone Assigned
+                {% endfor %}
+            </td>
+            <td data-label="New zone">
+                <form id="form_{{ courier.id }}" method="post" action="{% url 'assign_zone_to_courier' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="courier_id" value="{{ courier.id }}">
+                    <select name="zone_id">
+                        {% for zone in zones %}
+                        <option value="{{ zone.id }}" {% if zone in courier.zones.all %}selected{% endif %}>
+                            {{ zone.zone_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+            </td>
+            <td data-label="">
+                <div class="btn-container">
+                    <button type="submit">Assign</button>
+                    </form>
+                    <button class="btn btn-danger" onclick="deleteCourier({{ courier.id }})">Delete</button>
+                </div>
+            </td>
+        </tr>
         {% endfor %}
-    </ul>
-    {% endif %}
-
-    <div class="table-wrapper">
-        <table id="courierTable">
-            <thead>
-            <tr>
-                <th>Scout</th>
-                <th>Current zone</th>
-                <th>New zone</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for courier in couriers %}
-            <tr>
-                <td data-label="Scout">{{ courier.username }}</td>
-                <td data-label="Current zone">
-                    {% for zone in courier.zones.all %}
-                    {{ zone.zone_name }}
-                    {% empty %}
-                    No Zone Assigned
-                    {% endfor %}
-                </td>
-                <td data-label="New zone">
-                    <form id="form_{{ courier.id }}" method="post" action="{% url 'assign_zone_to_courier' %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="courier_id" value="{{ courier.id }}">
-                        <select name="zone_id">
-                            {% for zone in zones %}
-                            <option value="{{ zone.id }}" {% if zone in courier.zones.all %}selected{% endif %}>
-                                {{ zone.zone_name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                </td>
-                <td data-label="">
-                    <div class="btn-container">
-                        <button type="submit">Assign</button>
-                        </form>
-                        <button class="btn btn-danger" onclick="deleteCourier({{ courier.id }})">Delete</button>
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    <div class="fixed-footer">
+        </tbody>
+    </table>
+</div>
+<div class="fixed-footer">
     <a href="{% url 'zone_list' %}">Back to Zone List</a>
-        </div>
-    <script>
-        function deleteCourier(courierId) {
-            const confirmation = confirm('You sure want to delete that user?');
-            if (!confirmation) {
-                return;
-            }
+</div>
+<script>
+    function deleteCourier(courierId) {
+        const confirmation = confirm('You sure want to delete that user?');
+        if (!confirmation) {
+            return;
+        }
 
-            fetch(`/delete_courier/${courierId}/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}'
-                }
-            })
+        fetch(`/delete_courier/${courierId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
             .then(response => response.json())
             .then(data => {
-                if (data.status === 'success') {
-                    location.reload();
-                } else {
-                    alert('ERROR: User not deleted!');
-                }
-            });
-        }
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert('ERROR: User not deleted!');
+            }
+        });
+    }
 
-        function filterTable() {
-            const input = document.getElementById('searchInput');
-            const filter = input.value.toLowerCase();
-            const table = document.getElementById('courierTable');
-            const trs = table.getElementsByTagName('tr');
+    function filterTable() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById('courierTable');
+        const trs = table.getElementsByTagName('tr');
 
-            for (let i = 1; i < trs.length; i++) {
-                const td = trs[i].getElementsByTagName('td')[0];
-                if (td) {
-                    const textValue = td.textContent || td.innerText;
-                    trs[i].style.display = textValue.toLowerCase().indexOf(filter) > -1 ? '' : 'none';
-                }
+        for (let i = 1; i < trs.length; i++) {
+            const td = trs[i].getElementsByTagName('td')[0];
+            if (td) {
+                const textValue = td.textContent || td.innerText;
+                trs[i].style.display = textValue.toLowerCase().indexOf(filter) > -1 ? '' : 'none';
             }
         }
-    </script>
+    }
+</script>
 </body>
 </html>

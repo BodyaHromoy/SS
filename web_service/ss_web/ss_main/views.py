@@ -604,7 +604,7 @@ def report(request):
                            'current_cur', 'cycle_times', 'design_voltage', 'fun_boolean', 'healthy', 'ochg_state',
                            'odis_state', 'over_discharge_times', 'pcb_ver', 'remaining_cap', 'remaining_cap_percent',
                            'sn', 'sw_ver', 'temp_cur1', 'temp_cur2', 'total_capacity', 'vid', 'voltage_cur',
-                           'session_start', 'time']
+                           'session_start', "start_percent", 'time']
                 worksheet.append(headers)
 
 
@@ -617,6 +617,7 @@ def report(request):
                            report.remaining_cap, report.remaining_cap_percent, report.sn, report.sw_ver,
                            report.temp_cur1, report.temp_cur2, report.total_capacity, report.vid, report.voltage_cur,
                            report.session_start.replace(tzinfo=None) if report.session_start else None,
+                           report.start_percent,
                            report.time.replace(tzinfo=None) if report.time else None]
                     worksheet.append(row)
 

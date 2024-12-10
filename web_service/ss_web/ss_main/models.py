@@ -101,6 +101,7 @@ class Cell(models.Model):
     capacity = models.CharField(max_length=255, null=True, verbose_name='CAPACITY')
     cap_coulo = models.CharField(max_length=255, null=True, verbose_name='CAP_COULO')
     cap_percent = models.CharField(max_length=255, null=True, verbose_name='CAP_PERCENT')
+    start_percent = models.CharField(max_length=255, null=True, verbose_name='START_PERCENT')
     cap_vol = models.CharField(max_length=255, null=True, verbose_name='CAP_VOL')
     charge_cap_h = models.CharField(max_length=255, null=True, verbose_name='CHARGE_CAP_H')
     charge_cap_l = models.CharField(max_length=255, null=True, verbose_name='CHARGE_CAP_L')
@@ -170,6 +171,7 @@ class Report(models.Model):
     reason = models.CharField(max_length=255, null=True)
     city = models.CharField(max_length=255, null=True)
     zone = models.CharField(max_length=255, null=True)
+    start_percent = models.CharField(max_length=255, null=True)
 
     class Meta:
         app_label = 'ss_main'
