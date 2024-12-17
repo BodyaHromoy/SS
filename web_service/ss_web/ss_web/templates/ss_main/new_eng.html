@@ -277,7 +277,7 @@
                         </div>
                     </div>
                     <div id="refresh-button-container">
-                        <button class="btn btn-primary btn-custom" onclick="refreshData()">↻</button>
+                        <button class="btn btn-primary btn-custom" onclick="refreshData()">↻ Refresh</button>
                     </div>
                 </footer>
                 <div id="cabinet-list-view">
@@ -417,12 +417,12 @@ function saveCabinetSettings() {
     // Преобразуем значения полей, которые должны быть числами
     formDataArray.forEach(function (item) {
         if (item.name === 'max_cycle_times' || item.name === 'year_of_manufacture') {
-            formData[item.name] = parseInt(item.value);  // Преобразуем в целое число
+            formData[item.name] = item.value;  // Преобразуем в целое число
         } else if (item.name === 'sn_error' || item.name === 'allow_vendor' || item.name === 'allow_sw_ver') {
             // Учитываем значение чекбоксов: если есть в массиве, значит true
             formData[item.name] = true;
         } else {
-            formData[item.name] = item.value;  // Для остальных полей сохраняем строки
+            formData[item.name] = item.value;
         }
     });
 
@@ -657,7 +657,9 @@ function applyMarkedFilter() {
 
     $(document).ready(function() {
         restoreFilters();
+        setInterval(refreshData, 15000)
     });
+
 </script>
 </body>
 </html>

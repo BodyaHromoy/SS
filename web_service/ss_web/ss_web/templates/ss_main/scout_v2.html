@@ -254,12 +254,10 @@
     }
 }
 
-
-
     const barChart = new Chart(document.getElementById('statusBarChart').getContext('2d'), {
         type: 'bar',
         data: {
-            labels: ['BAN', 'Inactive', 'ready', 'empty'],
+            labels: ['BAN', 'Inactive', 'ready', 'empty', 'charging'],
             datasets: [{
                 data: [],
                 backgroundColor: function(context) {
@@ -268,6 +266,8 @@
                         'Inactive': 'black',
                         'ready': 'green',
                         'empty': 'gray',
+                        'charging': 'orange',
+
                     };
                     return statusColors[context.chart.data.labels[context.dataIndex]] || 'blue';
                 }
@@ -314,7 +314,6 @@
     });
 }
 
-
     function updateData() {
         showLoader();
         fetch(`/cabinet/{{ cabinet.shkaf_id }}/update/`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
@@ -332,7 +331,13 @@
         const statusSlots = JSON.parse('{{ status_slots|default:"{}"|escapejs }}');
         updateBarChart(statusCounts);
         updateTable(statusSlots);
+
     });
+
+    updateData()
+    setInterval(() => {
+    updateData();
+    }, 15000);
 </script>
 </body>
 </html>

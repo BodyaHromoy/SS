@@ -241,7 +241,7 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
     if settings_for_settings.year_of_manufacture:
         print("Проверка года включена")
 
-        allowed_years = cabinet_setting.year_of_manufacture.split("000")
+        allowed_years = cabinet_setting.year_of_manufacture.split("/")
 
         extracted_year = extract_year_from_sn(existing_entry.sn)
         if extracted_year in allowed_years:
