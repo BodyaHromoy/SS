@@ -220,5 +220,12 @@ class Settings_for_settings (models.Model):
 
 
 
+class Cabinet_history (models.Model):
+    history_for = models.CharField(max_length=255, null=True, verbose_name='HISTORY_FOR')
+    history_for_id = models.ForeignKey(to=Cabinet, on_delete=models.CASCADE, null=False, to_field='shkaf_id')
+    battery_count = models.IntegerField(null=True)
+    time = models.DateTimeField(null=True, verbose_name='time')
+
+
 
 
