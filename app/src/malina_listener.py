@@ -694,12 +694,12 @@ async def start_mqtt_client():
 
 async def check_inactive_endpoints():
     while True:
-        await asyncio.sleep(10)
+        await asyncio.sleep(120)
         current_time = datetime.datetime.now()
         active_endpoints_keys = list(active_v_sn.keys())
         for vir_sn in active_endpoints_keys:
             last_updated_time = active_v_sn[vir_sn]
-            if current_time - last_updated_time > datetime.timedelta(seconds=10):
+            if current_time - last_updated_time > datetime.timedelta(seconds=120):
                 inactive_entries = ss_main_cell.select().where(ss_main_cell.vir_sn_eid == vir_sn)
                 for entry in inactive_entries:
                     move_to_report(entry, reason="inactive")

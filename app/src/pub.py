@@ -1,44 +1,82 @@
+import json
 import paho.mqtt.client as mqtt
-import threading
+from datetime import datetime
 import time
+import random
+import string
+
+broker = "192.168.1.98"
+port = 1883
+topic = "pzdc"
 
 
-BROKER = '192.168.1.98'
-PORT = 1883
-TOPIC_SUB = 'test'
-TOPIC_PUB = 'test'
-CLIENT_ID = 'python-mqtt-client'
+def generate_sn():
+    letters = string.ascii_uppercase
+    first_part = ''.join(random.choices(letters, k=5))
+    middle_number = str(random.randint(18, 25))
+    last_part = ''.join(random.choices(letters, k=5))
+    return first_part + middle_number + last_part
 
 
-def on_connect(client, userdata, flags, rc):
-    if rc == 0:
-        print("Подключение к брокеру успешно!")
-        client.subscribe(TOPIC_SUB)
-    else:
-        print(f"Ошибка подключения, код: {rc}")
+def create_status_message():
+    return json.dumps({
+        "EndpointID": random.randint(1, 99),
+        "StationID": 99,
+        "Status": {
+            "BALANCE_STATUS": "0",
+            "CAPACITY": "15300",
+            "CAP_COULO": "9192",
+            "CAP_PERCENT": "66",
+            "CAP_VOL": "9091",
+            "CHARGE_CAP_H": "65535",
+            "CHARGE_CAP_L": "65535",
+            "CHARGE_TIMES": "94",
+            "CORE_VOLT": [
+                "3.813", "3.804", "3.81", "3.816", "3.808", "3.807",
+                "3.819", "3.815", "3.81", "3.815", "-0.001", "-0.001",
+                "-0.001", "-0.001", "-0.001", "-0.001"
+            ],
+            "CURRENT_CUR": "-4.93",
+            "CYCLE_TIMES": "68",
+            "DESIGN_VOLTAGE": "36.5",
+            "FUN_BOOLEAN": "0x41",
+            "HEALTHY": "98",
+            "OCHG_STATE": "0xffffffffffffffff",
+            "ODIS_STATE": "0xffffffffffffffff",
+            "OVER_DISCHARGE_TIMES": "65535",
+            "PCB_VER": "2",
+            "REMAINING_CAP": "10155",
+            "REMAINING_CAP_PERCENT": "66",
+            "SN": generate_sn(),
+            "SW_VER": "TEST",
+            "TEMP_CUR1": "27",
+            "TEMP_CUR2": "28",
+            "TOTAL_CAPACITY": "15300",
+            "VID": "JET",
+            "VOLTAGE_CUR": "38.1",
+            "time": datetime.now().isoformat()
+        },
+        "Type": "Status"
+    })
 
 
-def on_message(client, userdata, msg):
-    print(f"Получено сообщение: {msg.payload.decode()} из топика: {msg.topic}")
+def send_message(client, topic, message):
+    client.publish(topic, message)
+    print(f"Отправлено сообщение в топик {topic}: {message}")
 
 
-def publish(client):
-    while True:
-        message = f"Сообщение отправлено в {time.ctime()}"
-        client.publish(TOPIC_PUB, message)
-        print(f"Отправлено сообщение: {message}")
-        time.sleep(1)
+if __name__ == "__main__":
+    client = mqtt.Client()
 
+    try:
+        client.connect(broker, port)
 
-def run():
-    client = mqtt.Client(CLIENT_ID)
-    client.on_connect = on_connect
-    client.on_message = on_message
-    client.connect(BROKER, PORT, 60)
-    publish_thread = threading.Thread(target=publish, args=(client,))
-    publish_thread.start()
-    client.loop_forever()
+        while True:
+            status_message = create_status_message()
+            send_message(client, topic, status_message)
+            time.sleep(1)
 
-
-if __name__ == '__main__':
-    run()
+    except Exception as e:
+        print(f"Ошибка: {e}")
+    finally:
+        client.disconnect()

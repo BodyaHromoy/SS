@@ -8,6 +8,7 @@ admin.site.register(Report)
 admin.site.register(Vendor)
 
 
+
 class CustomUserAdmin(UserAdmin):
     list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'role')
     fieldsets = UserAdmin.fieldsets + (
@@ -33,4 +34,5 @@ class CityAdmin(admin.ModelAdmin):
 admin.site.register(Zone, ZoneAdmin)
 admin.site.register(City, CityAdmin)
 admin.site.register(Cabinet_settings_for_auto_marking)
+admin.site.register(Settings_for_settings)
 admin.site.register(CustomUser, CustomUserAdmin)

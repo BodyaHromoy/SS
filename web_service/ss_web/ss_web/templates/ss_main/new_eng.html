@@ -459,29 +459,30 @@ function saveCabinetSettings() {
 
 
     function sendCommand(endpoint_id, cabinet_id) {
-        const cmd_number = prompt("Введите номер команды :");
-        if (!cmd_number) {
-            alert("Команда не введена!");
-            return;
-        }
-
-        $.ajax({
-            url: "{% url 'send_command' %}",
-            type: "POST",
-            data: {
-                'cabinet_id': cabinet_id,
-                'endpoint_id': endpoint_id,
-                'cmd_number': cmd_number,
-                'csrfmiddlewaretoken': '{{ csrf_token }}'
-            },
-            success: function(response) {
-                alert(response.message);
-            },
-            error: function() {
-                alert("Ошибка при отправке команды.");
-            }
-        });
+    const cmd_number = prompt("Введите номер команды :");
+    if (!cmd_number) {
+        alert("Команда не введена!");
+        return;
     }
+
+    $.ajax({
+        url: "{% url 'send_command' %}",
+        type: "POST",
+        data: {
+            'cabinet_id': cabinet_id,
+            'endpoint_id': endpoint_id,
+            'cmd_number': cmd_number,
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            alert(response.message);
+        },
+        error: function() {
+            alert("Ошибка при отправке команды.");
+        }
+    });
+}
+
 
     function refreshData() {
         const isDetailsViewVisible = $('#details-view').is(':visible');

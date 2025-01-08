@@ -51,6 +51,13 @@ def send_command(request):
         cmd_number = request.POST.get('cmd_number')
 
         try:
+            if cmd_number == "del":
+                deleted_count, _ = Cell.objects.filter(cabinet_id__shkaf_id=cabinet_id, endpointid=endpoint_id).delete()
+                if deleted_count > 0:
+                    return JsonResponse({"success": True, "message": "Запись успешно удалена!"})
+                else:
+                    return JsonResponse({"success": False, "message": "Запись не найдена для удаления."})
+
             record = Cell.objects.get(cabinet_id__shkaf_id=cabinet_id, endpointid=endpoint_id)
 
             if cmd_number == '1':
@@ -70,16 +77,15 @@ def send_command(request):
             }
 
             client = mqtt.Client()
-            client.connect("192.168.1.15", 1883, 60)
+            client.connect("192.168.1.98", 1883, 60)
             client.publish("test/back", json.dumps(json_data))
             client.disconnect()
-
 
             return JsonResponse({"success": True, "message": "Команда отправлена успешно!"})
         except Cell.DoesNotExist:
             return JsonResponse({"success": False, "message": "Ячейка не найдена."})
         except Exception as e:
-            return JsonResponse({"success": False, "message": f"Ошибка при отправке команды: {str(e)}"})
+            return JsonResponse({"success": False, "message": f"Ошибка при обработке команды: {str(e)}"})
     return JsonResponse({"success": False, "message": "Неверный запрос."})
 
 
