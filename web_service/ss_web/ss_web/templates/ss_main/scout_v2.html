@@ -188,7 +188,8 @@
                 <tr>
                     <th>Слот</th>
                     <th>Статус</th>
-                    <th>Уровень Заряда</th>
+                    <th>Модель</th>
+                    <th>Заряд</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -305,9 +306,10 @@
 
     allSlots.forEach(slot => {
         const isBanStatus = slot.status === 'BAN'; // Проверка статуса
-        const row = `<tr style="background-color: ${isBanStatus ? '#ffe6e6' : 'transparent'};">
+        const row = `<tr style="background-color: ${isBanStatus ? '#fc7c7c' : 'transparent'};">
             <td>● ${slot.endpointid}</td>
             <td>${slot.status}</td>
+            <td>${slot.sw_name || ''}</td>
             <td>${slot.charge || '-'}</td>
         </tr>`;
         tbody.innerHTML += row;

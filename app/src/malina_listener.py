@@ -81,6 +81,7 @@ class ss_main_cell(BaseModel):
     remaining_cap_percent = CharField(null=True, column_name='remaining_cap_percent')
     sn = CharField(null=True, column_name='sn')
     sw_ver = CharField(null=True, column_name='sw_ver')
+    sw_name = CharField(null=True, column_name='sw_name')
     temp_cur1 = CharField(null=True, column_name='temp_cur1')
     temp_cur2 = CharField(null=True, column_name='temp_cur2')
     total_capacity = CharField(null=True, column_name='total_capacity')
@@ -93,6 +94,7 @@ class ss_main_cell(BaseModel):
     vir_sn_eid = TextField(null=True, verbose_name='VIR_SN_EID')
     is_error = BooleanField(null=True, verbose_name='is_error', default=False)
     message = CharField(null=True, verbose_name='MESSAGE')
+    start_percent = CharField(max_length=255, null=True, verbose_name='START_PERCENT')
 
 
 class ss_main_marked(BaseModel):
@@ -325,6 +327,12 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
     existing_entry.remaining_cap = status_data.get("REMAINING_CAP")
     existing_entry.remaining_cap_percent = status_data.get("REMAINING_CAP_PERCENT")
     existing_entry.sw_ver = status_data.get("SW_VER")
+
+    if status_data.get("SW_VER") == "1.6.4.9":
+        existing_entry.sw_name = "S90L"
+
+    if status_data.get("SW_VER") == "3.5.6":
+        existing_entry.sw_name = "MAX+"
 
     if settings_for_settings.sw_ver:
         print("включена проверка версии ПО")

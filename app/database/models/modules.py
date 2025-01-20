@@ -27,6 +27,7 @@ class ss_main_cell(BaseModel):
     remaining_cap_percent = CharField(null=True, column_name='remaining_cap_percent')
     sn = CharField(null=True, column_name='sn')
     sw_ver = CharField(null=True, column_name='sw_ver')
+    sw_name = CharField(null=True, column_name='sw_name')
     temp_cur1 = CharField(null=True, column_name='temp_cur1')
     temp_cur2 = CharField(null=True, column_name='temp_cur2')
     total_capacity = CharField(null=True, column_name='total_capacity')
@@ -76,3 +77,12 @@ class ss_main_settings_for_settings(BaseModel):
     max_cycle_times = BooleanField(default=False, verbose_name='MAX_CYCLE_TIMES')
     vid = BooleanField(default=False, verbose_name='VID')
     sw_ver = BooleanField(default=False, verbose_name='SW_VER')
+
+
+class ss_main_cabinet_history (BaseModel):
+    history_for = ForeignKeyField(Ss_main_cabinet, field=Ss_main_cabinet.shkaf_id, on_delete='CASCADE')
+    first_half = IntegerField(verbose_name='FIRST_HALF', default=0)
+    second_half = IntegerField(verbose_name='SECOND_HALF', default=0)
+    first_data = CharField(null=True)
+    second_data = CharField(null=True)
+    date = DateTimeField(null=True)

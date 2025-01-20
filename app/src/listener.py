@@ -1,12 +1,14 @@
 import asyncio
 import datetime
 import json
+from turtledemo.paint import switchupdown
+
 import paho.mqtt.publish as publish
 import pytz
 from paho.mqtt.client import Client
 from app.database.models.cabinets import Ss_main_cabinet
 from app.database.models.modules import ss_main_cell, ss_main_marked, ss_main_big_battary_list, \
-    ss_main_cabinet_settings_for_auto_marking, ss_main_settings_for_settings
+    ss_main_cabinet_settings_for_auto_marking, ss_main_settings_for_settings, ss_main_cabinet_history
 from app.database.models.report import Ss_main_report
 
 
@@ -105,6 +107,10 @@ def update_or_add_big_battery_list(sn, cycle_times, stat_id):
         )
 
 
+#def cabinet_history():
+
+
+
 def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
     almaty_timezone = pytz.timezone('Asia/Almaty')
     current_time = datetime.datetime.now(almaty_timezone).replace(tzinfo=None)
@@ -167,6 +173,12 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
     existing_entry.remaining_cap = status_data.get("REMAINING_CAP")
     existing_entry.remaining_cap_percent = status_data.get("REMAINING_CAP_PERCENT")
     existing_entry.sw_ver = status_data.get("SW_VER")
+
+    if status_data.get("SW_VER") == "1.6.4.9":
+        existing_entry.sw_name = "S90L"
+
+    if status_data.get("SW_VER") == "3.5.6":
+        existing_entry.sw_name = "MAX+"
 
     if settings_for_settings.sw_ver:
         print("включена проверка версии ПО")
@@ -234,9 +246,6 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
             existing_entry.message = "-SN Error"
 
 
-    if not existing_entry.start_percent:
-        existing_entry.start_percent = status_data.get("CAP_PERCENT")
-        print("211112121")
 
     if settings_for_settings.year_of_manufacture:
         print("Проверка года включена")

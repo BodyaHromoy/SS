@@ -7,7 +7,7 @@ import string
 
 broker = "192.168.1.98"
 port = 1883
-topic = "pzdc"
+topic = "test1"
 
 
 def generate_sn():

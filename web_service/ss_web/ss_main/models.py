@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
-
+from django.contrib.postgres.fields import ArrayField
 
 class UserSession(models.Model):
 
@@ -120,6 +120,7 @@ class Cell(models.Model):
     remaining_cap_percent = models.CharField(max_length=255, null=True, verbose_name='REMAINING_CAP_PERCENT')
     sn = models.CharField(max_length=255, null=True, verbose_name='SN')
     sw_ver = models.CharField(max_length=255, null=True, verbose_name='SW_VER')
+    sw_name = models.CharField(max_length=255, null=True, verbose_name='SW_NAME')
     temp_cur1 = models.CharField(max_length=255, null=True, verbose_name='TEMP_CUR1')
     temp_cur2 = models.CharField(max_length=255, null=True, verbose_name='TEMP_CUR2')
     total_capacity = models.CharField(max_length=255, null=True, verbose_name='TOTAL_CAPACITY')
@@ -219,13 +220,12 @@ class Settings_for_settings (models.Model):
         return self.settings_for
 
 
-
 class Cabinet_history (models.Model):
-    history_for = models.CharField(max_length=255, null=True, verbose_name='HISTORY_FOR')
-    history_for_id = models.ForeignKey(to=Cabinet, on_delete=models.CASCADE, null=False, to_field='shkaf_id')
-    battery_count = models.IntegerField(null=True)
-    time = models.DateTimeField(null=True, verbose_name='time')
-
-
+    history_for = models.ForeignKey(to=Cabinet, on_delete=models.CASCADE, null=False, to_field='shkaf_id')
+    first_half = models.IntegerField(verbose_name='FIRST_HALF', default='0', null=True)
+    second_half = models.IntegerField(verbose_name='SECOND_HALF', default='0', null=True)
+    date = models.DateTimeField(null=True)
+    first_data = models.BinaryField(null=True)
+    second_data = models.BinaryField(null=True)
 
 
