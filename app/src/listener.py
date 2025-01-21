@@ -33,7 +33,7 @@ def reset_cell_fields(cell):
         "core_volt", "current_cur", "cycle_times", "design_voltage",
         "fun_boolean", "healthy", "ochg_state", "odis_state",
         "over_discharge_times", "pcb_ver", "remaining_cap",
-        "remaining_cap_percent", "sw_ver", "temp_cur1", "temp_cur2",
+        "remaining_cap_percent", "sw_ver", "sw_name", "temp_cur1", "temp_cur2",
         "total_capacity", "vid", "voltage_cur", "session_start",
         "session_end", "time", "status", "message", "start_percent"
     ]
@@ -107,8 +107,44 @@ def update_or_add_big_battery_list(sn, cycle_times, stat_id):
         )
 
 
-#def cabinet_history():
+def update_sn_count(stat_id, sanitized_sn):
+    almaty_timezone = pytz.timezone('Asia/Almaty')
+    current_time = datetime.datetime.now(almaty_timezone).replace(tzinfo=None)
 
+    morning_start = current_time.replace(hour=9, minute=0, second=0, microsecond=0)
+    evening_start = current_time.replace(hour=21, minute=0, second=0, microsecond=0)
+
+    if morning_start <= current_time < evening_start:
+        period = "first_half"
+        data_field = "first_data"
+        history_date = current_time.date()
+    else:
+        period = "second_half"
+        data_field = "second_data"
+
+        if current_time < morning_start:
+            history_date = (current_time - datetime.timedelta(days=1)).date()
+        else:
+            history_date = current_time.date()
+
+    history_entry, created = ss_main_cabinet_history.get_or_create(
+        history_for=stat_id,
+        date=history_date,
+        defaults={period: 0, data_field: ''}
+    )
+
+    existing_data = getattr(history_entry, data_field)
+    sn_list = existing_data.split(',') if existing_data else []
+
+    if sanitized_sn not in sn_list:
+        setattr(history_entry, period, getattr(history_entry, period) + 1)
+        sn_list.append(sanitized_sn)
+        setattr(history_entry, data_field, ','.join(sn_list))
+        history_entry.save()
+        print(
+            f"SN {sanitized_sn} добавлен в {period} для шкафа {stat_id} на дату {history_date}. Текущее значение: {getattr(history_entry, period)}")
+    else:
+        print(f"SN {sanitized_sn} уже существует в {period} для шкафа {stat_id} на дату {history_date}, пропускаем.")
 
 
 def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
@@ -235,6 +271,8 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
 
     sanitized_sn = sanitize(status_data.get("SN"))
     existing_entry.sn = sanitized_sn
+
+    update_sn_count(stat_id, sanitized_sn)
 
     if sanitized_sn != status_data.get("SN"):
         existing_entry.is_error = True

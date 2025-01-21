@@ -83,6 +83,6 @@ class ss_main_cabinet_history (BaseModel):
     history_for = ForeignKeyField(Ss_main_cabinet, field=Ss_main_cabinet.shkaf_id, on_delete='CASCADE')
     first_half = IntegerField(verbose_name='FIRST_HALF', default=0)
     second_half = IntegerField(verbose_name='SECOND_HALF', default=0)
-    first_data = CharField(null=True)
-    second_data = CharField(null=True)
+    first_data = TextField(null=True)
+    second_data = TextField(null=True)
     date = DateTimeField(null=True)

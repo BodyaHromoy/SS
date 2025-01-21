@@ -225,7 +225,7 @@ class Cabinet_history (models.Model):
     first_half = models.IntegerField(verbose_name='FIRST_HALF', default='0', null=True)
     second_half = models.IntegerField(verbose_name='SECOND_HALF', default='0', null=True)
     date = models.DateTimeField(null=True)
-    first_data = models.BinaryField(null=True)
-    second_data = models.BinaryField(null=True)
+    first_data = models.TextField(null=True)
+    second_data = models.TextField(null=True)
 
 
