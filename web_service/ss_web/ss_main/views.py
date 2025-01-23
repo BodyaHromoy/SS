@@ -459,7 +459,7 @@ def user_cabinets(request):
 def cabinet_details(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
     cells = Cell.objects.filter(cabinet_id=cabinet)
-
+    history = Cabinet_history.filter(history_for=cabinet)
     status_counts = cells.values('status').annotate(count=Count('status')).order_by('status')
     status_slots = {}
 
@@ -514,7 +514,7 @@ def update_cabinet_data(request, shkaf_id):
         return JsonResponse({
             'status_counts': list(status_counts),
             'status_slots': status_slots,
-            'average_charge': average_charge,  # Ensure average charge is returned
+            'average_charge': average_charge,
             'error_slots': error_slots_list,
         })
     else:
