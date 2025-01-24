@@ -459,7 +459,6 @@ def user_cabinets(request):
 def cabinet_details(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
     cells = Cell.objects.filter(cabinet_id=cabinet)
-    history = Cabinet_history.filter(history_for=cabinet)
     status_counts = cells.values('status').annotate(count=Count('status')).order_by('status')
     status_slots = {}
 
