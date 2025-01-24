@@ -170,6 +170,15 @@ class Ss_main_report(BaseModel2):
     zone = CharField(max_length=255, null=True)
 
 
+class ss_main_cabinet_history (BaseModel):
+    history_for = ForeignKeyField(Ss_main_cabinet, field=Ss_main_cabinet.shkaf_id, on_delete='CASCADE')
+    first_half = IntegerField(verbose_name='FIRST_HALF', default=0)
+    second_half = IntegerField(verbose_name='SECOND_HALF', default=0)
+    first_data = TextField(null=True)
+    second_data = TextField(null=True)
+    date = DateTimeField(null=True)
+
+
 active_v_sn = {}
 
 
@@ -191,9 +200,9 @@ def reset_cell_fields(cell):
         "core_volt", "current_cur", "cycle_times", "design_voltage",
         "fun_boolean", "healthy", "ochg_state", "odis_state",
         "over_discharge_times", "pcb_ver", "remaining_cap",
-        "remaining_cap_percent", "sw_ver", "temp_cur1", "temp_cur2",
+        "remaining_cap_percent", "sw_ver", "sw_name", "temp_cur1", "temp_cur2",
         "total_capacity", "vid", "voltage_cur", "session_start",
-        "session_end", "time", "status", "message"
+        "session_end", "time", "status", "message", "start_percent"
     ]
     for field in fields_to_reset:
         setattr(cell, field, None)
@@ -263,6 +272,46 @@ def update_or_add_big_battery_list(sn, cycle_times, stat_id):
             cycle_times=cycle_times,
             is_tired=False                                      # (int(cycle_times) > cabinet_setting.max_cycle_times)
         )
+
+
+def update_sn_count(stat_id, sanitized_sn):
+    almaty_timezone = pytz.timezone('Asia/Almaty')
+    current_time = datetime.datetime.now(almaty_timezone).replace(tzinfo=None)
+
+    morning_start = current_time.replace(hour=9, minute=0, second=0, microsecond=0)
+    evening_start = current_time.replace(hour=21, minute=0, second=0, microsecond=0)
+
+    if morning_start <= current_time < evening_start:
+        period = "first_half"
+        data_field = "first_data"
+        history_date = current_time.date()
+    else:
+        period = "second_half"
+        data_field = "second_data"
+
+        if current_time < morning_start:
+            history_date = (current_time - datetime.timedelta(days=1)).date()
+        else:
+            history_date = current_time.date()
+
+    history_entry, created = ss_main_cabinet_history.get_or_create(
+        history_for=stat_id,
+        date=history_date,
+        defaults={period: 0, data_field: ''}
+    )
+
+    existing_data = getattr(history_entry, data_field)
+    sn_list = existing_data.split(',') if existing_data else []
+
+    if sanitized_sn not in sn_list:
+        setattr(history_entry, period, getattr(history_entry, period) + 1)
+        sn_list.append(sanitized_sn)
+        setattr(history_entry, data_field, ','.join(sn_list))
+        history_entry.save()
+        print(
+            f"SN {sanitized_sn} добавлен в {period} для шкафа {stat_id} на дату {history_date}. Текущее значение: {getattr(history_entry, period)}")
+    else:
+        print(f"SN {sanitized_sn} уже существует в {period} для шкафа {stat_id} на дату {history_date}, пропускаем.")
 
 
 def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
@@ -336,7 +385,8 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
 
     if settings_for_settings.sw_ver:
         print("включена проверка версии ПО")
-        if existing_entry.sw_ver == cabinet_setting.sw_ver:
+        allowed_versions = cabinet_setting.sw_ver.split("/")
+        if existing_entry.sw_ver in allowed_versions:
             print("версия ПО совпадает с разрешенной")
         else:
             print("версия ПО не совпадает с настройками")
@@ -367,8 +417,9 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
 
     if settings_for_settings.vid:
         print("включена проверка вендора")
-        if existing_entry.vid == cabinet_setting.vid:
-            print("вендор cовпадает с настройками")
+        allowed_vendors = cabinet_setting.vid.split("/")
+        if existing_entry.vid in allowed_vendors:
+            print("вендор совпадает с настройками")
         else:
             print("вендор не совпадает с настройками")
             existing_entry.is_error = True
@@ -381,11 +432,14 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
     else:
         print("проверка вендора отключена")
 
+
     existing_entry.voltage_cur = status_data.get("VOLTAGE_CUR")
     existing_entry.time = current_time
 
     sanitized_sn = sanitize(status_data.get("SN"))
     existing_entry.sn = sanitized_sn
+
+    update_sn_count(stat_id, sanitized_sn)
 
     if sanitized_sn != status_data.get("SN"):
         existing_entry.is_error = True
@@ -396,10 +450,16 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
         else:
             existing_entry.message = "-SN Error"
 
+
+
     if settings_for_settings.year_of_manufacture:
         print("Проверка года включена")
-        if extract_year_from_sn(existing_entry.sn) == cabinet_setting.year_of_manufacture:
-            print(extract_year_from_sn(existing_entry.sn), "", cabinet_setting.year_of_manufacture)
+
+        allowed_years = cabinet_setting.year_of_manufacture.split("/")
+
+        extracted_year = extract_year_from_sn(existing_entry.sn)
+        if extracted_year in allowed_years:
+            print(f"Проверка не пройдена: {extracted_year} совпадает с одним из {allowed_years}")
             existing_entry.is_error = True
             existing_entry.status = "BAN"
             if existing_entry.message:
@@ -407,18 +467,14 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
                     existing_entry.message += ",-Catch Year"
             else:
                 existing_entry.message = "-Catch Year"
-            print("Проверка не пройдена")
         else:
-            print("Проверка пройдена")
+            print(f"Проверка пройдена: {extracted_year} не совпадает с {allowed_years}")
     else:
         print("Проверка года отключена")
 
     if not existing_entry.session_start:
         existing_entry.session_start = current_time
     existing_entry.session_end = current_time
-
-
-
 
     cycle_times = status_data.get("CYCLE_TIMES")
     update_or_add_big_battery_list(sanitized_sn, cycle_times, stat_id)
@@ -496,7 +552,8 @@ def move_to_report(existing_entry, reason):
         time=current_time,
         reason=reason,
         city=find_city_name(existing_entry.cabinet_id_id.city.city_name),
-        zone=find_zone_name(existing_entry.cabinet_id_id.zone.zone_name)
+        zone=find_zone_name(existing_entry.cabinet_id_id.zone.zone_name),
+        start_percent=existing_entry.start_percent
     )
     print(f"Перемещена строка с Endpoint ID {existing_entry.vir_sn_eid} в отчет из-за {reason}.")
 
@@ -702,12 +759,12 @@ async def start_mqtt_client():
 
 async def check_inactive_endpoints():
     while True:
-        await asyncio.sleep(120)
+        await asyncio.sleep(10)
         current_time = datetime.datetime.now()
         active_endpoints_keys = list(active_v_sn.keys())
         for vir_sn in active_endpoints_keys:
             last_updated_time = active_v_sn[vir_sn]
-            if current_time - last_updated_time > datetime.timedelta(seconds=120):
+            if current_time - last_updated_time > datetime.timedelta(seconds=10):
                 inactive_entries = ss_main_cell.select().where(ss_main_cell.vir_sn_eid == vir_sn)
                 for entry in inactive_entries:
                     move_to_report(entry, reason="inactive")
