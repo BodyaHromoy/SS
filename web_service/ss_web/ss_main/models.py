@@ -227,5 +227,3 @@ class Cabinet_history (models.Model):
     date = models.DateTimeField(null=True)
     first_data = models.TextField(null=True)
     second_data = models.TextField(null=True)
-
-

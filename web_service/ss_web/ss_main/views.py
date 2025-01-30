@@ -2,6 +2,8 @@ import json
 import random
 import string
 from datetime import timedelta
+import datetime
+import pytz
 from django.db.models.functions import Cast
 import openpyxl
 from django.contrib import messages
@@ -476,12 +478,26 @@ def cabinet_details(request, shkaf_id):
 
     error_slots = cells.filter(is_error=True)
 
+    # Получаем текущую дату
+    almaty_timezone = pytz.timezone('Asia/Almaty')
+    current_time = datetime.datetime.now(almaty_timezone).replace(tzinfo=None)
+    history_date = current_time.date()
+
+    # Получаем запись из истории для текущей даты
+    history_entry = Cabinet_history.objects.filter(history_for=cabinet, date=history_date).first()
+
+    # Получаем количество за первую и вторую половину дня
+    first_half_count = history_entry.first_half if history_entry else 0
+    second_half_count = history_entry.second_half if history_entry else 0
+
     context = {
         'cabinet': cabinet,
         'status_counts': json.dumps(list(status_counts)),
         'status_slots': json.dumps(status_slots),
         'average_charge': average_charge,
         'error_slots': error_slots,
+        'first_half_count': first_half_count,
+        'second_half_count': second_half_count,
     }
     return render(request, 'ss_main/scout_v2.html', context)
 
