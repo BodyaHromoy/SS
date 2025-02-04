@@ -1,8 +1,6 @@
 import asyncio
 import datetime
 import json
-from turtledemo.paint import switchupdown
-
 import paho.mqtt.publish as publish
 import pytz
 from paho.mqtt.client import Client
@@ -489,6 +487,7 @@ async def sort(msg):
                 existing_entry.remaining_cap = None
                 existing_entry.remaining_cap_percent = None
                 existing_entry.sw_ver = None
+                existing_entry.sw_name = None
                 existing_entry.temp_cur1 = None
                 existing_entry.temp_cur2 = None
                 existing_entry.total_capacity = None
@@ -525,6 +524,7 @@ async def sort(msg):
                 existing_entry.remaining_cap = None
                 existing_entry.remaining_cap_percent = None
                 existing_entry.sw_ver = None
+                existing_entry.sw_name = None
                 existing_entry.temp_cur1 = None
                 existing_entry.temp_cur2 = None
                 existing_entry.total_capacity = None
