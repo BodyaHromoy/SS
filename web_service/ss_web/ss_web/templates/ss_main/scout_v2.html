@@ -174,8 +174,8 @@
             <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('lock-id')">Копировать</button>
         </p>
         <p><strong>Состояние двери:</strong> Не назначено</p>
-        <p><strong>1-я половина дня:</strong> {{ first_half_count }}</p>
-        <p><strong>2-я половина дня</strong> {{ second_half_count }}</p>
+        <p><strong>1-я половина дня:</strong> <span id="first-half">{{ first_half_count }}</span></p>
+        <p><strong>2-я половина дня:</strong> <span id="second-half">{{ second_half_count }}</span></p>
         <button class="modal-close" id="modal-close">Закрыть</button>
     </div>
 </div>
@@ -318,17 +318,24 @@
     });
 }
 
-    function updateData() {
-        showLoader();
-        fetch(`/cabinet/{{ cabinet.shkaf_id }}/update/`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-            .then(response => response.json())
-            .then(data => {
-                updateBarChart(data.status_counts);
-                updateTable(data.status_slots);
-            })
-            .catch(error => console.error('Ошибка обновления:', error))
-            .finally(hideLoader);
-    }
+function updateModalInfo(firstHalf, secondHalf) {
+    document.querySelector('#first-half').textContent = firstHalf;
+    document.querySelector('#second-half').textContent = secondHalf;
+}
+
+function updateData() {
+    showLoader();
+    fetch(`/cabinet/{{ cabinet.shkaf_id }}/update/`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(response => response.json())
+        .then(data => {
+            updateBarChart(data.status_counts);
+            updateTable(data.status_slots);
+            updateModalInfo(data.first_half_count, data.second_half_count);
+        })
+        .catch(error => console.error('Ошибка обновления:', error))
+        .finally(hideLoader);
+}
+
 
     document.addEventListener('DOMContentLoaded', () => {
         const statusCounts = JSON.parse('{{ status_counts|default:"[]"|escapejs }}');

@@ -656,6 +656,7 @@ async def sort(msg):
                 existing_entry.remaining_cap = None
                 existing_entry.remaining_cap_percent = None
                 existing_entry.sw_ver = None
+                existing_entry.sw_name = None
                 existing_entry.temp_cur1 = None
                 existing_entry.temp_cur2 = None
                 existing_entry.total_capacity = None
@@ -692,6 +693,7 @@ async def sort(msg):
                 existing_entry.remaining_cap = None
                 existing_entry.remaining_cap_percent = None
                 existing_entry.sw_ver = None
+                existing_entry.sw_name = None
                 existing_entry.temp_cur1 = None
                 existing_entry.temp_cur2 = None
                 existing_entry.total_capacity = None
@@ -790,6 +792,7 @@ async def check_inactive_endpoints():
                     entry.remaining_cap = None
                     entry.remaining_cap_percent = None
                     entry.sw_ver = None
+                    entry.sw_name = None
                     entry.temp_cur1 = None
                     entry.temp_cur2 = None
                     entry.total_capacity = None

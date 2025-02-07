@@ -264,6 +264,7 @@
                             <th>Готово</th>
                             <th>Зарядка</th>
                             <th>Пусто</th>
+                            <th>BAN</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -274,6 +275,7 @@
                             <td data-label="Готово">{{ cabinet_status.ready_count }}</td>
                             <td data-label="Зарядка">{{ cabinet_status.charging_count }}</td>
                             <td data-label="Пусто">{{ cabinet_status.empty_count }}</td>
+                            <td data-label="BAN">{{ cabinet_status.ban_count }}</td>
                             <td data-label=""><a href="{% url 'cabinet_details' cabinet_status.cabinet.shkaf_id %}" class="btn btn-primary btn-sm">Детали</a></td>
                         </tr>
                         {% endfor %}
@@ -322,6 +324,7 @@
                         <td data-label="Готово">${cabinet_status.ready_count}</td>
                         <td data-label="Зарядка">${cabinet_status.charging_count}</td>
                         <td data-label="Пусто">${cabinet_status.empty_count}</td>
+                        <td data-label="BAN">${cabinet_status.ban_count}</td>
                         <td data-label=""><a href="/cabinet/${cabinet_status.shkaf_id}/" class="btn btn-primary btn-sm">Детали</a></td>
                     `;
                     tableBody.appendChild(row);

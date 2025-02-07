@@ -442,11 +442,13 @@ def user_cabinets(request):
         ready_count = cells.filter(status='ready').count()
         charging_count = cells.filter(status='charging').count()
         empty_count = cells.filter(status='empty').count()
+        ban_count = cells.filter(status='BAN').count()
         cabinet_statuses.append({
             'cabinet': cabinet,
             'ready_count': ready_count,
             'charging_count': charging_count,
             'empty_count': empty_count,
+            'ban_count': ban_count
         })
 
     context = {
@@ -521,16 +523,21 @@ def update_cabinet_data(request, shkaf_id):
             if status not in status_slots:
                 status_slots[status] = []
             status_slots[status].append({'endpointid': cell.endpointid, 'charge': cell.cap_percent, 'sw_name': cell.sw_name})
-
-        # Fetch the error slots
         error_slots = cells.filter(is_error=True)
         error_slots_list = [{'endpointid': slot.endpointid, 'message': slot.message} for slot in error_slots]
-
+        almaty_timezone = pytz.timezone('Asia/Almaty')
+        current_time = datetime.datetime.now(almaty_timezone).replace(tzinfo=None)
+        history_date = current_time.date()
+        history_entry = Cabinet_history.objects.filter(history_for=cabinet, date=history_date).first()
+        first_half_count = history_entry.first_half if history_entry else 0
+        second_half_count = history_entry.second_half if history_entry else 0
         return JsonResponse({
             'status_counts': list(status_counts),
             'status_slots': status_slots,
             'average_charge': average_charge,
             'error_slots': error_slots_list,
+            'first_half_count': first_half_count,
+            'second_half_count': second_half_count,
         })
     else:
         return JsonResponse({'error': 'Invalid request'}, status=400)
@@ -549,11 +556,13 @@ def user_cabinets_api(request):
         ready_count = cells.filter(status='ready').count()
         charging_count = cells.filter(status='charging').count()
         empty_count = cells.filter(status='empty').count()
+        ban_count = cells.filter(status='BAN').count()
         cabinet_statuses.append({
             'shkaf_id': cabinet.shkaf_id,
             'ready_count': ready_count,
             'charging_count': charging_count,
             'empty_count': empty_count,
+            'ban_count': ban_count,
         })
 
     return JsonResponse(cabinet_statuses, safe=False)
