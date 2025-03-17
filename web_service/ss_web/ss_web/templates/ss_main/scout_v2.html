@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Мониторинг Шкафа №{{ cabinet.shkaf_id }}</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -146,6 +148,49 @@
             z-index: 2000;
             display: none;
         }
+        #map-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #map-modal.active {
+        display: flex;
+    }
+
+    #map-modal .modal-content {
+        background: white;
+        padding: 1.5em;
+        border-radius: 8px;
+        max-width: 600px;
+        width: 90%;
+    }
+
+    #map-modal .modal-close {
+        background: #0056B3;
+        color: white;
+        border: none;
+        padding: 0.5em 1em;
+        border-radius: 4px;
+        cursor: pointer;
+        float: right;
+    }
+
+        .map-icon {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    margin-left: auto;
+}
+
 
         @keyframes spin {
             0% { transform: translate(-50%, -50%) rotate(0deg); }
@@ -160,7 +205,9 @@
     <div class="info">
         <p><strong>Шкаф №:</strong> {{ cabinet.shkaf_id|default:"-" }}</p>
     </div>
+    <button id="mapButton" onclick="showMap()" class="map-icon">🗺️</button>
     <button class="menu-btn" id="menu-btn">☰</button>
+
 </div>
 
 <div class="modal" id="info-modal">
@@ -179,6 +226,16 @@
         <button class="modal-close" id="modal-close">Закрыть</button>
     </div>
 </div>
+
+<div class="modal" id="map-modal">
+    <div class="modal-content">
+        <h5>Локация Шкафа №:{{ cabinet.shkaf_id|default:"-" }}</h5>
+        <button class="btn btn-primary" onclick="goToGoogleMaps()">Открыть в Google Maps</button>
+        <div id="map" style="height: 400px;"></div>
+        <button class="modal-close" id="map-modal-close">Закрыть</button>
+    </div>
+</div>
+
 
 <div class="main-content">
     <div id="chartView" class="card">
@@ -288,6 +345,28 @@
             }
         }
     });
+        function showMap() {
+            document.getElementById('map-modal').classList.add('active');
+            const map = L.map('map').setView([{{ latitude }}, {{ longitude }}], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            L.marker([{{ latitude }}, {{ longitude }}]).addTo(map)
+                .bindPopup('Шкаф №{{ cabinet.shkaf_id }}')
+                .openPopup();
+        }
+
+    // Close the map modal
+    document.getElementById('map-modal-close').addEventListener('click', () => {
+        document.getElementById('map-modal').classList.remove('active');
+    });
+
+        function goToGoogleMaps() {
+        const latitude = {{ latitude }};
+        const longitude = {{ longitude }};
+        const googleMapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        window.open(googleMapsUrl, '_blank');
+    }
 
     function updateBarChart(statusCounts) {
         barChart.data.labels = statusCounts.map(item => item.status);

@@ -17,21 +17,19 @@
             box-sizing: border-box;
         }
         .info-header {
-            background-color: #007BFF;
+            background-color: #0056B3;
             color: white;
             padding: 1em;
-            border-radius: 0.3em;
+            text-align: left;
+
             position: fixed;
             width: 100%;
             top: 0;
             left: 0;
             z-index: 1000;
-            text-align: left;
-            border: 1px solid #ccc;
-            font-size: 1.2em;
         }
         .main-content {
-            padding-top: 8em;
+            padding-top: 5em;
             padding-bottom: 5em;
         }
         h2 {
@@ -88,25 +86,51 @@
         .menu-btn:hover {
             background: #0056b3;
         }
-        .hidden-buttons {
-            display: none;
-            flex-direction: column;
-            gap: 0.5em;
-            margin-top: 0.5em;
-        }
-        .footer {
-            text-align: center;
-            position: fixed;
-            width: 100%;
-            bottom: 0;
-            left: 0;
-            background-color: #f0f0f0;
-            padding: 1em;
-            border-top: 1px solid #CCC;
-            z-index: 1000;
-        }
+
+         .footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    background-color: white;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+    padding: 1em 1.5em; /* Increased padding */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1em;
+    z-index: 1000;
+}
+
         .footer button {
-            margin: 0.5em;
+    font-size: 1.2em; /* Increased font size */
+    padding: 1em 2em; /* Increased padding */
+}
+.footer a {
+    font-size: 1em; /* Standard button text size */
+    padding: 0.75em 1.5em; /* Increased internal padding */
+    background-color: #0056b3; /* Standard blue background */
+    color: white; /* White text */
+    border-radius: 0.3em; /* Rounded corners */
+    border: none; /* No border */
+    cursor: pointer; /* Pointer cursor on hover */
+    box-sizing: border-box;
+    text-align: center;
+    display: inline-block; /* Makes it act as a button */
+}
+
+.footer a:hover {
+    background-color: #004085; /* Dark blue on hover */
+    color: white;
+    transform: translateY(-2px); /* Slight button lift on hover */
+}
+
+
+        .footer button:hover {
+            background-color: #004085; /* Темно-синий при наведении */
+            color: #fff;
+            transform: translateY(-2px); /* Легкий подъем кнопки */
         }
         @media (max-width: 768px) {
             thead {

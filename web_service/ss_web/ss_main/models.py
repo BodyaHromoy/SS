@@ -89,6 +89,9 @@ class Cabinet(models.Model):
     street = models.TextField()
     extra_inf = models.TextField()
     vendor = models.ForeignKey(to=Vendor, on_delete=models.CASCADE, null=False, to_field='vendor_name')
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+
 
     def __str__(self):
         return self.shkaf_id

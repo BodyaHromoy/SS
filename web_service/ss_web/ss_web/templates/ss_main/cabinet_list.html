@@ -193,7 +193,7 @@
         <p>Boxes in {{ zone.zone_name }} </p>
         <p>Capacity: {{ total_cells_count }}</p>
         <p>Online boxes: {{ cabinets_count }}</p>
-        <p>Locked doors: 3</p>
+        <p>Locked doors: undefined</p>
     </header>
 
     <main class="main-content">
@@ -206,6 +206,7 @@
                         <th>↯ - Charging</th>
                         <th>◯ - Empty</th>
                         <th>! - Inactive</th>
+                        <th>BAN</th>
                         <th>Door state</th>
                         <th></th>
                     </tr>
@@ -218,6 +219,7 @@
                         <td data-label="↯">{{ status_counts.charging }}</td>
                         <td data-label="◯">{{ status_counts.empty }}</td>
                         <td data-label="!">{{ status_counts.Inactive }}</td>
+                        <td data-label="BAN">{{ status_counts.ban }}</td>
                         <td data-label="Door state"> Undefined </td>
                         <td data-label="">
                             <a href="{% url 'cabinet_details' cabinet.shkaf_id %}" class="btn btn-primary btn-sm">Details</a>

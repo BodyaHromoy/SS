@@ -33,11 +33,11 @@
         .messages li {
             padding: 0.5em 0;
         }
-        .search-wrapper {
+        .filter-wrapper {
             margin-bottom: 1em;
             text-align: center;
         }
-        .search-wrapper input {
+        .filter-wrapper select {
             width: 100%;
             max-width: 600px;
             padding: 0.5em;
@@ -96,21 +96,26 @@
         .btn-danger:hover {
             background: #c82333;
         }
-        a {
-            display: block;
+        .fixed-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
             width: 100%;
-            max-width: 800px;
-            margin: 1em auto;
+            background: #fff;
             text-align: center;
-            padding: 1em;
+            padding: 1em 0; /* Reduced padding */
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .fixed-footer a {
+            display: inline-block;
+            padding: 0.75em 1.5em;
             border: 1px solid #007BFF;
             border-radius: 0.3em;
             color: #007BFF;
             text-decoration: none;
-            font-size: 1em;
-            box-sizing: border-box;
+            font-size: 1.2em;
         }
-        a:hover {
+        .fixed-footer a:hover {
             background: #007BFF;
             color: white;
         }
@@ -155,8 +160,13 @@
 <body>
 <h2>Scout managing tool</h2>
 
-<div class="search-wrapper">
-    <input type="text" id="searchInput" placeholder="Search..." onkeyup="filterTable()">
+<div class="filter-wrapper">
+    <select id="zoneFilter" onchange="filterByZone()">
+        <option value="">Все зоны</option>
+        {% for zone in zones %}
+        <option value="{{ zone.zone_name }}">{{ zone.zone_name }}</option>
+        {% endfor %}
+    </select>
 </div>
 
 {% if messages %}
@@ -181,7 +191,7 @@
         {% for courier in couriers %}
         <tr>
             <td data-label="Scout">{{ courier.username }}</td>
-            <td data-label="Current zone">
+            <td data-label="Current zone" class="zone-column">
                 {% for zone in courier.zones.all %}
                 {{ zone.zone_name }}
                 {% empty %}
@@ -212,12 +222,14 @@
         </tbody>
     </table>
 </div>
+
 <div class="fixed-footer">
-    <a href="{% url 'zone_list' %}">Back to Zone List</a>
+    <a href="{% url 'zone_list' %}">Назад</a>
 </div>
+
 <script>
     function deleteCourier(courierId) {
-        const confirmation = confirm('You sure want to delete that user?');
+        const confirmation = confirm('Вы уверены, что хотите удалить пользователя?');
         if (!confirmation) {
             return;
         }
@@ -228,29 +240,25 @@
                 'X-CSRFToken': '{{ csrf_token }}'
             }
         })
-            .then(response => response.json())
-            .then(data => {
+        .then(response => response.json())
+        .then(data => {
             if (data.status === 'success') {
                 location.reload();
             } else {
-                alert('ERROR: User not deleted!');
+                alert('Ошибка: пользователь не удалён!');
             }
         });
     }
 
-    function filterTable() {
-        const input = document.getElementById('searchInput');
-        const filter = input.value.toLowerCase();
-        const table = document.getElementById('courierTable');
-        const trs = table.getElementsByTagName('tr');
+    function filterByZone() {
+        const filterValue = document.getElementById('zoneFilter').value.toLowerCase();
+        const rows = document.querySelectorAll('#courierTable tbody tr');
 
-        for (let i = 1; i < trs.length; i++) {
-            const td = trs[i].getElementsByTagName('td')[0];
-            if (td) {
-                const textValue = td.textContent || td.innerText;
-                trs[i].style.display = textValue.toLowerCase().indexOf(filter) > -1 ? '' : 'none';
-            }
-        }
+        rows.forEach(row => {
+            const zoneCell = row.querySelector('.zone-column');
+            const zoneText = zoneCell ? zoneCell.textContent.toLowerCase() : '';
+            row.style.display = filterValue === "" || zoneText.includes(filterValue) ? "" : "none";
+        });
     }
 </script>
 </body>

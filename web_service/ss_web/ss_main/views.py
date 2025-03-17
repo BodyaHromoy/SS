@@ -336,6 +336,7 @@ def cabinet_list(request, zone_id):
             'charging': cells.filter(status='charging').count(),
             'empty': cells.filter(status='empty').count(),
             'Inactive': cells.filter(status='Inactive').count(),
+            'ban': cells.filter(status='BAN').count(),
         }
         cabinets_status_counts.append((cabinet, status_counts))
 
@@ -500,6 +501,8 @@ def cabinet_details(request, shkaf_id):
         'error_slots': error_slots,
         'first_half_count': first_half_count,
         'second_half_count': second_half_count,
+        'latitude': cabinet.latitude,
+        'longitude': cabinet.longitude,
     }
     return render(request, 'ss_main/scout_v2.html', context)
 
@@ -538,6 +541,8 @@ def update_cabinet_data(request, shkaf_id):
             'error_slots': error_slots_list,
             'first_half_count': first_half_count,
             'second_half_count': second_half_count,
+            'latitude': cabinet.latitude,
+            'longitude': cabinet.longitude,
         })
     else:
         return JsonResponse({'error': 'Invalid request'}, status=400)
