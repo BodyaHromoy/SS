@@ -39,6 +39,10 @@ urlpatterns = [
     path('send_command/', views.send_command, name='send_command'),
     path('cabinet_settings/<int:shkaf_id>/', views.cabinet_settings, name='cabinet_settings'),
 
+    # Карта
+    path('map/', map_view, name='map_view'),
+    path('api/cabinets/', get_cabinets, name='get_cabinets'),
+
     # старая инженерка
     path('123/', main, name='main'),
 

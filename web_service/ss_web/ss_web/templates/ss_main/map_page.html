@@ -1,0 +1,512 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Карта шкафов</title>
+
+    <!-- Подключаем Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <style>
+        /* Стили для кнопок зума */
+        .leaflet-control-zoom {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1001;
+            background-color: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .leaflet-control-zoom-in,
+        .leaflet-control-zoom-out {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .leaflet-control-zoom-in:hover,
+        .leaflet-control-zoom-out:hover {
+            background-color: #0056b3;
+        }
+
+        /* Карта на весь экран */
+        #map {
+            height: 100vh;
+        }
+
+        /* Затемнение фона при открытии меню */
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 900;
+        }
+
+        /* Выезжающее меню (слева) */
+        #sidebar {
+            width: 320px;
+            height: 100vh;
+            position: fixed;
+            left: -350px;
+            top: 0;
+            background: #fff;
+            transition: 0.3s ease-in-out;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            z-index: 1000;
+            overflow-y: auto;
+            border-radius: 8px;
+        }
+
+        /* Активное меню */
+        #sidebar.active {
+            left: 0;
+        }
+
+        /* Кнопка закрытия */
+        .close-btn {
+            cursor: pointer;
+            font-size: 24px;
+            font-weight: bold;
+            display: inline-block;
+            text-align: right;
+            padding: 10px;
+            color: #333;
+            transition: color 0.3s;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .close-btn:hover {
+            color: #007bff;
+        }
+
+        /* Заголовок меню и кнопка закрытия в одной строке */
+        #sidebar h3 {
+            font-size: 24px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #333;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        /* Таблица информации */
+        #sidebar .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        /* Стиль для строк таблицы */
+        #sidebar .info-table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+            color: #555;
+        }
+
+        /* Заголовки таблицы */
+        #sidebar .info-table th {
+            text-align: left;
+            font-weight: bold;
+            padding: 10px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        /* Таблица статусов */
+        #sidebar .status-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        /* Стиль для строк таблицы статусов */
+        #sidebar .status-table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+            color: #555;
+        }
+
+        /* Заголовки таблицы статусов */
+        #sidebar .status-table th {
+            text-align: left;
+            font-weight: bold;
+            padding: 10px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        /* Верхняя панель (поиск) */
+        .top-bar {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 1002;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+            max-width: 320px;
+        }
+
+        /* Поле поиска */
+        #search-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border 0.3s;
+        }
+
+        #search-input:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        /* Список автозаполнения */
+        #suggestions {
+            position: absolute;
+            top: 50px;
+            left: 0;
+            background: white;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 1003;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* Элементы списка */
+        .suggestion {
+            padding: 10px;
+            cursor: pointer;
+            color: #333;
+        }
+
+        .suggestion:hover {
+            background: #f0f0f0;
+        }
+
+        /* Кнопка "Назад" */
+        .map-controls {
+            position: fixed;
+            right: 10px;
+            top: 10px;
+            z-index: 1001;
+        }
+
+        .back-btn {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .back-btn:hover {
+            background: #0056b3;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .back-btn:focus {
+            outline: none;
+        }
+
+        /* Контейнер для диаграммы */
+        #status-chart-container {
+            margin-top: 20px;
+            width: 100%;
+            height: 300px;
+        }
+
+        /* Кнопка Google Maps */
+        #open-google-maps {
+            display: block;
+            background-color: #28a745;
+            color: white;
+            padding: 10px 15px;
+            text-align: center;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+            cursor: pointer;
+            border: none;
+            transition: 0.3s;
+        }
+
+        #open-google-maps:hover {
+            background-color: #218838;
+        }
+
+        /* Адаптивность для мобильных устройств */
+        @media (max-width: 768px) {
+            .top-bar {
+                width: calc(100% - 40px);
+                top: 20px;
+            }
+
+            #sidebar {
+                width: 100%;
+                left: -100%;
+                box-shadow: none;
+            }
+
+            #sidebar.active {
+                left: 0;
+            }
+
+            .leaflet-control-zoom {
+                bottom: 10px;
+                right: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .top-bar {
+                width: 100%;
+                padding: 10px;
+                font-size: 14px;
+            }
+
+            .back-btn {
+                font-size: 14px;
+                padding: 8px 16px;
+            }
+
+            .back-btn:hover {
+                padding: 8px 16px;
+            }
+
+            #search-input {
+                font-size: 12px;
+            }
+        }
+    </style>
+
+</head>
+<body>
+    <!-- Затемнение (фон) -->
+    <div id="overlay" onclick="toggleSidebar(false)"></div>
+
+    <!-- Верхняя панель с поиском -->
+    <div class="top-bar">
+        <input type="text" id="search-input" placeholder="Введите номер шкафа..." oninput="searchCabinet()">
+        <div id="suggestions"></div>
+    </div>
+
+    <!-- Выезжающее меню -->
+    <div id="sidebar">
+        <span class="close-btn" onclick="toggleSidebar(false)">×</span>
+        <h3>Информация о шкафе</h3>
+
+        <!-- Таблица информации о шкафе -->
+        <table class="info-table">
+            <tr>
+                <th>Box ID</th>
+                <td><span id="cabinet-id"></span></td>
+            </tr>
+            <tr>
+                <th>City</th>
+                <td><span id="cabinet-city"></span></td>
+            </tr>
+            <tr>
+                <th>Zone</th>
+                <td><span id="cabinet-zone"></span></td>
+            </tr>
+            <tr>
+                <th>Lock ID</th>
+                <td><span id="cabinet-lockid"></span></td>
+            </tr>
+        </table>
+
+ <!-- Таблица статусов заменяется на диаграмму -->
+<div id="status-chart-container">
+    <button id="open-google-maps">Открыть на Google Maps</button>
+    <canvas id="status-chart"></canvas>
+</div>
+
+
+    </div>
+
+    <!-- Кнопка назад -->
+    <div class="map-controls">
+        <button class="back-btn" onclick="toggleSidebar(false)">Назад</button>
+    </div>
+
+    <!-- Карта -->
+    <div id="map"></div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let map = L.map('map').setView([55.7558, 37.6173], 12); // Координаты Москвы
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        let cabinetsData = [];
+        let markers = {};
+
+       function toggleSidebar(state, cabinet = null) {
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
+    const ctx = document.getElementById("status-chart").getContext("2d"); // Контекст для диаграммы
+
+    // Добавляем переменные для хранения координат
+    let cabinetLatitude = null;
+    let cabinetLongitude = null;
+
+    if (state) {
+        overlay.style.display = "block";
+        sidebar.classList.add("active");
+
+        if (cabinet) {
+            // Заполнение информации о шкафе
+            document.getElementById("cabinet-id").textContent = cabinet.shkaf_id;
+            document.getElementById("cabinet-city").textContent = cabinet.city || "Не указано";
+            document.getElementById("cabinet-zone").textContent = cabinet.zone || "Не указано";
+            document.getElementById("cabinet-lockid").textContent = cabinet.extrainf || "Не указано";
+
+            // Считываем количество каждого статуса
+            let statusCount = cabinet.status_counts || {}; // Получаем статусы из словаря
+
+            // Если график уже существует, уничтожаем его
+            if (window.chart) {
+                window.chart.destroy();
+            }
+
+            // Обновление диаграммы
+            window.chart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Inactive', 'Ready', 'Charging', 'Not Charging', 'Ban', 'Empty'],
+                    datasets: [{
+                        data: [
+                            statusCount['Inactive'] || 0,
+                            statusCount['ready'] || 0,
+                            statusCount['charging'] || 0,
+                            statusCount['not_charging'] || 0,
+                            statusCount['BAN'] || 0,
+                            statusCount['empty'] || 0
+                        ],
+                        backgroundColor: ['black', 'green', 'yellow', 'gray', 'red', 'blue'],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(tooltipItem) {
+                                    return tooltipItem.label + ': ' + tooltipItem.raw;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Сохраняем координаты для последующего использования
+            cabinetLatitude = cabinet.latitude;
+            cabinetLongitude = cabinet.longitude;
+
+            // Добавляем обработчик на кнопку Google Maps
+            const googleMapsButton = document.getElementById("open-google-maps");
+            googleMapsButton.onclick = function() {
+                if (cabinetLatitude && cabinetLongitude) {
+                    const googleMapsUrl = `https://www.google.com/maps?q=${cabinetLatitude},${cabinetLongitude}`;
+                    window.open(googleMapsUrl, '_blank'); // Открываем ссылку в новой вкладке
+                } else {
+                    alert('У шкафа нет координат для отображения на Google Maps');
+                }
+            };
+        }
+    } else {
+        overlay.style.display = "none";
+        sidebar.classList.remove("active");
+    }
+}
+
+
+        function searchCabinet() {
+            let input = document.getElementById("search-input").value.toLowerCase();
+            let suggestionsBox = document.getElementById("suggestions");
+            suggestionsBox.innerHTML = '';
+
+            let matches = cabinetsData.filter(c => c.shkaf_id.toLowerCase().includes(input));
+            if (matches.length > 0) {
+                suggestionsBox.style.display = "block";
+                matches.forEach(cabinet => {
+                    let div = document.createElement("div");
+                    div.classList.add("suggestion");
+                    div.textContent = cabinet.shkaf_id;
+                    div.onclick = () => selectCabinet(cabinet);
+                    suggestionsBox.appendChild(div);
+                });
+            } else {
+                suggestionsBox.style.display = "none";
+            }
+        }
+
+        function selectCabinet(cabinet) {
+            document.getElementById("search-input").value = cabinet.shkaf_id;
+            document.getElementById("suggestions").style.display = "none";
+
+            if (cabinet.latitude && cabinet.longitude) {
+                map.setView([parseFloat(cabinet.latitude), parseFloat(cabinet.longitude)], 14);
+
+                // Подсветка маркера
+                if (markers[cabinet.shkaf_id]) {
+                    markers[cabinet.shkaf_id].openPopup();
+                }
+
+                toggleSidebar(true, cabinet);
+            } else {
+                console.warn(`У шкафа ${cabinet.shkaf_id} нет координат`);
+            }
+        }
+
+        fetch('/api/cabinets/')
+            .then(response => response.json())
+            .then(data => {
+                cabinetsData = data.cabinets;
+                data.cabinets.forEach(cabinet => {
+                    if (cabinet.latitude && cabinet.longitude) {
+                        let marker = L.marker([parseFloat(cabinet.latitude), parseFloat(cabinet.longitude)]).addTo(map);
+                        marker.on('click', () => toggleSidebar(true, cabinet));
+                        markers[cabinet.shkaf_id] = marker;
+                    }
+                });
+            })
+            .catch(error => console.error('Ошибка загрузки шкафов:', error));
+    </script>
+</body>
+</html>

@@ -154,6 +154,32 @@
             margin-right: 5px;
         }
 
+        /* Стили для сообщений и ошибок */
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+        .alert-success {
+            color: #3c763d;
+            background-color: #dff0d8;
+            border-color: #d6e9c6;
+        }
+        .alert-error {
+            color: #a94442;
+            background-color: #f2dede;
+            border-color: #ebccd1;
+        }
+        .error-input {
+            border-color: #a94442 !important;
+        }
+        .error-text {
+            color: #a94442 !important;
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+
         @keyframes pulse {
             from {
                 transform: scale(0.9);
@@ -172,22 +198,45 @@
             Back
     </a>
     <div class="form-container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}error{% else %}success{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
         <form method="post" class="form">
             {% csrf_token %}
             <p class="title">Create Courier</p>
             <div class="flex">
                 <label>
-                    <input class="input" type="text" name="first_name" required placeholder="">
+                    <input class="input {% if form.errors.first_name %}error-input{% endif %}"
+                           type="text" name="first_name" required placeholder=""
+                           value="{% if form.first_name.value %}{{ form.first_name.value }}{% endif %}">
                     <span>First Name</span>
+                    {% if form.errors.first_name %}
+                        <div class="error-text">{{ form.errors.first_name.0 }}</div>
+                    {% endif %}
                 </label>
                 <label>
-                    <input class="input" type="text" name="last_name" required placeholder="">
+                    <input class="input {% if form.errors.last_name %}error-input{% endif %}"
+                           type="text" name="last_name" required placeholder=""
+                           value="{% if form.last_name.value %}{{ form.last_name.value }}{% endif %}">
                     <span>Last Name</span>
+                    {% if form.errors.last_name %}
+                        <div class="error-text">{{ form.errors.last_name.0 }}</div>
+                    {% endif %}
                 </label>
             </div>
             <label>
-                <input class="input" type="email" name="email" required placeholder="">
+                <input class="input {% if form.errors.email %}error-input{% endif %}"
+                       type="email" name="email" required placeholder=""
+                       value="{% if form.email.value %}{{ form.email.value }}{% endif %}">
                 <span>Email</span>
+                {% if form.errors.email %}
+                    <div class="error-text">{{ form.errors.email.0 }}</div>
+                {% endif %}
             </label>
             <label>
                 <input class="input" type="text" name="role" value="courier" disabled>
@@ -197,6 +246,23 @@
         </form>
     </div>
 <script>
+    // Автоматическое скрытие сообщений через 5 секунд
+    document.addEventListener('DOMContentLoaded', function() {
+        var alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function(alert) {
+            setTimeout(function() {
+                alert.style.opacity = '0';
+                setTimeout(function() {
+                    alert.style.display = 'none';
+                }, 600);
+            }, 5000);
+        });
+
+        // Очистка формы после успешной отправки
+        {% if form.is_bound and not form.errors %}
+            document.querySelector('form').reset();
+        {% endif %}
+    });
 </script>
 </body>
 </html>

@@ -149,7 +149,7 @@ EMAIL_PORT = 465
 EMAIL_USE_TLS = False
 EMAIL_USE_SSL = True
 EMAIL_HOST_USER = 'bhromenko@mail.ru'
-EMAIL_HOST_PASSWORD = 'w7vLvrMpksm2rMYVrtkt'
+EMAIL_HOST_PASSWORD = 'iyjse0DR4cSZs51Yk7y4'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/

@@ -45,6 +45,54 @@ def is_regional_manager(user):
     return user.is_authenticated and user.role == 'regional_manager' or 'engineer'
 
 
+def map_view(request):
+    cabinets = Cabinet.objects.all()
+    data = []
+    for cabinet in cabinets:
+        cells = Cell.objects.filter(cabinet_id=cabinet)
+        status_counts = cells.values("status").annotate(count=models.Count("status"))
+        status_dict = {status["status"]: status["count"] for status in status_counts}
+
+        data.append({
+            "shkaf_id": cabinet.shkaf_id,
+            "latitude": cabinet.latitude,
+            "longitude": cabinet.longitude,
+            "status_counts": status_dict,
+        })
+
+    return render(request, 'ss_main/map_page.html', {"cabinets": data})
+
+
+def get_cabinets(request):
+    cabinets = Cabinet.objects.all()
+    data = []
+    for cabinet in cabinets:
+        # Получаем все ячейки для этого шкафа
+        cells = Cell.objects.filter(cabinet_id=cabinet)
+
+        # Подсчитываем количество каждого статуса
+        status_counts = cells.values("status").annotate(count=models.Count("status"))
+
+        # Преобразуем список статусов в словарь для удобства
+        status_dict = {status["status"]: status["count"] for status in status_counts}
+
+        # Добавляем информацию о шкафе и статусах
+        data.append({
+            "shkaf_id": cabinet.shkaf_id,
+            "latitude": cabinet.latitude,
+            "longitude": cabinet.longitude,
+            "status_counts": status_dict,  # Добавляем словарь с количеством статусов
+            "city": cabinet.city.city_name,
+            "zone": cabinet.zone.zone_name,
+            "location": cabinet.location,
+            "extrainf": cabinet.extra_inf,
+            "street": cabinet.street,
+        })
+
+    return JsonResponse({"cabinets": data})
+
+
+
 @user_passes_test(is_engineer)
 def send_command(request):
     if request.method == 'POST':
@@ -147,9 +195,6 @@ def main(request):
 @login_required
 @user_passes_test(is_logistician)
 def create_courier(request):
-    #if not request.user.role == 'logistician':
-     #   return HttpResponseForbidden()
-
     if request.method == 'POST':
         form = CourierCreationForm(request.POST)
         if form.is_valid():
@@ -163,18 +208,23 @@ def create_courier(request):
             for city in current_user_citys:
                 user.citys.add(city)
 
+            # Отправка письма и дубляж на почту нового скаута
             send_mail(
                 'Scout Registration Info',
                 f'Username: {user.username}\nPassword: {password}\nEmail: {user.email}\nFull Name: {user.first_name} {user.last_name}',
                 'bhromenko@mail.ru',
-                [request.user.email],
+                [request.user.email, user.email],  # Добавили email нового скаута
                 fail_silently=False,
             )
             messages.success(request, f"Скаут '{user.username}' успешно зарегистрирован (проверьте свою почту).")
+            return redirect('create_courier')  # Редирект для очистки формы
+        else:
+            messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
     else:
         form = CourierCreationForm()
 
     return render(request, 'ss_main/create_courier.html', {'form': form})
+
 
 
 # Создание нового логиста
