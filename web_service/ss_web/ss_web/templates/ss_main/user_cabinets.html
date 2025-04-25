@@ -18,42 +18,45 @@
     }
 
     .info-header {
-        background-color: #0056B3;
-        color: white;
-        padding: 1em;
-        position: fixed;
-        width: 100%;
-        top: 0;
-        left: 0;
-        z-index: 1000;
-        text-align: center;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+    background-color: #0056B3;
+    color: white;
+    padding: 0.5em 1em; /* уменьшили отступы */
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95em; /* уменьшили шрифт */
+    line-height: 1.2;
+}
 
-    .info-header p {
-        margin: 0;
-    }
+.info-header p {
+    margin: 0;
+    font-size: 0.95em;
+}
 
-    .info-header .user-info {
-        display: flex;
-        align-items: center;
-    }
+.info-header .user-info p {
+    margin-right: 0.5em;
+}
 
-    .info-header .user-info p {
-        margin-right: 1em;
-    }
+.zones-list p {
+    margin: 0 0 0.2em 0;
+    font-weight: bold;
+    font-size: 0.95em;
+}
 
-    .zones-list ul {
-        list-style-type: none;
-        padding-left: 0;
-    }
+.zones-list ul {
+    margin: 0;
+}
 
-    .zones-list li {
-        padding: 0.2em 0;
-    }
+.zones-list li {
+    font-size: 0.9em;
+}
 
     .main-content {
         padding-top: 4em;
