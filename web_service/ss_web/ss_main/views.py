@@ -376,7 +376,9 @@ def cabinet_list(request, zone_id):
     cabinets = Cabinet.objects.filter(zone=zone)
     cabinets_count = cabinets.count()
 
+
     total_cells_count = 0
+    cells_through = 0
     cabinets_status_counts = []
     for cabinet in cabinets:
         cells = Cell.objects.filter(cabinet_id=cabinet)
