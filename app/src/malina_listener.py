@@ -278,8 +278,8 @@ def update_sn_count(stat_id, sanitized_sn):
     almaty_timezone = pytz.timezone('Asia/Almaty')
     current_time = datetime.datetime.now(almaty_timezone).replace(tzinfo=None)
 
-    morning_start = current_time.replace(hour=0, minute=0, second=0, microsecond=0)
-    evening_start = current_time.replace(hour=12, minute=0, second=0, microsecond=0)
+    morning_start = current_time.replace(hour=9, minute=0, second=0, microsecond=0)
+    evening_start = current_time.replace(hour=21, minute=0, second=0, microsecond=0)
 
     if morning_start <= current_time < evening_start:
         period = "first_half"

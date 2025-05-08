@@ -223,6 +223,7 @@
         <p><strong>Состояние двери:</strong> Не назначено</p>
         <p><strong>1-я половина дня:</strong> <span id="first-half">{{ first_half_count }}</span></p>
         <p><strong>2-я половина дня:</strong> <span id="second-half">{{ second_half_count }}</span></p>
+        <p><strong>За последние сутки (09:00 - 09:00):</strong> <span id="full-day">{{ full_day_count }}</span></p>
         <button class="modal-close" id="modal-close">Закрыть</button>
     </div>
 </div>
@@ -317,7 +318,7 @@
     const barChart = new Chart(document.getElementById('statusBarChart').getContext('2d'), {
         type: 'bar',
         data: {
-            labels: ['BAN', 'Inactive', 'ready', 'empty', 'charging'],
+            labels: ['BAN', 'Inactive', 'ready', 'empty', 'charging', 'not_charging'],
             datasets: [{
                 data: [],
                 backgroundColor: function(context) {
@@ -326,7 +327,8 @@
                         'Inactive': 'black',
                         'ready': 'green',
                         'empty': 'gray',
-                        'charging': 'orange',
+                        'charging': 'blue',
+                        'not_charging': 'orange',
 
                     };
                     return statusColors[context.chart.data.labels[context.dataIndex]] || 'blue';

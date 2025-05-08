@@ -512,6 +512,8 @@ def user_cabinets(request):
     return render(request, 'ss_main/user_cabinets.html', context)
 
 
+from django.db.models import Q
+
 @login_required
 def cabinet_details(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
@@ -533,17 +535,45 @@ def cabinet_details(request, shkaf_id):
 
     error_slots = cells.filter(is_error=True)
 
-    # Получаем текущую дату
-    almaty_timezone = pytz.timezone('Asia/Almaty')
-    current_time = datetime.datetime.now(almaty_timezone).replace(tzinfo=None)
-    history_date = current_time.date()
+    # --- Временные интервалы ---
+    almaty = pytz.timezone('Asia/Almaty')
+    now = datetime.datetime.now(almaty)
 
-    # Получаем запись из истории для текущей даты
-    history_entry = Cabinet_history.objects.filter(history_for=cabinet, date=history_date).first()
+    today_9 = now.replace(hour=9, minute=0, second=0, microsecond=0)
+    today_21 = now.replace(hour=21, minute=0, second=0, microsecond=0)
 
-    # Получаем количество за первую и вторую половину дня
-    first_half_count = history_entry.first_half if history_entry else 0
-    second_half_count = history_entry.second_half if history_entry else 0
+    # По какому интервалу показывать first_half / second_half
+    if now < today_9:
+        # Сейчас ночь: показать итог с 21:00 вчера до 09:00 сегодня
+        target_date = (now - datetime.timedelta(days=1)).date()
+        period = "night"
+    elif now < today_21:
+        # Сейчас день: показать итог с 09:00 до 21:00 сегодня
+        target_date = now.date()
+        period = "day"
+    else:
+        # Сейчас ночь: показать итог с 21:00 до 09:00 завтра
+        target_date = now.date()
+        period = "night"
+
+    # Получаем нужную запись истории
+    history_entry = Cabinet_history.objects.filter(history_for=cabinet, date=target_date).first()
+
+    # Определяем, какие данные использовать
+    if period == "day":
+        first_half_count = history_entry.first_half if history_entry else 0
+        second_half_count = 0  # предыдущая ночь нас не интересует
+    else:
+        first_half_count = history_entry.second_half if history_entry else 0
+        second_half_count = 0  # предыдущий день не нужен
+
+    # Получаем "last full day" — интервал 09:00 до 09:00
+    # Берем вчерашнюю дату
+    full_day_date = (now - datetime.timedelta(days=1)).date()
+    full_day_entry = Cabinet_history.objects.filter(history_for=cabinet, date=full_day_date).first()
+    full_day_count = 0
+    if full_day_entry:
+        full_day_count = (full_day_entry.first_half or 0) + (full_day_entry.second_half or 0)
 
     context = {
         'cabinet': cabinet,
@@ -553,10 +583,12 @@ def cabinet_details(request, shkaf_id):
         'error_slots': error_slots,
         'first_half_count': first_half_count,
         'second_half_count': second_half_count,
+        'full_day_count': full_day_count,
         'latitude': cabinet.latitude,
         'longitude': cabinet.longitude,
     }
     return render(request, 'ss_main/scout_v2.html', context)
+
 
 
 # Обновление деталей шкафа
