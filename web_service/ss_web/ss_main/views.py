@@ -523,12 +523,13 @@ def cabinet_details(request, shkaf_id):
 
     for cell in cells:
         status = cell.status
+        temp_cur1 = cell.temp_cur1
         endpointid = cell.endpointid
         sw_name = cell.sw_name
         cap_percent = cell.cap_percent or "N/A"
         if status not in status_slots:
             status_slots[status] = []
-        status_slots[status].append({'endpointid': endpointid, 'charge': cap_percent, 'sw_name': sw_name})
+        status_slots[status].append({'endpointid': endpointid, 'charge': cap_percent, 'sw_name': sw_name, 'temp_cur1': temp_cur1,})
 
     average_charge = cells.annotate(cap_percent_as_float=Cast('cap_percent', FloatField())).aggregate(
         average_charge=Avg('cap_percent_as_float'))['average_charge']
@@ -609,7 +610,7 @@ def update_cabinet_data(request, shkaf_id):
             status = cell.status
             if status not in status_slots:
                 status_slots[status] = []
-            status_slots[status].append({'endpointid': cell.endpointid, 'charge': cell.cap_percent, 'sw_name': cell.sw_name})
+            status_slots[status].append({'endpointid': cell.endpointid, 'charge': cell.cap_percent, 'sw_name': cell.sw_name, 'temp_cur1': cell.temp_cur1,})
         error_slots = cells.filter(is_error=True)
         error_slots_list = [{'endpointid': slot.endpointid, 'message': slot.message} for slot in error_slots]
         almaty_timezone = pytz.timezone('Asia/Almaty')

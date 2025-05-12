@@ -248,6 +248,7 @@
                 <tr>
                     <th>Слот</th>
                     <th>Статус</th>
+                    <th>t°</th>
                     <th>Модель</th>
                     <th>Заряд</th>
                 </tr>
@@ -392,7 +393,8 @@
         const row = `<tr style="background-color: ${isBanStatus ? '#fc7c7c' : 'transparent'};">
             <td>● ${slot.endpointid}</td>
             <td>${slot.status}</td>
-            <td>${slot.sw_name || ''}</td>
+            <td>${slot.temp_cur1 || '-'}</td>
+            <td>${slot.sw_name || '-'}</td>
             <td>${slot.charge || '-'}</td>
         </tr>`;
         tbody.innerHTML += row;
