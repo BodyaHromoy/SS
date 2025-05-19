@@ -2,6 +2,8 @@
 {% load static %}
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Список зон</title>
@@ -41,6 +43,14 @@
     font-size: 1.1em;
 }
 
+.map-btn {
+    margin-right: 0.2em;
+}
+
+.menu-buttons {
+    display: flex;
+    align-items: center;
+}
 
         .menu-btn:hover {
             background: #003d84;
@@ -132,6 +142,9 @@
             color: #fff;
             transform: translateY(-2px);
         }
+        .map-btn {
+            margin-left: 6em;
+        }
 
         @media (max-width: 768px) {
             thead {
@@ -178,7 +191,41 @@
         <p>Login: {{ user.username }}</p>
         <p>City: {{ user_city.city_name }}</p>
     </div>
-    <button class="menu-btn" onclick="toggleMenu()">☰</button>
+    <div class="menu-buttons">
+        <button class="menu-btn map-btn" onclick="toggleMap()">📍</button>
+        <button class="menu-btn" id="menuToggleBtn" onclick="toggleMenu()">☰</button>
+    </div>
+</div>
+
+<div id="mapModal" class="d-none" style="
+    position: fixed;
+    top: 5em;
+    left: 5%;
+    width: 90%;
+    height: 80%;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 0.5em;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    z-index: 2000;
+    overflow: hidden;
+">
+    <div style="height: 100%; width: 100%;">
+        <div id="map" style="height: 100%; width: 100%;"></div>
+    </div>
+    <button onclick="closeMap()" style="
+        position: absolute;
+        top: 0.5em;
+        right: 0.5em;
+        background-color: red;
+        color: white;
+        border: none;
+        padding: 0.4em 0.8em;
+        font-size: 1em;
+        border-radius: 0.3em;
+        cursor: pointer;
+        z-index: 2100;
+    ">✖</button>
 </div>
 
 <div id="dropdownMenu" class="dropdown-menu-custom d-none">
@@ -233,12 +280,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script>
-    function goBack() {
-        window.history.back();
-    }
-
-    function goForvard() {
-        window.history.forward();
+    function closeMap() {
+        document.getElementById('mapModal').classList.add('d-none');
     }
 
     function updateData() {
@@ -250,10 +293,87 @@
         menu.classList.toggle('d-none');
     }
 
+    let mapInitialized = false;
+
+    function toggleMap() {
+        const modal = document.getElementById('mapModal');
+        modal.classList.remove('d-none');
+
+        if (!mapInitialized) {
+            const map = L.map('map').setView([43.238949, 76.889709], 12);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: 'Map data © OpenStreetMap contributors'
+            }).addTo(map);
+
+            const cabinets = {{ cabinets_with_coords|safe }};
+
+            cabinets.forEach(cabinet => {
+                if (cabinet.latitude && cabinet.longitude) {
+                    L.marker([cabinet.latitude, cabinet.longitude])
+                        .addTo(map)
+                        .bindPopup(`<strong>${cabinet.shkaf_id}</strong><br>${cabinet.street}`);
+                }
+            });
+
+            mapInitialized = true;
+        }
+    }
+
     document.addEventListener('click', function (event) {
         const menu = document.getElementById('dropdownMenu');
-        const button = document.querySelector('.menu-btn');
-        if (!menu.contains(event.target) && !button.contains(event.target)) {
+        const toggleBtn = document.getElementById('menuToggleBtn');
+
+        if (!menu.contains(event.target) && !toggleBtn.contains(event.target)) {
+            menu.classList.add('d-none');
+        }
+    });
+</script><script>
+    function closeMap() {
+        document.getElementById('mapModal').classList.add('d-none');
+    }
+
+    function updateData() {
+        location.reload();
+    }
+
+    function toggleMenu() {
+        const menu = document.getElementById('dropdownMenu');
+        menu.classList.toggle('d-none');
+    }
+
+    let mapInitialized = false;
+
+    function toggleMap() {
+        const modal = document.getElementById('mapModal');
+        modal.classList.remove('d-none');
+
+        if (!mapInitialized) {
+            const map = L.map('map').setView([43.238949, 76.889709], 12);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: 'Map data © OpenStreetMap contributors'
+            }).addTo(map);
+
+            const cabinets = {{ cabinets_with_coords|safe }};
+
+            cabinets.forEach(cabinet => {
+                if (cabinet.latitude && cabinet.longitude) {
+                    L.marker([cabinet.latitude, cabinet.longitude])
+                        .addTo(map)
+                        .bindPopup(`<strong>${cabinet.shkaf_id}</strong><br>${cabinet.street}`);
+                }
+            });
+
+            mapInitialized = true;
+        }
+    }
+
+    document.addEventListener('click', function (event) {
+        const menu = document.getElementById('dropdownMenu');
+        const toggleBtn = document.getElementById('menuToggleBtn');
+
+        if (!menu.contains(event.target) && !toggleBtn.contains(event.target)) {
             menu.classList.add('d-none');
         }
     });

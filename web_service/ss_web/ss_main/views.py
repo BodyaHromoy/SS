@@ -4,6 +4,7 @@ import string
 from datetime import timedelta
 import datetime
 import pytz
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models.functions import Cast
 import openpyxl
 from django.contrib import messages
@@ -356,7 +357,18 @@ def zone_list(request):
             'user': user
         })
 
-    return render(request, 'ss_main/zone_list.html', {'zone_data': zone_data, 'user_city': user_city})
+    # Список шкафов с координатами
+    cabinets_with_coords = Cabinet.objects.filter(latitude__isnull=False, longitude__isnull=False)
+    cabinets_json = json.dumps(
+        list(cabinets_with_coords.values('shkaf_id', 'street', 'latitude', 'longitude')),
+        cls=DjangoJSONEncoder
+    )
+
+    return render(request, 'ss_main/zone_list.html', {
+        'zone_data': zone_data,
+        'user_city': user_city,
+        'cabinets_with_coords': cabinets_json
+    })
 
 
 # Список курьеров в зоне(у логиста)
