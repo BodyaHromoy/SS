@@ -20,11 +20,17 @@ from django.shortcuts import render, get_object_or_404
 from django.db.models import F, FloatField
 import paho.mqtt.client as mqtt
 import logging
+from django.utils import timezone
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
+
 from .decorators.auth_decorators import staff_required
 from .forms.auth_form import CustomAuthenticationForm
 from .forms.forms import ReportFilterForm, CourierCreationForm, LogicCreationForm, CabinetSettingsForm, \
     SettingsForSettingsForm
 from .models import *
+from django.utils import timezone
+
 
 
 logger = logging.getLogger(__name__)
@@ -603,6 +609,57 @@ def cabinet_details(request, shkaf_id):
     return render(request, 'ss_main/scout_v2.html', context)
 
 
+def export_battery_history(request, shkaf_id):
+    start_date_str = request.GET.get("start_date")
+    end_date_str = request.GET.get("end_date")
+
+    # Проверка наличия дат
+    if not start_date_str or not end_date_str:
+        return HttpResponse("Обе даты обязательны", status=400)
+
+    try:
+        # Преобразование строки в datetime с учётом часового пояса
+        start_naive = datetime.datetime.strptime(start_date_str, "%Y-%m-%d")
+        end_naive = datetime.datetime.strptime(end_date_str, "%Y-%m-%d")
+
+        # Сделать aware
+        start_date = timezone.make_aware(start_naive)
+        # Чтобы включить весь день до конца, добавим один день и уберем микросекунду
+        end_date = timezone.make_aware(end_naive + datetime.timedelta(days=1)) - datetime.timedelta(microseconds=1)
+    except Exception as e:
+        return HttpResponse(f"Неверный формат даты: {e}", status=400)
+
+    try:
+        history = Cabinet_history.objects.filter(
+            history_for__shkaf_id=shkaf_id,
+            date__range=(start_date, end_date)
+        ).order_by("date")
+    except Exception as e:
+        return HttpResponse(f"Ошибка получения данных: {e}", status=500)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "History"
+
+    ws.append(["Дата", "FIRST_HALF", "SECOND_HALF", "first_data", "second_data"])
+
+    for entry in history:
+        ws.append([
+            timezone.localtime(entry.date).strftime("%Y-%m-%d %H:%M:%S") if entry.date else "",
+            entry.first_half,
+            entry.second_half,
+            entry.first_data or "",
+            entry.second_data or "",
+        ])
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    filename = f"cabinet_{shkaf_id}_history.xlsx"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    wb.save(response)
+    return response
 
 # Обновление деталей шкафа
 def update_cabinet_data(request, shkaf_id):
