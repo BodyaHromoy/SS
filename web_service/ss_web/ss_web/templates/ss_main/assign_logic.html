@@ -1,62 +1,265 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>Assign Zone to Logistician</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assign Zone to Couriers</title>
+    <style>
+        body {
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            padding: 1em;
+            margin: 0;
+            font-size: 18px;
+            box-sizing: border-box;
+        }
+        h2 {
+            color: #333;
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 1em;
+        }
+        .messages {
+            margin: 0 auto 1em;
+            width: 100%;
+            max-width: 600px;
+            padding: 1em;
+            border: 1px solid #CCC;
+            border-radius: 1em;
+            background: #fff;
+            list-style: none;
+            box-sizing: border-box;
+        }
+        .messages li {
+            padding: 0.5em 0;
+        }
+        .filter-wrapper {
+            margin-bottom: 1em;
+            text-align: center;
+        }
+        .filter-wrapper select {
+            width: 100%;
+            max-width: 600px;
+            padding: 0.5em;
+            border: 1px solid #CCC;
+            border-radius: 0.3em;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            border: 1px solid #CCC;
+            border-radius: 1em;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            font-size: 0.9em;
+        }
+        th, td {
+            padding: 0.5em;
+            text-align: left;
+            border-bottom: 1px solid #CCC;
+            box-sizing: border-box;
+        }
+        th {
+            background-color: #f9f9f9;
+        }
+        form {
+            margin: 0;
+        }
+        select, button {
+            width: 100%;
+            padding: 0.75em;
+            border: 1px solid #CCC;
+            border-radius: 0.3em;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 0.5em;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .fixed-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #fff;
+            text-align: center;
+            padding: 1em 0; /* Reduced padding */
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .fixed-footer a {
+            display: inline-block;
+            padding: 0.75em 1.5em;
+            border: 1px solid #007BFF;
+            border-radius: 0.3em;
+            color: #007BFF;
+            text-decoration: none;
+            font-size: 1.2em;
+        }
+        .fixed-footer a:hover {
+            background: #007BFF;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            thead {
+                display: none;
+            }
+            th, td {
+                display: block;
+                width: 100%;
+                text-align: right;
+            }
+            th {
+                text-align: left;
+            }
+            tr {
+                display: block;
+                margin-bottom: 1em;
+                background: #fff;
+                padding: 0.5em;
+                border-radius: 0.5em;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            }
+            td:before {
+                content: attr(data-label);
+                float: left;
+                font-weight: bold;
+            }
+            .btn-container {
+                display: flex;
+                justify-content: space-between;
+                flex-wrap: wrap;
+            }
+            .btn-container button {
+                flex: 1 1 48%;
+                margin-top: 0.5em;
+            }
+        }
+    </style>
 </head>
 <body>
-<h2>Assign Zone to Couriers</h2>
+<h2>Scout managing tool</h2>
+
+<div class="filter-wrapper">
+    <select id="zoneFilter" onchange="filterByZone()">
+        <option value="">Все зоны</option>
+        {% for zone in zones %}
+        <option value="{{ zone.zone_name }}">{{ zone.zone_name }}</option>
+        {% endfor %}
+    </select>
+</div>
 
 {% if messages %}
 <ul class="messages">
     {% for message in messages %}
-    <li
-            {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}
-    </li>
+    <li>{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
     {% endfor %}
 </ul>
 {% endif %}
 
-<table>
-    <thead>
-    <tr>
-        <th>Courier</th>
-        <th>Current Zone</th>
-        <th>New Zone</th>
-        <th>Action</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for logistician in logisticians %}
-    <tr>
-        <td>{{ logistician.username }}</td>
-        <td>
-            {% for zone in logistician.zones.all %}
-            {{ zone.zone_name }}
-            {% empty %}
-            No Zone Assigned
-            {% endfor %}
-        </td>
-        <td>
-            <form id="form_{{ logic.id }}" method="post" action="{% url 'assign_zone_to_logic' %}">
-                {% csrf_token %}
-                <input type="hidden" name="courier_id" value="{{ logic.id }}">
-                <select name="zone_id">
-                    {% for zone in zones %}
-                    <option value="{{ zone.id }}" {% if zone in logic.zones.all %}selected{% endif %}>
-                        {{ zone.zone_name }}
-                    </option>
-                    {% endfor %}
-                </select>
-        </td>
-        <td>
-            <button type="submit">Assign</button>
-            </form>
-        </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table>
-<a href="{% url 'zone_list' %}">Back to Zone List</a>
+<div class="table-wrapper">
+    <table id="courierTable">
+        <thead>
+        <tr>
+            <th>Scout</th>
+            <th>Current zone</th>
+            <th>New zone</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for courier in couriers %}
+        <tr>
+            <td data-label="Scout">{{ courier.username }}</td>
+            <td data-label="Current zone" class="zone-column">
+                {% for zone in courier.zones.all %}
+                {{ zone.zone_name }}
+                {% empty %}
+                No Zone Assigned
+                {% endfor %}
+            </td>
+            <td data-label="New zone">
+                <form id="form_{{ courier.id }}" method="post" action="{% url 'assign_zone_to_courier' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="courier_id" value="{{ courier.id }}">
+                    <select name="zone_id">
+                        {% for zone in zones %}
+                        <option value="{{ zone.id }}" {% if zone in courier.zones.all %}selected{% endif %}>
+                            {{ zone.zone_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+            </td>
+            <td data-label="">
+                <div class="btn-container">
+                    <button type="submit">Assign</button>
+                    </form>
+                    <button class="btn btn-danger" onclick="deleteCourier({{ courier.id }})">Delete</button>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
 
+<div class="fixed-footer">
+    <a href="{% url 'zone_list' %}">Назад</a>
+</div>
+
+<script>
+    function deleteCourier(courierId) {
+        const confirmation = confirm('Вы уверены, что хотите удалить пользователя?');
+        if (!confirmation) {
+            return;
+        }
+
+        fetch(`/delete_courier/${courierId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert('Ошибка: пользователь не удалён!');
+            }
+        });
+    }
+
+    function filterByZone() {
+        const filterValue = document.getElementById('zoneFilter').value.toLowerCase();
+        const rows = document.querySelectorAll('#courierTable tbody tr');
+
+        rows.forEach(row => {
+            const zoneCell = row.querySelector('.zone-column');
+            const zoneText = zoneCell ? zoneCell.textContent.toLowerCase() : '';
+            row.style.display = filterValue === "" || zoneText.includes(filterValue) ? "" : "none";
+        });
+    }
+</script>
 </body>
 </html>

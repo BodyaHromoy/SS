@@ -212,7 +212,7 @@
                 {% for courier in couriers %}
                 <tr>
                     <td data-label="Username:" >{{ courier.username }}</td>
-                    <td data-label="Full name:">{{ courier.get_full_name }}</td>
+                    <td data-label="Full name:">{{ courier.get_full_name|default:"-" }}</td>
                     <td data-label="Last login:">{{ courier.last_login }}</td>
                     <td></td>
                 </tr>

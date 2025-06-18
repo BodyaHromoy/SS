@@ -91,6 +91,7 @@ class Cabinet(models.Model):
     vendor = models.ForeignKey(to=Vendor, on_delete=models.CASCADE, null=False, to_field='vendor_name')
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
+    device_id = models.TextField(null=True)
 
 
     def __str__(self):
@@ -202,7 +203,7 @@ class Cabinet_settings_for_auto_marking (models.Model):
     sw_ver = models.CharField(max_length=255, null=True)
     critical_temp = models.IntegerField(null=True)
     lock_status = models.BooleanField(default=False, verbose_name='LOCK_STATUS')
-    temp_inside = models.IntegerField(null=True)
+    temp_inside = models.CharField(null=True)
     fan_status = models.BooleanField(default=False, verbose_name='FAN_STATUS')
     mains_voltage = models.CharField(max_length=255, null=True)
     reserve_voltage = models.CharField(max_length=255, null=True)

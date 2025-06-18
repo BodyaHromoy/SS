@@ -14,16 +14,15 @@ from django.core.mail import send_mail
 from django.db.models import Count, Avg
 from django.http import HttpResponse
 from django.http import HttpResponseForbidden
-from django.http import JsonResponse
 from django.shortcuts import redirect
-from django.shortcuts import render, get_object_or_404
 from django.db.models import F, FloatField
 import paho.mqtt.client as mqtt
 import logging
-from django.utils import timezone
 from openpyxl import Workbook
-from openpyxl.utils import get_column_letter
-
+import requests
+from django.http import JsonResponse
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import user_passes_test
 from .decorators.auth_decorators import staff_required
 from .forms.auth_form import CustomAuthenticationForm
 from .forms.forms import ReportFilterForm, CourierCreationForm, LogicCreationForm, CabinetSettingsForm, \
@@ -164,8 +163,37 @@ def new_eng_cabinet_detail(request, shkaf_id):
 @user_passes_test(is_engineer)
 def cabinet_settings(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
-    settings = Cabinet_settings_for_auto_marking.objects.filter(cabinet_id=cabinet).first()
+    settings, _ = Cabinet_settings_for_auto_marking.objects.get_or_create(cabinet_id=cabinet)
     settings_for_settings = Settings_for_settings.objects.filter(settings_for=settings).first()
+
+    # 📡 Попытка получить JSON от устройства
+    if cabinet.device_id:
+        try:
+            url = f"http://192.168.1.16:8080/api/dev/{cabinet.device_id}"
+            response = requests.get(url, timeout=5)
+            data = response.json()
+
+            # 📥 Парсим только если это словарь
+            if isinstance(data, dict):
+                # Обновляем значения
+                settings.mains_voltage = str(data.get("VoltageMain", ""))
+                settings.reserve_voltage = str(data.get("VoltageAux", ""))
+                settings.lock_status = data.get("DigitalIn1", 0) == 3
+                settings.fan_status = data.get("DigitalOut1", 0) == 2
+
+                # Сохраняем только temp_inside как строку из всех "Temperature*_1wire"
+                temps = [
+                    str(value)
+                    for key, value in data.items()
+                    if key.startswith("Temperature") and "_1wire" in key
+                ]
+                if temps:
+                    settings.temp_inside = "/".join(temps)
+
+                settings.save()
+
+        except Exception as e:
+            print(f"Ошибка при получении данных с устройства: {e}")
 
     if request.method == 'POST':
         form = CabinetSettingsForm(request.POST, instance=settings)
@@ -175,8 +203,8 @@ def cabinet_settings(request, shkaf_id):
             form.save()
             settings_for_form.save()
 
-            Cell.objects.filter(cabinet_id=cabinet).update(is_error=False)
-            Cell.objects.filter(cabinet_id=cabinet).update(message=None)
+            # Обновляем статусы ячеек
+            Cell.objects.filter(cabinet_id=cabinet).update(is_error=False, message=None)
 
             return JsonResponse({'success': True})
         else:
@@ -238,9 +266,6 @@ def create_courier(request):
 @login_required
 @user_passes_test(is_regional_manager)
 def create_logic(request):
-    if not request.user.role == 'regional_manager':
-        return HttpResponseForbidden()
-
     if request.method == 'POST':
         form = LogicCreationForm(request.POST)
         if form.is_valid():
@@ -254,10 +279,10 @@ def create_logic(request):
                 'Logistician Registration Info',
                 f'Username: {user.username}\nPassword: {password}\nEmail: {user.email}\nFull Name: {user.first_name} {user.last_name}',
                 'bhromenko@mail.ru',
-                [request.user.email],
+                [request.user.email, user.email],
                 fail_silently=False,
             )
-            messages.success(request, f"Logistician '{user.username}' successfully registered (check your email).")
+            messages.success(request, f"Логист '{user.username}' успешно зарегистрирован (проверьте свою почту).")
     else:
         form = LogicCreationForm()
 
@@ -529,8 +554,6 @@ def user_cabinets(request):
     }
     return render(request, 'ss_main/user_cabinets.html', context)
 
-
-from django.db.models import Q
 
 @login_required
 def cabinet_details(request, shkaf_id):

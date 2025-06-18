@@ -328,55 +328,6 @@
             menu.classList.add('d-none');
         }
     });
-</script><script>
-    function closeMap() {
-        document.getElementById('mapModal').classList.add('d-none');
-    }
-
-    function updateData() {
-        location.reload();
-    }
-
-    function toggleMenu() {
-        const menu = document.getElementById('dropdownMenu');
-        menu.classList.toggle('d-none');
-    }
-
-    let mapInitialized = false;
-
-    function toggleMap() {
-        const modal = document.getElementById('mapModal');
-        modal.classList.remove('d-none');
-
-        if (!mapInitialized) {
-            const map = L.map('map').setView([43.238949, 76.889709], 12);
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: 'Map data © OpenStreetMap contributors'
-            }).addTo(map);
-
-            const cabinets = {{ cabinets_with_coords|safe }};
-
-            cabinets.forEach(cabinet => {
-                if (cabinet.latitude && cabinet.longitude) {
-                    L.marker([cabinet.latitude, cabinet.longitude])
-                        .addTo(map)
-                        .bindPopup(`<strong>${cabinet.shkaf_id}</strong><br>${cabinet.street}`);
-                }
-            });
-
-            mapInitialized = true;
-        }
-    }
-
-    document.addEventListener('click', function (event) {
-        const menu = document.getElementById('dropdownMenu');
-        const toggleBtn = document.getElementById('menuToggleBtn');
-
-        if (!menu.contains(event.target) && !toggleBtn.contains(event.target)) {
-            menu.classList.add('d-none');
-        }
-    });
 </script>
 </body>
 </html>
