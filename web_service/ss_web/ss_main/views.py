@@ -13,15 +13,12 @@ from django.contrib.auth.views import LoginView, LogoutView
 from django.core.mail import send_mail
 from django.db.models import Count, Avg
 from django.http import HttpResponse
-from django.http import HttpResponseForbidden
 from django.shortcuts import redirect
 from django.db.models import F, FloatField
 import paho.mqtt.client as mqtt
 import logging
 from openpyxl import Workbook
-import requests
 from django.http import JsonResponse
-from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import user_passes_test
 from .decorators.auth_decorators import staff_required
 from .forms.auth_form import CustomAuthenticationForm
@@ -29,7 +26,14 @@ from .forms.forms import ReportFilterForm, CourierCreationForm, LogicCreationFor
     SettingsForSettingsForm
 from .models import *
 from django.utils import timezone
+import re
+import requests
+from requests.auth import HTTPBasicAuth
+from bs4 import BeautifulSoup
+from django.conf import settings
+from django.shortcuts import get_object_or_404, render
 
+from .models import Cabinet
 
 
 logger = logging.getLogger(__name__)
@@ -160,40 +164,144 @@ def new_eng_cabinet_detail(request, shkaf_id):
     return render(request, 'ss_main/new_eng_cabinet_detail.html', {'cabinet': cabinet, 'cells': cells})
 
 
+def new_eng_telemetry(request, shkaf_id):
+    cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
+
+    url = f'http://79.143.21.106:9000/detailed/{cabinet.device_id}'
+    try:
+        resp = requests.get(
+            url,
+            auth=HTTPBasicAuth(settings.TELEMETRY_USER, settings.TELEMETRY_PASS),
+            timeout=5,
+        )
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        return render(request, 'ss_main/telemetry_partial.html', {
+            'box_number': cabinet.shkaf_id,
+            'error': f'Не удалось загрузить данные: {e}',
+        })
+
+    soup = BeautifulSoup(resp.content, 'html.parser')
+    gen, tel, em = soup.find_all('div', class_='panel')
+
+    qr_code = cabinet.extra_inf
+    imei = gen.find('p').get_text(strip=True).split(':', 1)[1].strip()
+    iccid_a = gen.find('a', href=re.compile(r'/command/.*/iccid'))
+    iccid = iccid_a['href'] if iccid_a else '-'
+
+    p_tags = tel.find_all('p')
+    last_update    = p_tags[0].get_text(strip=True).split(':', 1)[1].strip()
+    reserv_voltage = p_tags[1].get_text(strip=True).split(':', 1)[1].strip()
+    power_voltage  = p_tags[2].get_text(strip=True).split(':', 1)[1].strip()
+
+    in_vals = {}
+    for i in (1, 2, 3):
+        tag = tel.find('p', text=re.compile(fr'Вход {i}:'))
+        in_vals[f'in{i}'] = tag.get_text(strip=True).split(':', 1)[1].strip() if tag else ''
+
+    temps = {}
+    for tag in tel.find_all('p'):
+        m = re.search(r'Температура\((\d)\).+?:\s*([\d.]+)', tag.get_text(strip=True))
+        if m:
+            temps[f't{m.group(1)}'] = m.group(2)
+    t1 = temps.get('t1', '')
+    t2 = temps.get('t2', '')
+    t3 = temps.get('t3', '')
+    t4 = temps.get('t4', '')
+
+    coord_a = tel.find('a', href=re.compile(r'https?://'))
+    coordinates = coord_a.get_text(strip=True).split(':', 1)[1].strip() if coord_a else ''
+    gps_parts = [a.get_text(strip=True) for a in tel.find_all('a')
+                 if 'GPS:' in a.get_text() or 'спутников' in a.get_text()]
+    gps_info = ' '.join(gps_parts)
+
+    meter_reading = em.find('h2').get_text(strip=True).split(':', 1)[1].strip()
+    mp = em.find_all('p')
+    meter_update = mp[0].get_text(strip=True).split(':', 1)[1].strip()
+    meter_temp   = mp[1].get_text(strip=True).split(':', 1)[1].strip()
+    frequency    = mp[2].get_text(strip=True).split(':', 1)[1].strip()
+
+    table = em.find('table')
+    phases = [th.get_text(strip=True) for th in table.select('tr:first-of-type th')[1:]]
+
+    def get_metric_values(metric_name):
+        cell = table.find('td', text=re.compile(fr'^{re.escape(metric_name)}$'))
+        if not cell:
+            return ['0'] * len(phases)
+        siblings = cell.find_next_siblings('td')
+        return [sib.get_text(strip=True) for sib in siblings]
+
+    volt_vals   = get_metric_values('Напряжение')
+    curr_vals   = get_metric_values('Ток')
+    cos_vals    = get_metric_values('Косинус φ')
+    power_vals  = get_metric_values('Активная мощность(расчёт)')
+
+    # хелпер: выдрать число с точкой
+    def extract_num(s: str) -> str:
+        m = re.search(r'\d+(?:\.\d+)?', s)
+        return m.group(0) if m else '0'
+
+    # собираем список lines
+    lines = []
+    for idx, phase in enumerate(phases):
+        v   = extract_num(volt_vals[idx])
+        a   = extract_num(curr_vals[idx])
+        cos = extract_num(cos_vals[idx])
+        p   = extract_num(power_vals[idx])
+        lines.append({
+            'name': f'Line {phase}',
+            'V': v,
+            'A': a,
+            'cos': cos,
+            'P': p,
+        })
+
+    # --- Собираем контекст и рендерим шаблон ---
+    context = {
+        'box_number':    cabinet.shkaf_id,
+        'qr_code':       qr_code,
+        'imei':          imei,
+        'iccid':         imei,
+
+        'last_update':    last_update,
+        'reserv_voltage': reserv_voltage,
+        'power_voltage':  power_voltage,
+        **in_vals,
+        'out1':           '',
+        'out2':           '',
+        't1':             t1,
+        't2':             t2,
+        't3':             t3,
+        't4':             t4,
+        'coordinates':    coordinates,
+        'gps_info':       gps_info,
+
+        'power_count':   meter_reading,
+        'meter_update':  meter_update,
+        'meter_temp':    meter_temp,
+        'frequency':     frequency,
+
+        'lines':         lines,
+        'sticker':       getattr(cabinet, 'sticker', ''),
+    }
+    return render(request, 'ss_main/telemetry_partial.html', context)
+
+
+def update_sticker(request, shkaf_id):
+    cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
+    new_sticker = request.POST.get('sticker', '').strip()
+    cabinet.sticker = new_sticker
+    cabinet.save(update_fields=['sticker'])
+    return JsonResponse({'success': True, 'sticker': cabinet.sticker})
+
+
 @user_passes_test(is_engineer)
 def cabinet_settings(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
     settings, _ = Cabinet_settings_for_auto_marking.objects.get_or_create(cabinet_id=cabinet)
     settings_for_settings = Settings_for_settings.objects.filter(settings_for=settings).first()
 
-    # 📡 Попытка получить JSON от устройства
-    if cabinet.device_id:
-        try:
-            url = f"http://192.168.1.16:8080/api/dev/{cabinet.device_id}"
-            response = requests.get(url, timeout=5)
-            data = response.json()
 
-            # 📥 Парсим только если это словарь
-            if isinstance(data, dict):
-                # Обновляем значения
-                settings.mains_voltage = str(data.get("VoltageMain", ""))
-                settings.reserve_voltage = str(data.get("VoltageAux", ""))
-                settings.lock_status = data.get("DigitalIn1", 0) == 3
-                settings.fan_status = data.get("DigitalOut1", 0) == 2
-
-                # Сохраняем только temp_inside как строку из всех "Temperature*_1wire"
-                temps = [
-                    str(value)
-                    for key, value in data.items()
-                    if key.startswith("Temperature") and "_1wire" in key
-                ]
-                if temps:
-                    settings.temp_inside = "/".join(temps)
-
-                settings.save()
-
-        except Exception as e:
-            print(f"Ошибка при получении данных с устройства: {e}")
 
     if request.method == 'POST':
         form = CabinetSettingsForm(request.POST, instance=settings)
@@ -214,6 +322,40 @@ def cabinet_settings(request, shkaf_id):
     settings_for_form = SettingsForSettingsForm(instance=settings_for_settings)
 
     return render(request, 'ss_main/cabinet_settings_partial.html', {
+        'form': form,
+        'settings_for_form': settings_for_form,
+        'cabinet': cabinet
+    })
+
+
+
+@user_passes_test(is_engineer)
+def cabinet_settings2(request, shkaf_id):
+    cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
+    settings, _ = Cabinet_settings_for_auto_marking.objects.get_or_create(cabinet_id=cabinet)
+    settings_for_settings = Settings_for_settings.objects.filter(settings_for=settings).first()
+
+
+
+    if request.method == 'POST':
+        form = CabinetSettingsForm(request.POST, instance=settings)
+        settings_for_form = SettingsForSettingsForm(request.POST, instance=settings_for_settings)
+
+        if form.is_valid() and settings_for_form.is_valid():
+            form.save()
+            settings_for_form.save()
+
+            # Обновляем статусы ячеек
+            Cell.objects.filter(cabinet_id=cabinet).update(is_error=False, message=None)
+
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'errors': {**form.errors, **settings_for_form.errors}})
+
+    form = CabinetSettingsForm(instance=settings)
+    settings_for_form = SettingsForSettingsForm(instance=settings_for_settings)
+
+    return render(request, 'ss_main/cabinet_settings_partial2.html', {
         'form': form,
         'settings_for_form': settings_for_form,
         'cabinet': cabinet

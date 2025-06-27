@@ -236,8 +236,6 @@
                                         href="{% url 'new_eng' %}">Main</a></li>
                 <li class="nav-item"><a class="nav-link btn btn-primary btn-sm btn-narrow mt-2"
                                         href="{% url 'report' %}">Reports</a></li>
-                <li class="nav-item"><a class="nav-link btn btn-primary btn-sm btn-narrow mt-2"
-                                        href= "http://192.168.1.98:8080" >TOP SECRET!!!</a></li>
                 <form method="post" action="{% url 'logout' %}" class="logout-form">
                     {% csrf_token %}
                     <button class="btn btn-danger logout-button">Exit</button>
@@ -282,35 +280,64 @@
                 </footer>
                 <div id="cabinet-list-view">
                     <table class="table table-striped">
-                        <thead>
-                        <tr>
-                            <th>Box ID</th>
-                            <th>City</th>
-                            <th>Zone</th>
-                            <th>Address</th>
-                            <th>Locker ID</th>
-                            <th>Additional info</th>
-                            <th>Action</th>
-                        </tr>
-                        </thead>
-                        <tbody id="cabinet-list">
-                        {% for cabinet in cabinets %}
-                        <tr>
-                            <td>{{ cabinet.shkaf_id|default:"-" }}</td>
-                            <td>{{ cabinet.city.city_name|default:"-" }}</td>
-                            <td>{{ cabinet.zone.zone_name|default:"-" }}</td>
-                            <td>{{ cabinet.street|default:"-" }}</td>
-                            <td>{{ cabinet.extra_inf|default:"-" }}</td>
-                            <td>{{ cabinet.location|default:"-" }}</td>
-                            <td>
-                                <button class="btn btn-primary" onclick="showCabinetDetails('{{ cabinet.shkaf_id }}')">
-                                    Check slots
-                                </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
+                          <thead>
+                            <tr>
+                              <th>Box ID</th>
+                              <th>City</th>
+                              <th>Zone</th>
+                              <th>Capacity</th>
+                              <th>Buffer</th>
+                              <th>Address</th>
+                              <th>Locker QR</th>
+                              <th>Additional info</th>
+                              <th>Fire alert</th>
+                              <th>Sense inputs</th>
+                              <th>RSSI</th>
+                              <th>Action</th>    <!-- теперь только один столбец Action -->
+                            </tr>
+                          </thead>
+                          <tbody id="cabinet-list">
+                            {% for cabinet in cabinets %}
+                            <tr>
+                              <td>{{ cabinet.shkaf_id|default:"-" }}</td>
+                              <td>{{ cabinet.city.city_name|default:"-" }}</td>
+                              <td>{{ cabinet.zone.zone_name|default:"-" }}</td>
+                              <td>{{ cabinet.capacity|default:"-" }}</td>
+                              <td>{{ cabinet.buffer|default:"-" }}</td>
+                              <td>{{ cabinet.street|default:"-" }}</td>
+                                <td>{{ cabinet.extra_inf|default:"-" }}</td>
+                                <td>{{ cabinet.location|default:"-" }}</td>
+                              <td>
+                                <span style="
+                                    display:inline-block;
+                                    width:16px; height:16px;
+                                    border:1px solid #444;
+                                    border-radius:50%;
+                                    background:{{ cabinet.fire_allert|yesno:'red,transparent' }};
+                                "></span>
+                              </td>
+                              <td>{{ cabinet.sense|default:"-" }}</td>
+                              <td>{{ cabinet.rssi|default:"-" }}</td>
+                              <td>
+  <div class="d-flex">
+    <button
+      class="btn btn-primary btn-sm flex-fill mr-1"
+      onclick="showCabinetDetails('{{ cabinet.shkaf_id }}')"
+    >
+      Check slots
+    </button>
+    <button
+      class="btn btn-info btn-sm flex-fill"
+      onclick="showTelemetry('{{ cabinet.shkaf_id }}')"
+    >
+      Telemetry
+    </button>
+  </div>
+</td>
+                            </tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
                 </div>
             </div>
             <div id="details-view" style="display: none;">
@@ -364,6 +391,27 @@
         </div>
     </div>
 </div>
+
+<!-- Telemetry Modal -->
+<div class="modal fade" id="telemetryModal" tabindex="-1" role="dialog" aria-labelledby="telemetryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document"><!-- можно modal-lg или modal-xl -->
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="telemetryModalLabel">Telemetry</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="telemetryModalBody">
+        <p>Loading telemetry…</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <!-- Settings -->
 <div class="modal fade" id="cabinetSettingsModal" tabindex="-1" role="dialog" aria-labelledby="cabinetSettingsModalLabel" aria-hidden="true">
@@ -661,6 +709,21 @@ function applyMarkedFilter() {
         restoreFilters();
         setInterval(refreshData, 15000)
     });
+
+
+    function showTelemetry(shkaf_id) {
+  // Сразу показываем «заглушку» внутри модалки
+  $('#telemetryModalBody').html('<p>Loading telemetry…</p>');
+  // Подгружаем partial по AJAX
+  $.get(`/new_eng_telemetry/${shkaf_id}/`, function(data) {
+    // Вставляем полученный HTML
+    $('#telemetryModalBody').html(data);
+    // И открываем само окно
+    $('#telemetryModal').modal('show');
+  }).fail(function() {
+    $('#telemetryModalBody').html('<p class="text-danger">Error loading telemetry.</p>');
+  });
+}
 
 </script>
 </body>

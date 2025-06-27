@@ -1,0 +1,391 @@
+{% load static %}
+<style>
+.telemetry-container .form-control-plaintext {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: .375rem .75rem;
+}
+.telemetry-container .nav-area {
+  background: #f8f9fa;
+  padding: .5rem 1rem;
+}
+.telemetry-container .status-card {
+  width: 100px;
+  background: #e9ecef;
+  border-radius: 4px;
+  text-align: center;
+  padding: .5rem;
+  margin: .25rem;
+}
+
+.telemetry-container .power-card {
+  width: 100%;
+  max-width: none;
+  background: #e9ecef;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  text-align: center;
+  padding: .75rem;
+  margin-bottom: 1rem;
+}
+.telemetry-container .power-card .display-4 {
+  font-size: 2rem;
+}
+
+.telemetry-container .grid-table-wrapper {
+  margin-left: 0;
+}
+.telemetry-container .sticker-area {
+  background: #e9ecef;
+  padding: .5rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+  .telemetry-container .power-card {
+  margin-bottom: 0.25rem !important;
+}
+
+
+.telemetry-container .grid-table-wrapper {
+  margin-top: 0 !important;
+}
+
+  .telemetry-grid-new {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: Arial, sans-serif;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  .telemetry-grid-new thead {
+    background-color: #007bff;
+    color: #ffffff;
+  }
+
+  .telemetry-grid-new th,
+  .telemetry-grid-new td {
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #dee2e6;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .telemetry-grid-new tbody tr:nth-child(odd) {
+    background-color: #f8f9fa;
+  }
+
+  .telemetry-grid-new tbody tr:hover {
+    background-color: #e2e6ea;
+  }
+
+
+  .telemetry-container {
+    position: relative;
+    transition: opacity 0.4s ease;
+  }
+  .telemetry-container.refreshing {
+    opacity: 0.4;
+  }
+</style>
+
+<div class="container-fluid telemetry-container">
+
+  <div class="row mb-3">
+    <div class="col-md-2 mb-2">
+      <label class="small font-weight-bold">QR</label>
+      <input type="text" readonly class="form-control form-control-sm form-control-plaintext" value="{{ qr_code }}">
+    </div>
+    <div class="col-md-2 mb-2">
+      <label class="small font-weight-bold">Box №</label>
+      <input type="text" id="cabinet-number" readonly class="form-control form-control-sm form-control-plaintext font-weight-bold" value="{{ box_number }}">
+    </div>
+    <div class="col-md-3 mb-2">
+      <label class="small font-weight-bold">IMEI</label>
+      <input type="text" readonly class="form-control form-control-sm form-control-plaintext" value="{{ imei }}">
+    </div>
+    <div class="col-md-3 mb-2">
+  <label class="small font-weight-bold">ICCID</label>
+      <a
+        href="http://79.143.21.106:9000/command/{{ iccid }}/iccid"
+        class="form-control form-control-sm form-control-plaintext"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        iccid
+      </a>
+    </div>
+  </div>
+
+
+<div class="row nav-area mb-3 align-items-center">
+  <div class="col-auto">
+    <button class="btn btn-primary btn-sm ml-2" onclick="refreshTelemetry()">↻ Refresh</button>
+    <button class="btn btn-primary btn-sm ml-2" disabled>Send Command</button>
+  </div>
+  <div class="col text-center">
+    <a
+      href="https://www.google.com/maps/search/?api=1&query={{ coordinates|urlencode }}"
+      target="_blank"
+      class="font-weight-bold text-primary"
+    >
+      Координаты: {{ coordinates }}
+    </a>
+    <small class="text-muted ml-2">{{ gps_info }}</small>
+  </div>
+  <button
+    class="btn btn-secondary settings-button"
+    onclick="loadCabinetSettings({{ box_number }})"
+  >
+    Settings
+  </button>
+</div>
+
+  <div class="d-flex flex-wrap mb-3">
+    <div class="status-card">
+      <div class="font-weight-bold small">Reserv Voltage</div>
+      <div>{{ reserv_voltage }}</div>
+    </div>
+    <div class="status-card">
+      <div class="font-weight-bold small">IN1, door</div>
+      <div>{{ in1 }}</div>
+    </div>
+    <div class="status-card">
+      <div class="font-weight-bold small">IN2, cool</div>
+      <div>{{ in2 }}</div>
+    </div>
+    <div class="status-card">
+      <div class="font-weight-bold small">IN3, smoke</div>
+      <div>{{ in3 }}</div>
+    </div>
+    <div class="status-card">
+      <div class="font-weight-bold small">OUT1, locker</div>
+      <div>{{ out1 }}</div>
+    </div>
+    <div class="status-card">
+      <div class="font-weight-bold small">OUT2, offPWR</div>
+      <div>{{ out2 }}</div>
+    </div>
+    <div class="status-card">
+      <div class="font-weight-bold small">1-w T1</div>
+      <div>{{ t1 }}</div>
+    </div>
+    <div class="status-card">
+      <div class="font-weight-bold small">1-w T2</div>
+      <div>{{ t2 }}</div>
+    </div>
+    <div class="status-card">
+      <div class="font-weight-bold small">1-w T3</div>
+      <div>{{ t3 }}</div>
+    </div>
+    <div class="status-card">
+      <div class="font-weight-bold small">1-w T4</div>
+      <div>{{ t4 }}</div>
+    </div>
+  </div>
+
+
+  <div class="mb-3">
+    <div class="power-card">
+      <div class="font-weight-bold small text-uppercase">POWER COUNT</div>
+      <div class="display-4 mb-0">{{ power_count }}</div>
+      <small class="text-muted">kW·h</small>
+    </div>
+  </div>
+
+
+  <div class="grid-table-wrapper mb-1">
+  <table class="telemetry-grid-new">
+    <thead>
+      <tr>
+        <th>Grid</th>
+        <th>Voltage, V</th>
+        <th>Current, A</th>
+        <th>Cosinus φ</th>
+        <th>Predicted consumption, W</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for line in lines %}
+      <tr>
+        <td>{{ line.name }}</td>
+        <td>{{ line.V }}</td>
+        <td>{{ line.A }}</td>
+        <td>{{ line.cos }}</td>
+        <td>{{ line.P }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+
+  <div class="row mb-1">
+    <div class="col">
+      <div class="sticker-area">
+        <span class="font-weight-bold">sticker</span>
+        <input type="text" class="form-control form-control-sm" value="{{ sticker }}">
+        <button class="btn btn-secondary btn-sm">confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="cabinetSettingsModal" tabindex="-1" role="dialog" aria-labelledby="cabinetSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cabinetSettingsModalLabel">Operation Settings</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="cabinet-settings-content">
+                    <p>Loading settings...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveCabinetSettings()">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+  function refreshTelemetry() {
+    const container = document.querySelector('.telemetry-container');
+
+    // включаем «режим обновления»
+    container.classList.add('refreshing');
+
+    // берём URL из Django-тега
+    const url = "{% url 'new_eng_telemetry' box_number %}";
+
+    fetch(url, { credentials: 'same-origin' })
+      .then(res => {
+        if (!res.ok) throw new Error(res.statusText);
+        return res.text();
+      })
+      .then(html => {
+        // парсим ответ, достаём новую обёртку
+        const doc       = new DOMParser().parseFromString(html, 'text/html');
+        const newInner  = doc.querySelector('.telemetry-container').innerHTML;
+
+        // подменяем содержимое (не контейнер, чтобы CSS остался)
+        container.innerHTML = newInner;
+
+        // выключаем «режим обновления» через небольшой таймаут,
+        // чтобы успел отработать transition
+        setTimeout(() => {
+          container.classList.remove('refreshing');
+        }, 50);
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Не удалось обновить телеметрию: " + err.message);
+        container.classList.remove('refreshing');
+      });
+  }
+
+
+
+  function loadCabinetSettings(cabinetId) {
+    $('#cabinetSettingsModal').modal('show');
+
+    // AJAX на нужный URL с cabinetId
+    $.ajax({
+        url: `/cabinet_settings2/${cabinetId}/`,
+        method: 'GET',
+        success(data) {
+            $('#cabinet-settings-content').html(data);
+        },
+        error() {
+            $('#cabinet-settings-content').html('<p>Error loading settings</p>');
+        }
+    });
+}
+
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+function saveCabinetSettings() {
+    var formDataArray = $('#cabinet-settings-form').serializeArray();
+    var formData = {};
+
+    // Преобразуем значения полей, которые должны быть числами
+    formDataArray.forEach(function (item) {
+        if (item.name === 'max_cycle_times' || item.name === 'year_of_manufacture') {
+            formData[item.name] = item.value;  // Преобразуем в целое число
+        } else if (item.name === 'sn_error' || item.name === 'allow_vendor' || item.name === 'allow_sw_ver') {
+            // Учитываем значение чекбоксов: если есть в массиве, значит true
+            formData[item.name] = true;
+        } else {
+            formData[item.name] = item.value;
+        }
+    });
+
+    // Добавляем значения для неотмеченных чекбоксов (они не отправляются по умолчанию)
+    $('input[type="checkbox"]:not(:checked)').each(function () {
+        formData[this.name] = false;  // Если чекбокс не выбран, сохраняем как false
+    });
+
+    var csrfToken = getCSRFToken();
+
+    $.ajax({
+        url: $('#cabinet-settings-form').attr('action'),
+        method: 'POST',
+        data: formData,
+        headers: {
+            'X-CSRFToken': csrfToken  // Добавляем CSRF токен в заголовок
+        },
+        success: function(response) {
+            console.log(response);  // Лог ответа для отладки
+            if (response.success) {
+                alert('Settings saved successfully!');
+                $('#cabinetSettingsModal').modal('hide');
+            } else {
+                console.log(response.errors);  // Лог ошибок для отладки
+                alert('Error saving settings: ' + JSON.stringify(response.errors));
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log(xhr.responseText);  // Лог ошибок для отладки
+            alert('Error saving settings');
+        }
+    });
+}
+</script>
+<script>
+  // Убедитесь, что функция getCSRFToken() уже определена в вашем шаблоне
+  document.querySelector('.sticker-area button').addEventListener('click', function() {
+    const input = document.querySelector('.sticker-area input');
+    const stickerValue = input.value;
+    fetch("{% url 'update_sticker' box_number %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': getCSRFToken(),
+      },
+      body: new URLSearchParams({ sticker: stickerValue })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // можно обновить поле, показать уведомление и т.д.
+        alert('Sticker обновлён: ' + data.sticker);
+      } else {
+        alert('Ошибка при сохранении.');
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Сетевая ошибка при сохранении.');
+    });
+  });
+</script>

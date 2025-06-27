@@ -26,7 +26,7 @@ class CabinetSettingsForm(forms.ModelForm):
         fields = [
             'sn_error', 'year_of_manufacture', 'max_cycle_times', 'vid',
             'sw_ver', 'critical_temp', 'temp_inside', 'mains_voltage',
-            'reserve_voltage', 'lock_status', 'fan_status'
+            'reserve_voltage', 'lock_status', 'fan_status', 'smoke_status'
         ]
         labels = {
             'sn_error': 'Sn Error',
@@ -36,10 +36,12 @@ class CabinetSettingsForm(forms.ModelForm):
             'sw_ver': 'Allow SW Ver',
             'critical_temp': 'Critical Temp',
             'temp_inside': 'Temp Inside',
-            'mains_voltage': 'Grid Voltage',
-            'reserve_voltage': 'Reserve Voltage',
+            'mains_voltage': 'Max Grid Voltage',
+            'reserve_voltage': 'Max Reserve Voltage',
             'lock_status': 'Door Status',
             'fan_status': 'Fan Status',
+            'smoke_status': 'Smoke Status',
+
         }
 
 

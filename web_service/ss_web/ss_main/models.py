@@ -92,6 +92,14 @@ class Cabinet(models.Model):
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     device_id = models.TextField(null=True)
+    capacity = models.TextField(null=True)
+    buffer = models.TextField(null=True)
+    sense = models.TextField(null=True)
+    rssi = models.TextField(null=True)
+    sticker = models.TextField(null=True)
+    fire_allert = models.BooleanField(default=False)
+    door_state = models.BooleanField(default=False)
+
 
 
     def __str__(self):
@@ -203,10 +211,12 @@ class Cabinet_settings_for_auto_marking (models.Model):
     sw_ver = models.CharField(max_length=255, null=True)
     critical_temp = models.IntegerField(null=True)
     lock_status = models.BooleanField(default=False, verbose_name='LOCK_STATUS')
+    smoke_status = models.BooleanField(default=False, verbose_name='SMOKE_STATUS')
     temp_inside = models.CharField(null=True)
     fan_status = models.BooleanField(default=False, verbose_name='FAN_STATUS')
     mains_voltage = models.CharField(max_length=255, null=True)
     reserve_voltage = models.CharField(max_length=255, null=True)
+
 
     def __str__(self):
         return self.settings_for

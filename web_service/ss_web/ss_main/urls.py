@@ -40,6 +40,9 @@ urlpatterns = [
     path('new_eng_cabinet/<str:shkaf_id>/', views.new_eng_cabinet_detail, name='new_eng_cabinet_detail'),
     path('send_command/', views.send_command, name='send_command'),
     path('cabinet_settings/<int:shkaf_id>/', views.cabinet_settings, name='cabinet_settings'),
+    path('cabinet_settings2/<int:shkaf_id>/', views.cabinet_settings2, name='cabinet_settings2'),
+    path('new_eng_telemetry/<str:shkaf_id>/', views.new_eng_telemetry, name='new_eng_telemetry'),
+    path('update_sticker/<str:shkaf_id>/', views.update_sticker, name='update_sticker'),
 
     # Карта
     path('map/', map_view, name='map_view'),
