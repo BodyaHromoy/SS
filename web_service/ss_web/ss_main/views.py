@@ -165,6 +165,7 @@ def new_eng_cabinet_detail(request, shkaf_id):
 
 
 def new_eng_telemetry(request, shkaf_id):
+
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
 
     url = f'http://192.168.1.100:8088/detailed/{cabinet.device_id}'
