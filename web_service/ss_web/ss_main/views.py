@@ -151,7 +151,7 @@ def send_command(request):
     return JsonResponse({"success": False, "message": "Неверный запрос."})
 
 
-@user_passes_test(lambda u: u.is_staff)
+@user_passes_test(is_engineer)
 def new_eng(request):
     cabinets = Cabinet.objects.all()
     cities = City.objects.all()
@@ -165,7 +165,7 @@ def new_eng(request):
     })
 
 
-@user_passes_test(lambda u: u.is_staff)
+@user_passes_test(is_engineer)
 def new_eng_cabinet_detail(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
     cells = Cell.objects.filter(cabinet_id=cabinet).order_by('endpointid')
@@ -176,7 +176,7 @@ def new_eng_cabinet_detail(request, shkaf_id):
 
 
 @require_POST
-@user_passes_test(lambda u: u.is_staff)
+@user_passes_test(is_engineer)
 def save_cabinet(request):
     data = request.POST
     try:
