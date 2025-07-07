@@ -389,7 +389,7 @@
         barChart.update();
     }
 
-    function updateTable(statusSlots) {
+function updateTable(statusSlots) {
     const tbody = document.querySelector('#statusTable tbody');
     tbody.innerHTML = '';
     let allSlots = [];
@@ -401,17 +401,21 @@
     allSlots.sort((a, b) => a.endpointid - b.endpointid);
 
     allSlots.forEach(slot => {
-        const isBanStatus = slot.status === 'BAN'; // Проверка статуса
+        const isBanStatus = slot.status === 'BAN';
+        const isOverTemp = parseFloat(slot.temp_cur1) >= {{ cabinet.cabinet_settings_for_auto_marking.critical_temp|default:"1000" }};
+        const tempStyle = isOverTemp ? 'color:red;font-weight:bold;' : '';
+
         const row = `<tr style="background-color: ${isBanStatus ? '#fc7c7c' : 'transparent'};">
             <td>● ${slot.endpointid}</td>
             <td>${slot.status}</td>
             <td>${slot.charge || '-'}</td>
             <td>${slot.sw_name || '-'}</td>
-            <td>${slot.temp_cur1 || '-'}</td>
+            <td style="${tempStyle}">${slot.temp_cur1 || '-'}</td>
         </tr>`;
         tbody.innerHTML += row;
     });
 }
+
 
 function updateModalInfo(firstHalf, secondHalf) {
     document.querySelector('#first-half').textContent = firstHalf;

@@ -17,6 +17,8 @@ from django.shortcuts import redirect
 from django.db.models import F, FloatField
 import paho.mqtt.client as mqtt
 import logging
+
+from django.views.decorators.http import require_POST
 from openpyxl import Workbook
 from django.http import JsonResponse
 from django.contrib.auth.decorators import user_passes_test
@@ -149,19 +151,93 @@ def send_command(request):
     return JsonResponse({"success": False, "message": "Неверный запрос."})
 
 
-@user_passes_test(is_engineer)
+@user_passes_test(lambda u: u.is_staff)
 def new_eng(request):
     cabinets = Cabinet.objects.all()
     cities = City.objects.all()
     zones = Zone.objects.all()
-    return render(request, 'ss_main/new_eng.html', {'cabinets': cabinets, 'cities': cities, 'zones': zones})
+    vendors = Vendor.objects.all()
+    return render(request, 'ss_main/new_eng.html', {
+        'cabinets': cabinets,
+        'cities': cities,
+        'zones': zones,
+        'vendors': vendors
+    })
 
 
-@user_passes_test(is_engineer)
+@user_passes_test(lambda u: u.is_staff)
 def new_eng_cabinet_detail(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
     cells = Cell.objects.filter(cabinet_id=cabinet).order_by('endpointid')
-    return render(request, 'ss_main/new_eng_cabinet_detail.html', {'cabinet': cabinet, 'cells': cells})
+    return render(request, 'ss_main/new_eng_cabinet_detail.html', {
+        'cabinet': cabinet,
+        'cells': cells
+    })
+
+
+@require_POST
+@user_passes_test(lambda u: u.is_staff)
+def save_cabinet(request):
+    data = request.POST
+    try:
+        shkaf_id = data.get('shkaf_id')
+        cabinet, created = Cabinet.objects.update_or_create(
+            shkaf_id=shkaf_id,
+            defaults={
+                'city_id': data.get('city'),
+                'zone_id': data.get('zone'),
+                'vendor_id': data.get('vendor'),
+                'street': data.get('street'),
+                'location': data.get('location'),
+                'extra_inf': data.get('extra_inf', ''),
+                'latitude': data.get('latitude') or None,
+                'longitude': data.get('longitude') or None,
+                'device_id': data.get('device_id', ''),
+                'capacity': data.get('capacity', ''),
+                'buffer': data.get('buffer', ''),
+                'sense': data.get('sense', ''),
+                'rssi': data.get('rssi', ''),
+                'sticker': data.get('sticker', ''),
+                'fire_allert': data.get('fire_allert') == 'true',
+                'door_state': data.get('door_state') == 'true',
+            }
+        )
+
+        settings, _ = Cabinet_settings_for_auto_marking.objects.update_or_create(
+            cabinet_id=cabinet,
+            defaults={
+                'settings_for': shkaf_id,
+                'sn_error': data.get('sn_error') == 'true',
+                'year_of_manufacture': data.get('year_of_manufacture'),
+                'max_cycle_times': data.get('max_cycle_times'),
+                'vid': data.get('vid'),
+                'sw_ver': data.get('sw_ver'),
+                'critical_temp': data.get('critical_temp') or None,
+                'lock_status': data.get('lock_status') == 'true',
+                'smoke_status': data.get('smoke_status') == 'true',
+                'temp_inside': data.get('temp_inside', ''),
+                'fan_status': data.get('fan_status') == 'true',
+                'mains_voltage': data.get('mains_voltage'),
+                'reserve_voltage': data.get('reserve_voltage')
+            }
+        )
+
+        Settings_for_settings.objects.update_or_create(
+            settings_for=settings,
+            defaults={
+                'sn_error': data.get('sfs_sn_error') == 'true',
+                'year_of_manufacture': data.get('sfs_year_of_manufacture') == 'true',
+                'max_cycle_times': data.get('sfs_max_cycle_times') == 'true',
+                'vid': data.get('sfs_vid') == 'true',
+                'sw_ver': data.get('sfs_sw_ver') == 'true',
+            }
+        )
+
+        return JsonResponse({'success': True, 'created': created})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
 
 
 def new_eng_telemetry(request, shkaf_id):
@@ -467,7 +543,7 @@ def delete_courier(request, courier_id):
     return JsonResponse({'status': 'success'})
 
 
-# Назначение зоны зоны логисту
+# Назначение зоны логисту
 @login_required
 @user_passes_test(is_regional_manager)
 def assign_zone_to_logic(request):
@@ -506,32 +582,28 @@ def zone_list(request):
 
     for zone in zones:
         cabinets = Cabinet.objects.filter(zone=zone)
-        status_counts = {
-            'ready': 0,
-            'charging': 0,
-            'empty': 0,
-            'Inactive': 0
-        }
+        capacity_sum = 0
+        buffer_sum = 0
+        locked_doors_count = 0
 
         for cabinet in cabinets:
-            cells = Cell.objects.filter(cabinet_id=cabinet)
-            for cell in cells:
-                if cell.status == 'ready':
-                    status_counts['ready'] += 1
-                elif cell.status == 'charging':
-                    status_counts['charging'] += 1
-                elif cell.status == 'empty':
-                    status_counts['empty'] += 1
-                elif cell.status == 'Inactive':
-                    status_counts['Inactive'] += 1
+            try:
+                capacity_sum += int(cabinet.capacity or 0)
+                buffer_sum += int(cabinet.buffer or 0)
+            except ValueError:
+                pass  # игнорируем ошибки преобразования
+
+            if cabinet.door_state:  # True — дверь закрыта
+                locked_doors_count += 1
 
         zone_data.append({
             'zone': zone,
-            'status_counts': status_counts,
-            'user': user
+            'cabinet_count': cabinets.count(),
+            'capacity_sum': capacity_sum,
+            'buffer_sum': buffer_sum,
+            'locked_doors_count': locked_doors_count
         })
 
-    # Список шкафов с координатами
     cabinets_with_coords = Cabinet.objects.filter(latitude__isnull=False, longitude__isnull=False)
     cabinets_json = json.dumps(
         list(cabinets_with_coords.values('shkaf_id', 'street', 'latitude', 'longitude')),
@@ -554,6 +626,45 @@ def zone_detail(request, zone_id):
     return render(request, 'ss_main/zone_detail.html', {'zone': zone, 'couriers': couriers})
 
 
+def parse_device_status(device_id):
+    try:
+        if not device_id:
+            return 'n/a', None
+
+        url = f'http://192.168.1.16:8080/api/dev/{device_id}'
+        response = requests.get(url, timeout=2)
+        response.raise_for_status()
+        data = response.json()
+
+        # --- Parse GSMStatus to RSSI ---
+        gsm = data.get("GSMStatus")
+        if gsm is None:
+            rssi_signal = 'n/a'
+        elif gsm == 31:
+            rssi_signal = '-51 дБм ++'
+        elif gsm == 0:
+            rssi_signal = '-113 дБм --'
+        elif 0 < gsm <= 30:
+            rssi_signal = f'{-113 + gsm * 2} дБм'
+        elif gsm == 99:
+            rssi_signal = 'нет сигнала'
+        else:
+            rssi_signal = 'ошибка'
+
+        # --- Parse DigitalIn1 to door_state ---
+        digital_in1 = data.get("DigitalIn1")
+        door_state = None
+        if digital_in1 is not None:
+            # JS: ((digitalIn1 / 2) % 2) → в Python:
+            exhaust_bit = (digital_in1 // 2) % 2
+            door_state = exhaust_bit == 0  # 0 → дверь закрыта
+
+        return rssi_signal, door_state
+
+    except Exception:
+        return 'ошибка', None
+
+
 # Список шкафов в зоне(у логиста)
 @login_required
 @user_passes_test(is_logistician)
@@ -561,14 +672,15 @@ def cabinet_list(request, zone_id):
     zone = get_object_or_404(Zone, pk=zone_id)
     cabinets = Cabinet.objects.filter(zone=zone)
     cabinets_count = cabinets.count()
-
+    cabinets_with_coords = list(cabinets.values('shkaf_id', 'street', 'latitude', 'longitude'))
 
     total_cells_count = 0
-    cells_through = 0
     cabinets_status_counts = []
+
     for cabinet in cabinets:
         cells = Cell.objects.filter(cabinet_id=cabinet)
         total_cells_count += cells.count()
+
         status_counts = {
             'ready': cells.filter(status='ready').count(),
             'charging': cells.filter(status='charging').count(),
@@ -576,15 +688,34 @@ def cabinet_list(request, zone_id):
             'Inactive': cells.filter(status='Inactive').count(),
             'ban': cells.filter(status='BAN').count(),
         }
-        cabinets_status_counts.append((cabinet, status_counts))
+
+        # 📡 Получаем RSSI и состояние двери
+        rssi_signal, door_state = parse_device_status(cabinet.device_id)
+
+        updated_fields = []
+
+        if cabinet.rssi != rssi_signal:
+            cabinet.rssi = rssi_signal
+            updated_fields.append('rssi')
+
+        if door_state is not None and cabinet.door_state != door_state:
+            cabinet.door_state = door_state
+            updated_fields.append('door_state')
+
+        if updated_fields:
+            cabinet.save(update_fields=updated_fields)
+
+        cabinets_status_counts.append((cabinet, status_counts, rssi_signal))
 
     return render(request, 'ss_main/cabinet_list.html', {
         'zone': zone,
         'cabinets_count': cabinets_count,
         'total_cells_count': total_cells_count,
-
         'cabinets_status_counts': cabinets_status_counts,
+        'cabinets_with_coords': cabinets_with_coords,
     })
+
+
 
 
 # Обновление деталий шкафа

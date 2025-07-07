@@ -43,6 +43,8 @@ urlpatterns = [
     path('cabinet_settings2/<int:shkaf_id>/', views.cabinet_settings2, name='cabinet_settings2'),
     path('new_eng_telemetry/<str:shkaf_id>/', views.new_eng_telemetry, name='new_eng_telemetry'),
     path('update_sticker/<str:shkaf_id>/', views.update_sticker, name='update_sticker'),
+    path('save_cabinet/', views.save_cabinet, name='save_cabinet'),
+
 
     # Карта
     path('map/', map_view, name='map_view'),

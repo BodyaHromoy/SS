@@ -237,31 +237,30 @@
     <div class="table-container">
         <table>
             <thead>
-            <tr>
-                <th>Zone</th>
-                <th>☑</th>
-                <th>↯</th>
-                <th>◯</th>
-                <th>!</th>
-                <th></th>
-            </tr>
+                <tr>
+                    <th>Zone</th>
+                    <th>Charging Capacity</th>
+                    <th>Buffer Capacity</th>
+                    <th>Boxes Online</th>
+                    <th>Locked doors</th>
+                    <th></th>
+                </tr>
             </thead>
             <tbody id="cabinet-table-body">
-            {% for item in zone_data %}
-            <tr>
-                <td data-label="Zone">{{ item.zone.zone_name }}</td>
-                <td data-label="☑">{{ item.status_counts.ready }}</td>
-                <td data-label="↯">{{ item.status_counts.charging }}</td>
-                <td data-label="◯">{{ item.status_counts.empty }}</td>
-                <td data-label="!">{{ item.status_counts.Inactive }}</td>
-                <td data-label="">
-                    <div class="btn-container">
-                        <a href="{% url 'zone_detail' item.zone.id %}" class="btn btn-primary btn-sm">Scouts</a>
-                        <a href="{% url 'cabinet_list' item.zone.id %}" class="btn btn-primary btn-sm">Boxes</a>
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
+                {% for item in zone_data %}
+                <tr>
+                    <td data-label="Zone">{{ item.zone.zone_name }}</td>
+                    <td data-label="Charging Capacity">{{ item.capacity_sum }}</td>
+                    <td data-label="Buffer Capacity">{{ item.buffer_sum }}</td>
+                    <td data-label="Boxes Online">{{ item.cabinet_count }}</td>
+                    <td data-label="Locked doors">{{ item.locked_doors_count }}</td>
+                    <td data-label="">
+                        <div class="btn-container">
+                            <a href="{% url 'cabinet_list' item.zone.id %}" class="btn btn-primary btn-sm">Boxes</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
