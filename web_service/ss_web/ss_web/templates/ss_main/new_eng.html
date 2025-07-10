@@ -7,6 +7,15 @@
     <title>CMS</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
+
+        #cardModal .form-group input {
+              box-shadow: none;
+            }
+
+            #cardModal label {
+              font-size: 14px;
+            }
+
         body {
             font-family: Arial, sans-serif;
             background-color: #e6f0ff;
@@ -325,7 +334,6 @@
                     </div>
                     <div id="refresh-button-container">
                         <button class="btn btn-primary btn-custom" onclick="refreshData()">↻ Refresh</button>
-                        <button class="btn btn-success btn-custom" onclick="openCabinetForm()">+ Add Cabinet</button>
                     </div>
                 </footer>
                 <div id="cabinet-list-view">
@@ -369,20 +377,14 @@
                               <td>{{ cabinet.sense|default:"-" }}</td>
                               <td>{{ cabinet.rssi|default:"-" }}</td>
                               <td>
+  <td>
   <div class="d-flex">
-    <button
-      class="btn btn-primary btn-sm flex-fill mr-1"
-      onclick="showCabinetDetails('{{ cabinet.shkaf_id }}')"
-    >
-      Check slots
-    </button>
-    <button
-      class="btn btn-info btn-sm flex-fill"
-      onclick="showTelemetry('{{ cabinet.shkaf_id }}')"
-    >
-      Telemetry
-    </button>
+    <button class="btn btn-primary btn-sm flex-fill mr-1" onclick="showCabinetDetails('{{ cabinet.shkaf_id }}')">Check slots</button>
+    <button class="btn btn-info btn-sm flex-fill mr-1" onclick="showTelemetry('{{ cabinet.shkaf_id }}')">Telemetry</button>
+    <button class="btn btn-warning btn-sm flex-fill" onclick="showCard('{{ cabinet.shkaf_id }}')">Card</button>
   </div>
+</td>
+
 </td>
                             </tr>
                             {% endfor %}
@@ -462,7 +464,6 @@
   </div>
 </div>
 
-
 <!-- Settings -->
 <div class="modal fade" id="cabinetSettingsModal" tabindex="-1" role="dialog" aria-labelledby="cabinetSettingsModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
@@ -486,127 +487,24 @@
     </div>
 </div>
 
-
-<!-- Add/Edit Cabinet Modal -->
-<div class="modal fade" id="editCabinetModal" tabindex="-1" role="dialog" aria-labelledby="editCabinetModalLabel" aria-hidden="true">
+<!-- Card Modal -->
+<div class="modal fade" id="cardModal" tabindex="-1" role="dialog" aria-labelledby="cardModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
-    <form id="cabinetForm">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="editCabinetModalLabel">Create / Edit Cabinet</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span>&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          {% csrf_token %}
-
-<!-- Cabinet fields -->
-<h5>Cabinet</h5>
-<div class="form-row">
-  <div class="form-group col-md-4">
-    <label for="shkafId">Box ID</label>
-    <input type="text" class="form-control" id="shkafId" name="shkaf_id" required>
-  </div>
-  <div class="form-group col-md-4">
-    <label for="city">City</label>
-    <select class="form-control" id="city" name="city">
-      {% for city in cities %}
-      <option value="{{ city.city_name }}">{{ city.city_name }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="form-group col-md-4">
-    <label for="zone">Zone</label>
-    <select class="form-control" id="zone" name="zone">
-      {% for zone in zones %}
-      <option value="{{ zone.zone_name }}">{{ zone.zone_name }}</option>
-      {% endfor %}
-    </select>
-  </div>
-</div>
-
-<div class="form-row">
-  <div class="form-group col-md-4">
-    <label for="vendor">Vendor</label>
-    <select class="form-control" id="vendor" name="vendor">
-      {% for vendor in vendors %}
-      <option value="{{ vendor.vendor_name }}">{{ vendor.vendor_name }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="form-group col-md-4">
-    <label for="capacity">Capacity</label>
-    <input type="text" class="form-control" id="capacity" name="capacity">
-  </div>
-  <div class="form-group col-md-4">
-    <label for="buffer">Buffer</label>
-    <input type="text" class="form-control" id="buffer" name="buffer">
-  </div>
-</div>
-
-<div class="form-group">
-  <label for="street">Additional info</label>
-  <textarea class="form-control" id="street" name="street"></textarea>
-</div>
-
-<div class="form-group">
-  <label for="location">Addres</label>
-  <textarea class="form-control" id="location" name="location"></textarea>
-</div>
-
-<div class="form-group">
-  <label for="extra_inf">Locker QR</label>
-  <textarea class="form-control" id="extra_inf" name="extra_inf"></textarea>
-</div>
-
-<div class="form-row">
-  <div class="form-group col-md-6">
-    <label for="latitude">Latitude</label>
-    <input type="number" step="any" class="form-control" id="latitude" name="latitude">
-  </div>
-  <div class="form-group col-md-6">
-    <label for="longitude">Longitude</label>
-    <input type="number" step="any" class="form-control" id="longitude" name="longitude">
-  </div>
-</div>
-
-<div class="form-group">
-  <label for="device_id">IMEI</label>
-  <input type="text" class="form-control" id="device_id" name="device_id">
-</div>
-
-<div class="form-row">
-  <div class="form-group col-md-6">
-    <label for="sense">Sense</label>
-    <input type="text" class="form-control" id="sense" name="sense">
-  </div>
-  <div class="form-group col-md-6">
-    <label for="rssi">RSSI</label>
-    <input type="text" class="form-control" id="rssi" name="rssi">
-  </div>
-</div>
-
-<div class="form-group">
-  <label for="sticker">Sticker</label>
-  <input type="text" class="form-control" id="sticker" name="sticker">
-</div>
-
-<div class="form-check">
-  <input class="form-check-input" type="checkbox" id="fire_allert" name="fire_allert">
-  <label class="form-check-label" for="fire_allert">Fire Alert</label>
-</div>
-
-<div class="form-check">
-  <input class="form-check-input" type="checkbox" id="door_state" name="door_state">
-  <label class="form-check-label" for="door_state">Door Open</label>
-</div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="submit" class="btn btn-primary">Save Cabinet</button>
-        </div>
+    <div class="modal-content" style="background-color: #00aaff; color: #000;">
+      <div class="modal-header">
+        <h5 class="modal-title" id="cardModalLabel">Charge Box Card</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span>&times;</span>
+        </button>
       </div>
-    </form>
+      <div class="modal-body" id="cardModalBody">
+        <p>Loading...</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="saveCard()">💾 Save</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -972,6 +870,87 @@ $('#cabinetForm').on('submit', function (e) {
 
 function getCSRFToken() {
     return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+function showCard(shkaf_id) {
+  $('#cardModalBody').html('<p>Loading...</p>');
+
+  $.get(`/cabinet_card/${shkaf_id}/`, function(data) {
+    function row(label, value, name) {
+  return `
+    <div class="form-group d-flex align-items-center mb-2">
+      <label class="flex-shrink-0 d-flex align-items-center justify-content-center px-2 py-1 font-weight-bold border border-primary bg-white text-dark"
+             style="width: 160px; height: 38px; margin-right: 10px;">
+        ${label}
+      </label>
+      <input type="text" class="form-control form-control-sm" name="${name}" value="${value || ''}" style="height: 38px;">
+    </div>
+  `;
+}
+
+    const leftColumn = [
+      row("City", data.city, "city"),
+      row("Zone", data.zone, "zone"),
+      row("Address", data.street, "street"),
+      row("Additional Info", data.location, "location"),
+      row("Vendor", data.vendor, "vendor"),
+      row("QR", data.qr, "qr"),
+      row("N inventar", data.n_inventar, "n_inventar"),
+      row("N in System", data.shkaf_id, "shkaf_id"),
+    ].join('');
+
+    const rightColumn = [
+      row("Capacity charge", data.capacity, "capacity"),
+      row("Capacity buffer", data.buffer, "buffer"),
+      row("Energy counter SN", data.energy_counter_sn, "energy_counter_sn"),
+      row("IoT IMEI for RPi", data.iot_imei_rpi, "iot_imei_rpi"),
+      row("Mobile N for RPi", data.mobile_n_rpi, "mobile_n_rpi"),
+      row("IoT IMEI for Locker", data.iot_imei_locker, "iot_imei_locker"),
+      row("Mobile N for Locker", data.mobile_n_locker, "mobile_n_locker"),
+    ].join('');
+
+    $('#cardModalBody').html(`
+      <form id="cardForm">
+        <div class="container-fluid" style="background-color: #00aaff; padding: 20px;">
+          <div class="row">
+            <div class="col-md-6">${leftColumn}</div>
+            <div class="col-md-6">${rightColumn}</div>
+          </div>
+        </div>
+      </form>
+    `);
+
+    $('#cardModal').modal('show');
+  }).fail(function() {
+    $('#cardModalBody').html('<p class="text-danger">Error loading card data.</p>');
+  });
+}
+
+function saveCard() {
+  const formData = {};
+  $('#cardForm')
+    .serializeArray()
+    .forEach(({ name, value }) => {
+      formData[name] = value;
+    });
+
+    console.log("Form data to save:", formData);
+
+  $.ajax({
+    url: '/save_cabinet_card/',  // этот endpoint добавим ниже
+    method: 'POST',
+    data: {
+      ...formData,
+      csrfmiddlewaretoken: getCSRFToken()
+    },
+    success: function (response) {
+      alert(response.success ? "Saved successfully!" : "Save failed");
+      if (response.success) $('#cardModal').modal('hide');
+    },
+    error: function () {
+      alert("Error saving");
+    }
+  });
 }
 
 

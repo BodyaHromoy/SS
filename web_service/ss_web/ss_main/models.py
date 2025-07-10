@@ -99,6 +99,17 @@ class Cabinet(models.Model):
     sticker = models.TextField(null=True)
     fire_allert = models.BooleanField(default=False)
     door_state = models.BooleanField(default=False)
+    smoke_state = models.BooleanField(default=False)
+    device_vendor = models.TextField(null=True)
+    qr = models.TextField(null=True)
+    n_inventar = models.TextField(null=True)
+    energy_counter_sn = models.TextField(null=True)
+    iot_imei_rpi = models.TextField(null=True)
+    mobile_n_rpi = models.TextField(null=True)
+    iot_imei_locker = models.TextField(null=True)
+    mobile_n_locker = models.TextField(null=True)
+
+
 
 
 

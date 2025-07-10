@@ -1,0 +1,23 @@
+<div class="container text-white">
+  <div class="row">
+    <div class="col-md-6">
+      <p><b>City</b>: {{ cabinet.city.city_name }}</p>
+      <p><b>Zone</b>: {{ cabinet.zone.zone_name }}</p>
+      <p><b>Address</b>: {{ cabinet.street }}</p>
+      <p><b>Additional Info</b>: {{ cabinet.location }}</p>
+      <p><b>Vendor</b>: {{ cabinet.vendor.vendor_name }}</p>
+      <p><b>QR</b>: {{ cabinet.qr }}</p>
+      <p><b>N inventar</b>: {{ cabinet.n_inventar }}</p>
+      <p><b>N in System</b>: {{ cabinet.shkaf_id }}</p>
+    </div>
+    <div class="col-md-6">
+      <p><b>Capacity charge</b>: {{ cabinet.capacity }}</p>
+      <p><b>Capacity buffer</b>: {{ cabinet.buffer }}</p>
+      <p><b>Energy counter SN</b>: {{ cabinet.energy_counter_sn }}</p>
+      <p><b>IoT IMEI for RPi</b>: {{ cabinet.iot_imei_rpi }}</p>
+      <p><b>Mobile N for RPi</b>: {{ cabinet.mobile_n_rpi }}</p>
+      <p><b>IoT IMEI for Locker</b>: {{ cabinet.iot_imei_locker }}</p>
+      <p><b>Mobile N for Locker</b>: {{ cabinet.mobile_n_locker }}</p>
+    </div>
+  </div>
+</div>

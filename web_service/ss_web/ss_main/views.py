@@ -175,6 +175,59 @@ def new_eng_cabinet_detail(request, shkaf_id):
     })
 
 
+@user_passes_test(is_engineer)
+def cabinet_card(request, shkaf_id):
+    cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
+    data = {
+        "city": cabinet.city.city_name,
+        "zone": cabinet.zone.zone_name,
+        "street": cabinet.street,
+        "location": cabinet.extra_inf,
+        "vendor": cabinet.device_vendor,
+        "qr": cabinet.qr,
+        "n_inventar": cabinet.n_inventar,
+        "shkaf_id": cabinet.shkaf_id,
+        "capacity": cabinet.capacity,
+        "buffer": cabinet.buffer,
+        "energy_counter_sn": cabinet.energy_counter_sn,
+        "iot_imei_rpi": cabinet.device_id,
+        "mobile_n_rpi": cabinet.mobile_n_rpi,
+        "iot_imei_locker": cabinet.iot_imei_locker,
+        "mobile_n_locker": cabinet.mobile_n_locker,
+    }
+    return JsonResponse(data)
+
+
+@require_POST
+@user_passes_test(is_engineer)
+def save_cabinet_card(request):
+    try:
+        shkaf_id = request.POST.get('shkaf_id')
+        cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
+
+        cabinet.city = City.objects.get(city_name=request.POST.get('city'))
+        cabinet.zone = Zone.objects.get(zone_name=request.POST.get('zone'))
+        cabinet.street = request.POST.get('street')
+        cabinet.location = request.POST.get('location')
+        cabinet.device_vendor = request.POST.get('vendor')
+        cabinet.qr = request.POST.get('qr')
+        cabinet.n_inventar = request.POST.get('n_inventar')
+        cabinet.capacity = request.POST.get('capacity')
+        cabinet.buffer = request.POST.get('buffer')
+        cabinet.energy_counter_sn = request.POST.get('energy_counter_sn')
+        cabinet.device_id = request.POST.get('iot_imei_rpi')
+        cabinet.mobile_n_rpi = request.POST.get('mobile_n_rpi')
+        cabinet.iot_imei_locker = request.POST.get('iot_imei_locker')
+        cabinet.mobile_n_locker = request.POST.get('mobile_n_locker')
+
+        cabinet.save()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+
+
 @require_POST
 @user_passes_test(is_engineer)
 def save_cabinet(request):
@@ -268,8 +321,8 @@ def new_eng_telemetry(request, shkaf_id):
 
     p_tags = tel.find_all('p')
     last_update    = p_tags[0].get_text(strip=True).split(':', 1)[1].strip()
-    reserv_voltage = p_tags[1].get_text(strip=True).split(':', 1)[1].strip()
-    power_voltage  = p_tags[2].get_text(strip=True).split(':', 1)[1].strip()
+    power_voltage = p_tags[2].get_text(strip=True).split(':', 1)[1].strip()
+    reserv_voltage = power_voltage
 
     in_vals = {}
     for i in (1, 2, 3):
@@ -305,32 +358,36 @@ def new_eng_telemetry(request, shkaf_id):
         cell = table.find('td', text=re.compile(fr'^{re.escape(metric_name)}$'))
         if not cell:
             return ['0'] * len(phases)
-        siblings = cell.find_next_siblings('td')
-        return [sib.get_text(strip=True) for sib in siblings]
+        return [sib.get_text(strip=True) for sib in cell.find_next_siblings('td')]
 
-    volt_vals   = get_metric_values('Напряжение')
-    curr_vals   = get_metric_values('Ток')
-    cos_vals    = get_metric_values('Косинус φ')
-    power_vals  = get_metric_values('Активная мощность(расчёт)')
+    volt_vals = get_metric_values('Напряжение')
+    curr_vals = get_metric_values('Ток')
+    cos_vals = get_metric_values('Косинус φ')
 
-    # хелпер: выдрать число с точкой
+    # Сначала пробуем взять реальную «Активная мощность»
+    raw_power_vals = get_metric_values('Активная мощность')
+    # Если она не найдена (все нули или пусто), берём «Активная мощность(расчёт)»
+    if all(v in ('0', '') for v in raw_power_vals):
+        power_vals = get_metric_values('Активная мощность(расчёт)')
+    else:
+        power_vals = raw_power_vals
+
     def extract_num(s: str) -> str:
-        m = re.search(r'\d+(?:\.\d+)?', s)
+        m = re.search(r'-?\d+(?:\.\d+)?', s)
         return m.group(0) if m else '0'
 
-    # собираем список lines
     lines = []
     for idx, phase in enumerate(phases):
-        v   = extract_num(volt_vals[idx])
-        a   = extract_num(curr_vals[idx])
+        v = extract_num(volt_vals[idx])
+        a = extract_num(curr_vals[idx])
         cos = extract_num(cos_vals[idx])
-        p   = extract_num(power_vals[idx])
+        p = extract_num(power_vals[idx])
         lines.append({
             'name': f'Line {phase}',
             'V': v,
             'A': a,
             'cos': cos,
-            'P': p,
+            'P': p,  # теперь это реальная «Активная мощность»
         })
 
     # --- Собираем контекст и рендерим шаблон ---
