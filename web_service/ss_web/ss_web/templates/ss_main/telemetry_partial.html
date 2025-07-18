@@ -109,16 +109,17 @@
       <input type="text" readonly class="form-control form-control-sm form-control-plaintext" value="{{ imei }}">
     </div>
     <div class="col-md-3 mb-2">
-  <label class="small font-weight-bold">ICCID</label>
-      <a
-        href="http://79.143.21.106:9000/command/{{ iccid }}/iccid"
-        class="form-control form-control-sm form-control-plaintext"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        iccid
-      </a>
-    </div>
+  <label class="small font-weight-bold">
+    <a href="#" id="loadIccid" class="text-primary">ICCID</a>
+  </label>
+  <input
+    type="text"
+    id="iccidField"
+    readonly
+    class="form-control form-control-sm form-control-plaintext"
+    value=""
+  >
+</div>
   </div>
 
 
@@ -278,6 +279,7 @@
 
         // подменяем содержимое (не контейнер, чтобы CSS остался)
         container.innerHTML = newInner;
+        initIccidLoader();
 
         // выключаем «режим обновления» через небольшой таймаут,
         // чтобы успел отработать transition
@@ -388,4 +390,49 @@ function saveCabinetSettings() {
       alert('Сетевая ошибка при сохранении.');
     });
   });
+
+
+ function initIccidLoader() {
+  const loadBtn = document.getElementById('loadIccid');
+  const iccidField = document.getElementById('iccidField');
+
+  if (!loadBtn || !iccidField) {
+    console.warn("⚠️ ICCID элементы не найдены");
+    return;
+  }
+
+  // очищаем старые обработчики (если вызываем повторно)
+  loadBtn.replaceWith(loadBtn.cloneNode(true));
+  const newBtn = document.getElementById('loadIccid');
+
+  newBtn.addEventListener('click', function (e) {
+    e.preventDefault();
+    const imei = document.querySelector('input[readonly][value^="8620"]').value;
+    const url = `http://79.143.21.106:9000/command/${imei}/iccid`;
+
+    console.log("⏳ Fetch ICCID from", url);
+    iccidField.value = 'Загрузка...';
+
+    fetch(url)
+      .then(r => r.text())
+      .then(data => {
+        console.log("✅ ICCID получен:", data);
+        iccidField.value = data.trim();
+      })
+      .catch(err => {
+        console.error("❌ Ошибка ICCID:", err);
+        iccidField.value = 'Ошибка загрузки';
+      });
+  });
+}
+
 </script>
+
+
+<script>
+  $('#cabinetTelemetryModal').on('shown.bs.modal', function () {
+    console.log("📦 Модалка телеметрии показана, инициализируем ICCID");
+    initIccidLoader();
+  });
+</script>
+

@@ -297,7 +297,7 @@ def new_eng_telemetry(request, shkaf_id):
 
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
 
-    url = f'http://192.168.1.100:8088/detailed/{cabinet.device_id}'
+    url = f'http://192.168.1.100:8088/detailed/{cabinet.iot_imei_locker}'
     try:
         resp = requests.get(
             url,
@@ -395,7 +395,7 @@ def new_eng_telemetry(request, shkaf_id):
         'box_number':    cabinet.shkaf_id,
         'qr_code':       qr_code,
         'imei':          imei,
-        'iccid':         imei,
+        'iccid':         cabinet.iot_imei_locker,
 
         'last_update':    last_update,
         'reserv_voltage': reserv_voltage,
@@ -890,6 +890,8 @@ def user_cabinets(request):
 def cabinet_details(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
     cells = Cell.objects.filter(cabinet_id=cabinet)
+    cabinet_setting = Cabinet_settings_for_auto_marking.objects.filter(cabinet_id=cabinet.shkaf_id).first()
+    critical_temp = cabinet_setting.critical_temp if cabinet_setting else None
     status_counts = cells.values('status').annotate(count=Count('status')).order_by('status')
     status_slots = {}
 
@@ -959,6 +961,7 @@ def cabinet_details(request, shkaf_id):
         'full_day_count': full_day_count,
         'latitude': cabinet.latitude,
         'longitude': cabinet.longitude,
+        'critical_temp': critical_temp,
     }
     return render(request, 'ss_main/scout_v2.html', context)
 

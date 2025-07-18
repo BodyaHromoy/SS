@@ -380,6 +380,9 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
     if status_data.get("SW_VER") == "1.6.4.9":
         existing_entry.sw_name = "S90L"
 
+    if status_data.get("SW_VER") == "1.6.5.2":
+        existing_entry.sw_name = "S90L"
+
     if status_data.get("SW_VER") == "3.5.6":
         existing_entry.sw_name = "MAX+"
 
@@ -406,24 +409,7 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
     existing_entry.temp_cur1 = status_data.get("TEMP_CUR1")
     existing_entry.temp_cur2 = status_data.get("TEMP_CUR2")
 
-    if cabinet_setting.critical_temp is not None:
-        try:
-            temp_cur1_value = float(status_data.get("TEMP_CUR1"))
-            if temp_cur1_value > cabinet_setting.critical_temp:
-                print(f"Температура превышает критическую: {temp_cur1_value} > {cabinet_setting.critical_temp}")
-                existing_entry.is_error = True
-                existing_entry.status = "BAN"
-                if existing_entry.message:
-                    if "-High Temp" not in existing_entry.message:
-                        existing_entry.message += ",-High Temp"
-                else:
-                    existing_entry.message = "-High Temp"
-            else:
-                print(f"Температура в норме: {temp_cur1_value} <= {cabinet_setting.critical_temp}")
-        except (ValueError, TypeError):
-            print("Ошибка при разборе значения TEMP_CUR1 для проверки температуры.")
-    else:
-        print("Проверка температуры отключена или критическая температура не указана.")
+
 
     existing_entry.total_capacity = status_data.get("TOTAL_CAPACITY")
 

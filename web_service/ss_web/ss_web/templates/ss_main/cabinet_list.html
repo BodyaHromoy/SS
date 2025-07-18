@@ -333,13 +333,14 @@
                     {% for cabinet, status_counts, rssi_signal in cabinets_status_counts %}
                     <tr>
                         <td data-label="">
-                          <div class="cabinet-header">
-                            <span>№ {{ cabinet.shkaf_id }}</span>
-                            <span>Capacity {{ cabinet.capacity }}</span>
-                            <span>Buffer {{ cabinet.buffer }}</span>
-                            <span>RSSI {{ rssi_signal }}</span>
-                          </div>
-                        </td>
+                              <div class="cabinet-header">
+                                <span>№ {{ cabinet.shkaf_id }}</span>
+                                <span>{{ cabinet.capacity|default:"-" }}</span>
+                                <span>{{ cabinet.buffer|default:"-" }}</span>
+                                <span>{{ rssi_signal|default:"-" }}</span>
+                              </div>
+                            </td>
+
 
                         <td data-label="☑ - Ready" class="label-ready">{{ status_counts.ready }}</td>
                         <td data-label="↯ - Charging" class="label-charging">{{ status_counts.charging }}</td>
@@ -410,6 +411,15 @@
       }
   }
 </script>
-
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.cabinet-header span').forEach(span => {
+        const txt = span.textContent.trim().toLowerCase();
+        if (!span.textContent.trim() || txt === 'none' || txt === 'n/a') {
+          span.textContent = '-';
+        }
+      });
+    });
+  </script>
 </body>
 </html>
