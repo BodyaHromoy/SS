@@ -374,7 +374,7 @@
                               <th>Fire alert</th>
                               <th>Sense inputs</th>
                               <th>RSSI</th>
-                              <th>Action</th>    <!-- теперь только один столбец Action -->
+                              <th class="text-center">Action</th>
                             </tr>
                           </thead>
                           <tbody id="cabinet-list">
@@ -386,8 +386,8 @@
                               <td>{{ cabinet.capacity|default:"-" }}</td>
                               <td>{{ cabinet.buffer|default:"-" }}</td>
                               <td>{{ cabinet.street|default:"-" }}</td>
+                                <td>{{ cabinet.qr|default:"-" }}</td>
                                 <td>{{ cabinet.extra_inf|default:"-" }}</td>
-                                <td>{{ cabinet.location|default:"-" }}</td>
                               <td>
                                 <span style="
                                     display:inline-block;
@@ -399,7 +399,6 @@
                               </td>
                               <td>{{ cabinet.sense|default:"-" }}</td>
                               <td>{{ cabinet.rssi|default:"-" }}</td>
-                              <td>
   <td>
   <div class="d-flex">
     <button class="btn btn-primary btn-sm flex-fill mr-1" onclick="showCabinetDetails('{{ cabinet.shkaf_id }}')">Check slots</button>
@@ -1027,7 +1026,7 @@ function showCard(shkaf_id) {
       row("City", data.city, "city"),
       row("Zone", data.zone, "zone"),
       row("Address", data.street, "street"),
-      row("Additional Info", data.location, "location"),
+      row("Additional Info", data.extra_inf, "extra_inf"),
       row("Vendor", data.vendor, "vendor"),
       row("QR", data.qr, "qr"),
       row("N inventar", data.n_inventar, "n_inventar"),

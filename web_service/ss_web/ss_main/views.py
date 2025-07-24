@@ -153,15 +153,21 @@ def send_command(request):
 
 @user_passes_test(is_engineer)
 def new_eng(request):
-    cabinets = Cabinet.objects.all()
-    cities = City.objects.all()
-    zones = Zone.objects.all()
-    vendors = Vendor.objects.all()
-    return render(request, 'ss_main/new_eng.html', {
-        'cabinets': cabinets,
-        'cities': cities,
-        'zones': zones,
-        'vendors': vendors
+    cabinets = list(Cabinet.objects.all())
+
+    for cabinet in cabinets:
+        if cabinet.iot_imei_locker:
+            rssi, door_state = parse_device_status(cabinet.iot_imei_locker)
+            cabinet.rssi = rssi  # динамически добавляем атрибут
+            cabinet.door_state = door_state
+        else:
+            cabinet.rssi = '-'
+            cabinet.door_state = None
+
+    return render(request, "ss_main/new_eng.html", {
+        "cabinets": cabinets,
+        "cities": City.objects.all(),
+        "zones": Zone.objects.all(),
     })
 
 
@@ -182,7 +188,7 @@ def cabinet_card(request, shkaf_id):
         "city": cabinet.city.city_name,
         "zone": cabinet.zone.zone_name,
         "street": cabinet.street,
-        "location": cabinet.extra_inf,
+        "extra_inf": cabinet.extra_inf,
         "vendor": cabinet.device_vendor,
         "qr": cabinet.qr,
         "n_inventar": cabinet.n_inventar,
@@ -208,7 +214,7 @@ def save_cabinet_card(request):
         cabinet.city = City.objects.get(city_name=request.POST.get('city'))
         cabinet.zone = Zone.objects.get(zone_name=request.POST.get('zone'))
         cabinet.street = request.POST.get('street')
-        cabinet.location = request.POST.get('location')
+        cabinet.extra_inf = request.POST.get('extra_inf')
         cabinet.device_vendor = request.POST.get('vendor')
         cabinet.qr = request.POST.get('qr')
         cabinet.n_inventar = request.POST.get('n_inventar')
@@ -294,7 +300,6 @@ def save_cabinet(request):
 
 
 def new_eng_telemetry(request, shkaf_id):
-
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
 
     url = f'http://192.168.1.100:8088/detailed/{cabinet.iot_imei_locker}'
@@ -312,22 +317,41 @@ def new_eng_telemetry(request, shkaf_id):
         })
 
     soup = BeautifulSoup(resp.content, 'html.parser')
-    gen, tel, em = soup.find_all('div', class_='panel')
+    try:
+        gen, tel, em = soup.find_all('div', class_='panel')
+    except ValueError:
+        return render(request, 'ss_main/telemetry_partial.html', {
+            'box_number': cabinet.shkaf_id,
+            'error': 'Ошибка структуры данных: ожидалось 3 блока .panel',
+        })
 
     qr_code = cabinet.extra_inf
-    imei = gen.find('p').get_text(strip=True).split(':', 1)[1].strip()
+
+    try:
+        imei_text = gen.find('p').get_text(strip=True)
+        imei = imei_text.split(':', 1)[1].strip() if ':' in imei_text else 'n/a'
+    except Exception:
+        imei = 'n/a'
+
     iccid_a = gen.find('a', href=re.compile(r'/command/.*/iccid'))
     iccid = iccid_a['href'] if iccid_a else '-'
 
+    def safe_split(p_tags, index):
+        try:
+            text = p_tags[index].get_text(strip=True)
+            return text.split(':', 1)[1].strip() if ':' in text else 'n/a'
+        except (IndexError, AttributeError):
+            return 'n/a'
+
     p_tags = tel.find_all('p')
-    last_update    = p_tags[0].get_text(strip=True).split(':', 1)[1].strip()
-    power_voltage = p_tags[2].get_text(strip=True).split(':', 1)[1].strip()
+    last_update = safe_split(p_tags, 0)
+    power_voltage = safe_split(p_tags, 2)
     reserv_voltage = power_voltage
 
     in_vals = {}
     for i in (1, 2, 3):
         tag = tel.find('p', text=re.compile(fr'Вход {i}:'))
-        in_vals[f'in{i}'] = tag.get_text(strip=True).split(':', 1)[1].strip() if tag else ''
+        in_vals[f'in{i}'] = tag.get_text(strip=True).split(':', 1)[1].strip() if tag and ':' in tag.get_text() else ''
 
     temps = {}
     for tag in tel.find_all('p'):
@@ -340,21 +364,37 @@ def new_eng_telemetry(request, shkaf_id):
     t4 = temps.get('t4', '')
 
     coord_a = tel.find('a', href=re.compile(r'https?://'))
-    coordinates = coord_a.get_text(strip=True).split(':', 1)[1].strip() if coord_a else ''
+    try:
+        coordinates = coord_a.get_text(strip=True).split(':', 1)[1].strip() if coord_a and ':' in coord_a.get_text() else ''
+    except Exception:
+        coordinates = ''
+
     gps_parts = [a.get_text(strip=True) for a in tel.find_all('a')
                  if 'GPS:' in a.get_text() or 'спутников' in a.get_text()]
     gps_info = ' '.join(gps_parts)
 
-    meter_reading = em.find('h2').get_text(strip=True).split(':', 1)[1].strip()
-    mp = em.find_all('p')
-    meter_update = mp[0].get_text(strip=True).split(':', 1)[1].strip()
-    meter_temp   = mp[1].get_text(strip=True).split(':', 1)[1].strip()
-    frequency    = mp[2].get_text(strip=True).split(':', 1)[1].strip()
+    # --- Энергомодуль ---
+    h2_tag = em.find('h2')
+    meter_reading = h2_tag.get_text(strip=True).split(':', 1)[1].strip() if h2_tag and ':' in h2_tag.get_text() else 'n/a'
 
+    mp = em.find_all('p')
+    meter_update = safe_split(mp, 0)
+    meter_temp = safe_split(mp, 1)
+    frequency = safe_split(mp, 2)
+
+    # --- Таблица ---
     table = em.find('table')
-    phases = [th.get_text(strip=True) for th in table.select('tr:first-of-type th')[1:]]
+    phases = []
+    if table:
+        try:
+            header_row = table.select('tr:first-of-type th')
+            phases = [th.get_text(strip=True) for th in header_row[1:]]
+        except Exception:
+            phases = []
 
     def get_metric_values(metric_name):
+        if not table or not phases:
+            return ['0'] * len(phases)
         cell = table.find('td', text=re.compile(fr'^{re.escape(metric_name)}$'))
         if not cell:
             return ['0'] * len(phases)
@@ -364,9 +404,7 @@ def new_eng_telemetry(request, shkaf_id):
     curr_vals = get_metric_values('Ток')
     cos_vals = get_metric_values('Косинус φ')
 
-    # Сначала пробуем взять реальную «Активная мощность»
     raw_power_vals = get_metric_values('Активная мощность')
-    # Если она не найдена (все нули или пусто), берём «Активная мощность(расчёт)»
     if all(v in ('0', '') for v in raw_power_vals):
         power_vals = get_metric_values('Активная мощность(расчёт)')
     else:
@@ -378,19 +416,18 @@ def new_eng_telemetry(request, shkaf_id):
 
     lines = []
     for idx, phase in enumerate(phases):
-        v = extract_num(volt_vals[idx])
-        a = extract_num(curr_vals[idx])
-        cos = extract_num(cos_vals[idx])
-        p = extract_num(power_vals[idx])
+        v = extract_num(volt_vals[idx]) if idx < len(volt_vals) else '0'
+        a = extract_num(curr_vals[idx]) if idx < len(curr_vals) else '0'
+        cos = extract_num(cos_vals[idx]) if idx < len(cos_vals) else '0'
+        p = extract_num(power_vals[idx]) if idx < len(power_vals) else '0'
         lines.append({
             'name': f'Line {phase}',
             'V': v,
             'A': a,
             'cos': cos,
-            'P': p,  # теперь это реальная «Активная мощность»
+            'P': p,
         })
 
-    # --- Собираем контекст и рендерим шаблон ---
     context = {
         'box_number':    cabinet.shkaf_id,
         'qr_code':       qr_code,
@@ -419,6 +456,7 @@ def new_eng_telemetry(request, shkaf_id):
         'sticker':       getattr(cabinet, 'sticker', ''),
     }
     return render(request, 'ss_main/telemetry_partial.html', context)
+
 
 
 def update_sticker(request, shkaf_id):
@@ -674,7 +712,6 @@ def zone_list(request):
     })
 
 
-# Список курьеров в зоне(у логиста)
 @login_required
 @user_passes_test(is_logistician)
 def zone_detail(request, zone_id):
@@ -683,12 +720,12 @@ def zone_detail(request, zone_id):
     return render(request, 'ss_main/zone_detail.html', {'zone': zone, 'couriers': couriers})
 
 
-def parse_device_status(device_id):
+def parse_device_status(iot_imei_locker):
     try:
-        if not device_id:
+        if not iot_imei_locker:
             return 'n/a', None
 
-        url = f'http://192.168.1.16:8080/api/dev/{device_id}'
+        url = f'http://192.168.1.16:8080/api/dev/{iot_imei_locker}'
         response = requests.get(url, timeout=2)
         response.raise_for_status()
         data = response.json()
@@ -731,12 +768,19 @@ def cabinet_list(request, zone_id):
     cabinets_count = cabinets.count()
     cabinets_with_coords = list(cabinets.values('shkaf_id', 'street', 'latitude', 'longitude'))
 
-    total_cells_count = 0
+    total_capacity = 0
     cabinets_status_counts = []
 
     for cabinet in cabinets:
+        # Суммируем capacity
+        try:
+            capacity_value = int(cabinet.capacity) if cabinet.capacity is not None else 0
+            total_capacity += capacity_value
+        except (ValueError, TypeError):
+            pass  # Пропускаем если значение не число
+
+        # Получаем связанные ячейки
         cells = Cell.objects.filter(cabinet_id=cabinet)
-        total_cells_count += cells.count()
 
         status_counts = {
             'ready': cells.filter(status='ready').count(),
@@ -746,11 +790,10 @@ def cabinet_list(request, zone_id):
             'ban': cells.filter(status='BAN').count(),
         }
 
-        # 📡 Получаем RSSI и состояние двери
-        rssi_signal, door_state = parse_device_status(cabinet.device_id)
+        # Получаем RSSI и состояние двери
+        rssi_signal, door_state = parse_device_status(cabinet.iot_imei_locker)
 
         updated_fields = []
-
         if cabinet.rssi != rssi_signal:
             cabinet.rssi = rssi_signal
             updated_fields.append('rssi')
@@ -767,7 +810,7 @@ def cabinet_list(request, zone_id):
     return render(request, 'ss_main/cabinet_list.html', {
         'zone': zone,
         'cabinets_count': cabinets_count,
-        'total_cells_count': total_cells_count,
+        'total_cells_count': total_capacity,
         'cabinets_status_counts': cabinets_status_counts,
         'cabinets_with_coords': cabinets_with_coords,
     })

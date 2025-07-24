@@ -218,6 +218,9 @@
 .label-ban::before {
     color: red;
 }
+.cabinet-header span {
+    font-size: 0.75em;
+}
 
 
 .footer a:hover {
@@ -274,7 +277,7 @@
   <<div class="info-header">
   <div>
     <p>Boxes in Zone {{ zone.zone_name }}</p>
-    <p>Total Capacity: {{ total_cells_count }}</p>
+    <p>Charging Capacity: {{ total_cells_count }}</p>
     <p>Online boxes: {{ cabinets_count }}</p>
   </div>
   <div class="menu-buttons">
@@ -335,8 +338,8 @@
                         <td data-label="">
                               <div class="cabinet-header">
                                 <span>№ {{ cabinet.shkaf_id }}</span>
-                                <span>{{ cabinet.capacity|default:"-" }}</span>
-                                <span>{{ cabinet.buffer|default:"-" }}</span>
+                                <span>Cap:{{ cabinet.capacity|default:"-" }}</span>
+                                <span>Buf:{{ cabinet.buffer|default:"-" }}</span>
                                 <span>{{ rssi_signal|default:"-" }}</span>
                               </div>
                             </td>
