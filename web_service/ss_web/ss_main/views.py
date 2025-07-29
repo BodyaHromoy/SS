@@ -325,7 +325,7 @@ def new_eng_telemetry(request, shkaf_id):
             'error': 'Ошибка структуры данных: ожидалось 3 блока .panel',
         })
 
-    qr_code = cabinet.extra_inf
+    qr_code = cabinet.qr
 
     try:
         imei_text = gen.find('p').get_text(strip=True)

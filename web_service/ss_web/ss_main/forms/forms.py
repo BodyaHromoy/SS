@@ -37,7 +37,7 @@ class CabinetSettingsForm(forms.ModelForm):
             'critical_temp': 'Critical Temp',
             'temp_inside': 'Temp Inside',
             'mains_voltage': 'Max Grid Voltage',
-            'reserve_voltage': 'Max Reserve Voltage',
+            'reserve_voltage': 'Min Reserve Voltage',
             'lock_status': 'Door Status',
             'fan_status': 'Fan Status',
             'smoke_status': 'Smoke Status',

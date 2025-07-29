@@ -216,10 +216,10 @@
     <div class="modal-content">
         <p><strong>Зона:</strong> {{ cabinet.zone.zone_name|default:"-" }}</p>
         <p><strong>Локация:</strong> {{ cabinet.street|default:"-" }}</p>
-        <p><strong>Дополнительно:</strong> {{ cabinet.location|default:"-" }}</p>
+        <p><strong>Дополнительно:</strong> {{ cabinet.extra_inf|default:"-" }}</p>
         <p>
             <strong>ID Замка:</strong>
-            <span id="lock-id">{{ cabinet.extra_inf|default:"-" }}</span>
+            <span id="lock-id">{{ cabinet.qr|default:"-" }}</span>
             <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('lock-id')">Копировать</button>
         </p>
         <p><strong>Состояние двери:</strong> Не назначено</p>
