@@ -1037,7 +1037,8 @@ def region_zones(request, city_id):
         'city': city,
         'total_zones': len(zone_data),
         'total_cells': total_cells,
-        'cabinets_with_coords': cabinets_json
+        'cabinets_with_coords': cabinets_json,
+        'total_cabinets': total_cabinets,
     })
 
 
