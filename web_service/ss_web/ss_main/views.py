@@ -917,13 +917,14 @@ def region_cabinet_list(request, zone_id):
 
         cabinets_status_counts.append((cabinet, status_counts, rssi_signal, power_count, grid_voltage, temperature))
 
-
+    cabinets_with_coords = list(cabinets.values('shkaf_id', 'street', 'latitude', 'longitude'))
 
     return render(request, 'ss_main/region_cabinets.html', {
         'zone': zone,
         'cabinets_count': cabinets_count,
         'total_cells_count': total_capacity,
-        'cabinets_status_counts': cabinets_status_counts
+        'cabinets_status_counts': cabinets_status_counts,
+        'cabinets_with_coords': cabinets_with_coords,
     })
 
 
