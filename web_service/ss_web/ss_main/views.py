@@ -958,13 +958,35 @@ def main_region(request):
     city_data = []
     for city in cities:
         zones_count = Zone.objects.filter(city=city).count()
-        cabinets_count = Cabinet.objects.filter(city=city).count()
+        cabinets = Cabinet.objects.filter(city=city)
+
+        cabinets_count = cabinets.count()
+
+        total_capacity = 0
+        total_buffer = 0
+        for cab in cabinets:
+            try:
+                total_capacity += int(cab.capacity or 0)
+            except (TypeError, ValueError):
+                continue
+            try:
+                total_buffer += int(cab.buffer or 0)
+            except (TypeError, ValueError):
+                continue
+
         city_data.append({
             'city': city,
             'zones_count': zones_count,
             'cabinets_count': cabinets_count,
+            'charging_capacity': total_capacity,
+            'buffer_capacity': total_buffer,
         })
-    return render(request, 'ss_main/main_region.html', {'city_data': city_data, 'cities': cities})
+
+    return render(request, 'ss_main/main_region.html', {
+        'city_data': city_data,
+        'cities': cities
+    })
+
 
 
 # Список зон в городе(региональный менеджер)

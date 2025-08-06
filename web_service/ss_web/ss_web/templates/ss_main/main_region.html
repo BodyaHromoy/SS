@@ -208,8 +208,8 @@
                         <tr>
                             <td data-label="City">{{ data.city.city_name }}</td>
                             <td data-label="Zones in">{{ data.zones_count }}</td>
-                            <td data-label="Charging Capacity">{{ data.zones_count }}</td>
-                            <td data-label="Buffer Capacity">{{ data.zones_count }}</td>
+                            <td data-label="Charging Capacity">{{ data.charging_capacity }}</td>
+                            <td data-label="Buffer Capacity">{{ data.buffer_capacity }}</td>
                             <td data-label="Boxes Online">{{ data.cabinets_count }}</td>
                             <td data-label=""><a href="{% url 'region_zones' data.city.id %}" class="btn btn-primary btn-block">Zones</a></td>
                         </tr>
