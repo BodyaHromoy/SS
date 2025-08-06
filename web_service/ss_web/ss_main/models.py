@@ -108,9 +108,10 @@ class Cabinet(models.Model):
     mobile_n_rpi = models.TextField(null=True)
     iot_imei_locker = models.TextField(null=True)
     mobile_n_locker = models.TextField(null=True)
-
-
-
+    power_count = models.TextField(null=True)
+    grid_voltage = models.TextField(null=True)
+    temperature1 = models.TextField(null=True)
+    temperature2 = models.TextField(null=True)
 
 
     def __str__(self):

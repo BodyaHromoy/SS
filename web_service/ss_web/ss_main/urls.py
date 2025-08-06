@@ -31,9 +31,10 @@ urlpatterns = [
     # Региональные менеджеры
     path('region/', main_region, name='main_region'),
     path('region_zones/<int:city_id>/', views.region_zones, name='region_zones'),
-    path('region_logic/<int:zone_id>/', views.region_logic, name='region_logic'),
+    path('region_logic/', views.region_logic, name='region_logic'),
     path('create_logic/', create_logic, name='create_logic'),
     path('assign_logic/', assign_zone_to_logic, name='assign_zone_to_logic'),
+    path('region_zones/<int:zone_id>/cabinets/', region_cabinet_list, name='region_cabinet_list'),
 
     # Инженеры
     path('', views.new_eng, name='new_eng'),

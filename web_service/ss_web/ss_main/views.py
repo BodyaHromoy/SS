@@ -816,6 +816,116 @@ def cabinet_list(request, zone_id):
     })
 
 
+@login_required
+@user_passes_test(is_regional_manager)
+def region_cabinet_list(request, zone_id):
+    zone = get_object_or_404(Zone, pk=zone_id)
+    cabinets = Cabinet.objects.filter(zone=zone)
+    cabinets_count = cabinets.count()
+
+    total_capacity = 0
+    cabinets_status_counts = []
+
+    for cabinet in cabinets:
+        # Суммируем capacity
+        try:
+            capacity_value = int(cabinet.capacity) if cabinet.capacity else 0
+            total_capacity += capacity_value
+        except (ValueError, TypeError):
+            pass
+
+        # Получаем связанные ячейки
+        cells = Cell.objects.filter(cabinet_id=cabinet)
+        status_counts = {
+            'ready': cells.filter(status='ready').count(),
+            'charging': cells.filter(status='charging').count(),
+            'empty': cells.filter(status='empty').count(),
+            'Inactive': cells.filter(status='Inactive').count(),
+            'ban': cells.filter(status='BAN').count(),
+        }
+
+        # Парсим RSSI и состояние двери
+        rssi_signal, door_state = parse_device_status(cabinet.iot_imei_locker)
+        updated_fields = []
+
+        if cabinet.rssi != rssi_signal:
+            cabinet.rssi = rssi_signal
+            updated_fields.append('rssi')
+
+        if door_state is not None and cabinet.door_state != door_state:
+            cabinet.door_state = door_state
+            updated_fields.append('door_state')
+
+        # Парсим телеметрию
+        power_count, grid_voltage, temperature = '-', '-', '-'
+        try:
+            url = f'http://192.168.1.100:8088/detailed/{cabinet.iot_imei_locker}'
+            resp = requests.get(
+                url,
+                auth=HTTPBasicAuth(settings.TELEMETRY_USER, settings.TELEMETRY_PASS),
+                timeout=3
+            )
+            resp.raise_for_status()
+            soup = BeautifulSoup(resp.content, 'html.parser')
+
+            gen, tel, em = soup.find_all('div', class_='panel')
+
+            # Power Count
+            try:
+                h2_tag = em.find('h2')
+                if h2_tag and ':' in h2_tag.text:
+                    power_count = h2_tag.text.split(':', 1)[1].strip()
+            except Exception:
+                power_count = '-'
+
+            # Grid Voltage
+            def extract_num(s: str) -> str:
+                m = re.search(r'-?\d+(?:\.\d+)?', s)
+                return m.group(0) if m else '0'
+
+            table = em.find('table')
+            volt_vals = []
+            if table:
+                cell = table.find('td', text=re.compile(r'^Напряжение$'))
+                if cell:
+                    volt_vals = [extract_num(td.get_text(strip=True)) for td in cell.find_next_siblings('td')]
+            grid_voltage = '/ '.join(volt_vals) if volt_vals else '-'
+
+            # Temperature (Температура(1))
+            temp_tag = tel.find('p', string=re.compile(r'Температура\(1\)'))
+            if temp_tag and ':' in temp_tag.text:
+                temperature = temp_tag.text.split(':', 1)[1].strip()
+
+        except Exception as e:
+            print(f"[ERROR] Cabinet {cabinet.shkaf_id}: {e}")
+
+        # Обновление данных в Cabinet, если что-то изменилось
+        if power_count != '-' and cabinet.power_count != power_count:
+            cabinet.power_count = power_count
+            updated_fields.append('power_count')
+
+        if grid_voltage != '-' and cabinet.grid_voltage != grid_voltage:
+            cabinet.grid_voltage = grid_voltage
+            updated_fields.append('grid_voltage')
+
+        if temperature != '-' and cabinet.temperature1 != temperature:
+            cabinet.temperature1 = temperature
+            updated_fields.append('temperature1')
+
+        if updated_fields:
+            cabinet.save(update_fields=updated_fields)
+
+        cabinets_status_counts.append((cabinet, status_counts, rssi_signal, power_count, grid_voltage, temperature))
+
+
+
+    return render(request, 'ss_main/region_cabinets.html', {
+        'zone': zone,
+        'cabinets_count': cabinets_count,
+        'total_cells_count': total_capacity,
+        'cabinets_status_counts': cabinets_status_counts
+    })
+
 
 
 # Обновление деталий шкафа
@@ -865,37 +975,83 @@ def region_zones(request, city_id):
     zone_data = []
     total_cells = 0
     total_cabinets = 0
+
     for zone in zones:
         status_counts = zone.cell_status_counts()
         total_cells += sum(status_counts.values())
-        cabinets_count = Cabinet.objects.filter(zone=zone).count()
+
+        cabinets = Cabinet.objects.filter(zone=zone)
+        cabinets_count = cabinets.count()
         total_cabinets += cabinets_count
+
         couriers_count = CustomUser.objects.filter(zones=zone, role='courier').count()
         logisticians_count = CustomUser.objects.filter(zones=zone, role='logistician').count()
+
+        # Суммируем capacity
+        total_capacity = 0
+        for cab in cabinets:
+            try:
+                total_capacity += int(cab.capacity)
+            except (TypeError, ValueError):
+                continue
+
+        # Суммируем buffer
+        total_buffer = 0
+        for cab in cabinets:
+            try:
+                total_buffer += int(cab.buffer)
+            except (TypeError, ValueError):
+                continue
+
+        # Суммируем power_count
+        total_power_count = 0
+        for cab in cabinets:
+            if cab.power_count:
+                match = re.search(r"[-+]?\d*\.\d+|\d+", cab.power_count)
+                if match:
+                    try:
+                        total_power_count += float(match.group(0))
+                    except ValueError:
+                        continue
+
         zone_data.append({
             'zone': zone,
             'status_counts': status_counts,
             'cabinets_count': cabinets_count,
             'couriers_count': couriers_count,
-            'logisticians_count': logisticians_count
+            'logisticians_count': logisticians_count,
+            'charging_capacity': round(total_capacity, 2),
+            'buffer_capacity': round(total_buffer, 2),
+            'sum_power_count': round(total_power_count, 2),
         })
-    return render(request, 'ss_main/region_zones.html', {'zone_data': zone_data, 'city': city,
-                                                         'total_zones': len(zone_data), 'total_cells': total_cells,
-                                                         'total_cabinets': total_cabinets})
+
+    cabinets_with_coords = Cabinet.objects.filter(latitude__isnull=False, longitude__isnull=False)
+    cabinets_json = json.dumps(
+        list(cabinets_with_coords.values('shkaf_id', 'street', 'latitude', 'longitude')),
+        cls=DjangoJSONEncoder
+    )
+
+    return render(request, 'ss_main/region_zones.html', {
+        'zone_data': zone_data,
+        'city': city,
+        'total_zones': len(zone_data),
+        'total_cells': total_cells,
+        'cabinets_with_coords': cabinets_json
+    })
+
 
 
 # Логисты зоны(региональный менеджер)
 @login_required
 @user_passes_test(is_regional_manager)
-def region_logic(request, zone_id):
-    zone = get_object_or_404(Zone, id=zone_id)
-    logisticians = CustomUser.objects.filter(zones=zone, role='logistician').values('username', 'last_login',
-                                                                                    'first_name', 'last_name')
-    cabinets = Cabinet.objects.filter(zone=zone)
-    cells = Cell.objects.filter(cabinet_id__in=cabinets)
-    return render(request, 'ss_main/region_logic.html',
-                  {'zone': zone, 'logisticians': logisticians, 'cabinets_count': cabinets.count(),
-                   'cells_count': cells.count()})
+def region_logic(request):
+
+    logisticians = CustomUser.objects.filter(role='logistician')
+
+    return render(request, 'ss_main/region_logic.html', {
+        'logisticians': logisticians,
+    })
+
 
 
 # Основная страница курьера

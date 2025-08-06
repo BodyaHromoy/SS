@@ -183,9 +183,7 @@
 </head>
 <body>
     <div class="info-header">
-        <p>Zone: {{ zone.zone_name }}</p>
-        <p>Boxes in: {{ cabinets_count }}</p>
-        <p>Cells in: {{ cells_count }}</p>
+        <p>Logistician list</p>
     </div>
     <div class="main-content">
         <div class="table-container">
@@ -203,7 +201,6 @@
                         <td data-label="Username">{{ logistician.username }}</td>
                         <td data-label="Full name">{{ logistician.first_name|default:"-" }} {{ logistician.last_name|default:"-" }}</td>
                         <td data-label="Last login">{{ logistician.last_login }}</td>
-                        <td></td>
                     </tr>
                     {% endfor %}
                 </tbody>

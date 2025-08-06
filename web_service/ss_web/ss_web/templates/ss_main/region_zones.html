@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <title>Зоны в {{ city.city_name }}</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -191,13 +193,10 @@
 
     <div>
         <p>City - {{ city.city_name }}</p>
-        <p>Zones in city: {{ total_zones }}</p>
-    </div>
-    <div>
         <p>Boxes in city: {{ total_cabinets }}</p>
-        <p>Cells in city: {{ total_cells }}</p>
     </div>
     <div class="menu-buttons">
+        <button class="menu-btn map-btn" onclick="toggleMap()">📍</button>
         <button class="menu-btn" id="menuToggleBtn" onclick="toggleMenu()">☰</button>
     </div>
 </div>
@@ -235,7 +234,7 @@
 
 <div id="dropdownMenu" class="dropdown-menu-custom d-none">
     <a href="{% url 'create_logic' %}" class="btn btn-primary btn-block">Logistician registration</a>
-    <a href="{% url 'assign_zone_to_logic' %}" class="btn btn-primary btn-block">Logistician management</a>
+    <a href="{% url 'region_logic' %}" class="btn btn-primary btn-block">Logistician list</a>
 </div>
 
 
@@ -246,28 +245,29 @@
                 <thead class="thead-dark">
                 <tr>
                     <th>Zone</th>
-                    <th>Boxes in</th>
-                    <th>Logisticians in</th>
-                    <th>Scouts in</th>
+                    <th>Charging Capacity</th>
+                    <th>Buffer Capacity</th>
+                    <th>Boxes Online</th>
+                    <th>Sum of Power Count</th>
                     <th></th>
                 </tr>
                 </thead>
                 <tbody>
-
-                {% for data in zone_data %}
-                <tr>
-                    <td data-label="Zone">{{ data.zone.zone_name }}</td>
-                    <td data-label="Boxes in">{{ data.cabinets_count }}</td>
-                    <td data-label="Logisticians in">{{ data.logisticians_count }}</td>
-                    <td data-label="Scouts in">{{ data.couriers_count }}</td>
-                    <td data-label="">
-                        <div class="btn-container">
-                            <a href="{% url 'region_logic' data.zone.id %}" class="btn btn-primary btn-sm">Logisticians</a>
-                            <a href="{% url 'cabinet_list' data.zone.id %}" class="btn btn-primary btn-sm">Boxes</a>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
+                    {% for data in zone_data %}
+                    <tr>
+                        <td data-label="Zone">{{ data.zone.zone_name }}</td>
+                        <td data-label="Charging Capacity">{{ data.charging_capacity }}</td>
+                        <td data-label="Buffer Capacity">{{ data.buffer_capacity }}</td>
+                        <td data-label="Boxes Online">{{ data.cabinets_count }}</td>
+                        <td data-label="Sum of Power Count">{{ data.sum_power_count }}</td>
+                        <td data-label="">
+                            <div class="btn-container">
+                                <a href="{% url 'region_cabinet_list' data.zone.id %}" class="btn btn-primary btn-sm">Boxes</a>
+                                <a class="btn btn-primary btn-sm" onclick="alert('Zone report is under development')">Zone report</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
@@ -282,6 +282,10 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script>
 
+    function closeMap() {
+        document.getElementById('mapModal').classList.add('d-none');
+    }
+
     function toggleMenu() {
             const menu = document.getElementById('dropdownMenu');
             menu.classList.toggle('d-none');
@@ -293,7 +297,32 @@
     function updateData() {
         location.reload();
     }
+let mapInitialized = false;
 
+    function toggleMap() {
+        const modal = document.getElementById('mapModal');
+        modal.classList.remove('d-none');
+
+        if (!mapInitialized) {
+            const map = L.map('map').setView([43.238949, 76.889709], 12);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: 'Map data © OpenStreetMap contributors'
+            }).addTo(map);
+
+            const cabinets = {{ cabinets_with_coords|safe }};
+
+            cabinets.forEach(cabinet => {
+                if (cabinet.latitude && cabinet.longitude) {
+                    L.marker([cabinet.latitude, cabinet.longitude])
+                        .addTo(map)
+                        .bindPopup(`<strong>${cabinet.shkaf_id}</strong><br>${cabinet.street}`);
+                }
+            });
+
+            mapInitialized = true;
+        }
+    }
 </script>
 </body>
 </html>
