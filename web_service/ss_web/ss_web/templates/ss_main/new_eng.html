@@ -313,8 +313,13 @@
             <ul class="nav flex-column">
                 <li class="nav-item"><a class="nav-link btn btn-primary btn-sm btn-narrow mt-2"
                                         href="{% url 'new_eng' %}">Main</a></li>
+
+                <button class="nav-link btn btn-primary btn-sm btn-narrow mt-2" onclick="openCabinetForm()">Create</button>
+
                 <li class="nav-item"><a class="nav-link btn btn-primary btn-sm btn-narrow mt-2"
                                         href="{% url 'report' %}">Reports</a></li>
+                <li class="nav-item"><a class="nav-link btn btn-primary btn-sm btn-narrow mt-2"
+                                        href="{% url 'report_page' %}">Logs</a></li>
                 <form method="post" action="{% url 'logout' %}" class="logout-form">
                     {% csrf_token %}
                     <button class="btn btn-danger logout-button">Exit</button>
@@ -355,7 +360,6 @@
                     </div>
                     <div id="refresh-button-container" class="button-row">
     <button class="btn btn-primary btn-custom" onclick="refreshData()">↻ Refresh</button>
-    <button class="btn btn-success btn-custom ml-2" onclick="openCabinetForm()">＋ Create</button>
 </div>
 
                 </footer>
@@ -363,7 +367,7 @@
                     <table class="table table-striped">
                           <thead>
                             <tr>
-                              <th>Box ID</th>
+                              <th>Cabinet ID</th>
                               <th>City</th>
                               <th>Zone</th>
                               <th>Capacity</th>
@@ -380,7 +384,7 @@
                           <tbody id="cabinet-list">
                             {% for cabinet in cabinets %}
                             <tr>
-                              <td>{{ cabinet.shkaf_id|default:"-" }}</td>
+                              <td>{{ cabinet.readable_name|default:"-" }}</td>
                               <td>{{ cabinet.city.city_name|default:"-" }}</td>
                               <td>{{ cabinet.zone.zone_name|default:"-" }}</td>
                               <td>{{ cabinet.capacity|default:"-" }}</td>
@@ -399,15 +403,15 @@
                               </td>
                               <td>{{ cabinet.sense|default:"-" }}</td>
                               <td>{{ cabinet.rssi|default:"-" }}</td>
-  <td>
-  <div class="d-flex">
-    <button class="btn btn-primary btn-sm flex-fill mr-1" onclick="showCabinetDetails('{{ cabinet.shkaf_id }}')">Check slots</button>
-    <button class="btn btn-info btn-sm flex-fill mr-1" onclick="showTelemetry('{{ cabinet.shkaf_id }}')">Telemetry</button>
-    <button class="btn btn-warning btn-sm flex-fill" onclick="showCard('{{ cabinet.shkaf_id }}')">Card</button>
-  </div>
-</td>
+                              <td>
+                              <div class="d-flex">
+                                <button class="btn btn-primary btn-sm flex-fill mr-1" onclick="showCabinetDetails('{{ cabinet.shkaf_id }}')">Check slots</button>
+                                <button class="btn btn-info btn-sm flex-fill mr-1" onclick="showTelemetry('{{ cabinet.shkaf_id }}')">Telemetry</button>
+                                <button class="btn btn-warning btn-sm flex-fill" onclick="showCard('{{ cabinet.shkaf_id }}')">Card</button>
+                              </div>
+                            </td>
 
-</td>
+                            </td>
                             </tr>
                             {% endfor %}
                           </tbody>
@@ -418,7 +422,7 @@
                 <footer class="fixed-header">
                     <div class="row filter-container">
                         <div class="col-md-3 cabinet-info">
-                            <p>Box № <span id="cabinet-number"></span></p>
+                            <p>Cabinet {{ cabinet.readable_name|default:"-" }} "<span id="cabinet-number"></span>"</p>
                         </div>
                         <div class="col-md-3">
                             <select class="form-control" id="status-filter">
@@ -514,7 +518,7 @@
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content" style="background-color: #00aaff; color: #000;">
       <div class="modal-header">
-        <h5 class="modal-title" id="cardModalLabel">Charge Box Card</h5>
+        <h5 class="modal-title" id="cardModalLabel">Charge Cabinet Card for {{ cabinet.readable_name|default:"-" }}</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span>&times;</span>
         </button>
@@ -546,7 +550,7 @@
           <!-- Row 1 -->
           <div class="form-row">
             <div class="form-group col-md-4">
-              <label for="shkafId">Box ID</label>
+              <label for="shkafId">Cabinet ID</label>
               <input type="text" class="form-control" id="shkafId" name="shkaf_id" required>
             </div>
             <div class="form-group col-md-4">
@@ -1030,7 +1034,8 @@ function showCard(shkaf_id) {
       row("Vendor", data.vendor, "vendor"),
       row("QR", data.qr, "qr"),
       row("N inventar", data.n_inventar, "n_inventar"),
-      row("N in System", data.shkaf_id, "shkaf_id"),
+      row("readable_name", data.readable_name, "readable_name"),
+
     ].join('');
 
     const rightColumn = [
@@ -1041,6 +1046,7 @@ function showCard(shkaf_id) {
       row("Mobile N for RPi", data.mobile_n_rpi, "mobile_n_rpi"),
       row("IoT IMEI for Locker", data.iot_imei_locker, "iot_imei_locker"),
       row("Mobile N for Locker", data.mobile_n_locker, "mobile_n_locker"),
+      row("N in System", data.shkaf_id, "shkaf_id"),
     ].join('');
 
     $('#cardModalBody').html(`

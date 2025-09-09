@@ -275,7 +275,7 @@
                     <tbody id="cabinet-table-body">
                         {% for cabinet_status in cabinet_statuses %}
                         <tr>
-                            <td data-label="Шкаф">№{{ cabinet_status.cabinet.shkaf_id }}</td>
+                            <td data-label="Шкаф">{{ cabinet_status.cabinet.readable_name }}</td>
                             <td data-label="Готово">{{ cabinet_status.ready_count }}</td>
                             <td data-label="Зарядка">{{ cabinet_status.charging_count }}</td>
                             <td data-label="Пусто">{{ cabinet_status.empty_count }}</td>
@@ -324,7 +324,7 @@
                     const row = document.createElement('tr');
 
                     row.innerHTML = `
-                        <td data-label="Шкаф">№${cabinet_status.shkaf_id}</td>
+                        <td data-label="Шкаф">${cabinet_status.readable_name}</td>
                         <td data-label="Готово">${cabinet_status.ready_count}</td>
                         <td data-label="Зарядка">${cabinet_status.charging_count}</td>
                         <td data-label="Пусто">${cabinet_status.empty_count}</td>

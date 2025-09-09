@@ -10,7 +10,7 @@
       action="{% url 'cabinet_settings' shkaf_id=cabinet.shkaf_id %}">
   {% csrf_token %}
 
-  <h>Box №{{ cabinet.shkaf_id }}</h>
+  <h>Cabinet: {{ cabinet.readable_name }}</h>
   <hr>
 
   <h3 class="section-title">BMS</h3>

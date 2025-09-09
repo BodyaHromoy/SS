@@ -252,11 +252,11 @@
                     <td data-label="Zone">{{ item.zone.zone_name }}</td>
                     <td data-label="Charging Capacity">{{ item.capacity_sum }}</td>
                     <td data-label="Buffer Capacity">{{ item.buffer_sum }}</td>
-                    <td data-label="Boxes Online">{{ item.cabinet_count }}</td>
+                    <td data-label="Online">{{ item.cabinet_count }}</td>
                     <td data-label="Locked doors">{{ item.locked_doors_count }}</td>
                     <td data-label="">
                         <div class="btn-container">
-                            <a href="{% url 'cabinet_list' item.zone.id %}" class="btn btn-primary btn-sm">Boxes</a>
+                            <a href="{% url 'cabinet_list' item.zone.id %}" class="btn btn-primary btn-sm">Cabinets</a>
                         </div>
                     </td>
                 </tr>

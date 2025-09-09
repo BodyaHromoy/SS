@@ -8,7 +8,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models.functions import Cast
 import openpyxl
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.mail import send_mail
 from django.db.models import Count, Avg
@@ -16,8 +16,8 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.db.models import F, FloatField
 import paho.mqtt.client as mqtt
+from django.db import transaction, DataError, IntegrityError
 import logging
-
 from django.views.decorators.http import require_POST
 from openpyxl import Workbook
 from django.http import JsonResponse
@@ -200,8 +200,12 @@ def cabinet_card(request, shkaf_id):
         "mobile_n_rpi": cabinet.mobile_n_rpi,
         "iot_imei_locker": cabinet.iot_imei_locker,
         "mobile_n_locker": cabinet.mobile_n_locker,
+        "readable_name": cabinet.readable_name,
     }
     return JsonResponse(data)
+
+
+logger = logging.getLogger(__name__)
 
 
 @require_POST
@@ -209,27 +213,83 @@ def cabinet_card(request, shkaf_id):
 def save_cabinet_card(request):
     try:
         shkaf_id = request.POST.get('shkaf_id')
+        if not shkaf_id:
+            return JsonResponse({'success': False, 'error': 'shkaf_id not provided'}, status=400)
+
         cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
 
-        cabinet.city = City.objects.get(city_name=request.POST.get('city'))
-        cabinet.zone = Zone.objects.get(zone_name=request.POST.get('zone'))
-        cabinet.street = request.POST.get('street')
-        cabinet.extra_inf = request.POST.get('extra_inf')
-        cabinet.device_vendor = request.POST.get('vendor')
-        cabinet.qr = request.POST.get('qr')
-        cabinet.n_inventar = request.POST.get('n_inventar')
-        cabinet.capacity = request.POST.get('capacity')
-        cabinet.buffer = request.POST.get('buffer')
-        cabinet.energy_counter_sn = request.POST.get('energy_counter_sn')
-        cabinet.device_id = request.POST.get('iot_imei_rpi')
-        cabinet.mobile_n_rpi = request.POST.get('mobile_n_rpi')
-        cabinet.iot_imei_locker = request.POST.get('iot_imei_locker')
-        cabinet.mobile_n_locker = request.POST.get('mobile_n_locker')
+        # --- вспомогательные функции ---
+        def to_str(val):
+            if val is None:
+                return None
+            if hasattr(val, 'city_name'):
+                return val.city_name
+            if hasattr(val, 'zone_name'):
+                return val.zone_name
+            return str(val)
 
-        cabinet.save()
+        def normalize(val):
+            if val is None:
+                return ""
+            return str(val).strip()
+
+        # старые значения
+        old_values = {f: to_str(getattr(cabinet, f, None)) for f in [
+            'city', 'zone', 'street', 'extra_inf', 'device_vendor',
+            'qr', 'n_inventar', 'capacity', 'buffer', 'energy_counter_sn',
+            'device_id', 'mobile_n_rpi', 'iot_imei_locker', 'mobile_n_locker',
+            'readable_name', 'door_state'
+        ]}
+
+        # новые значения
+        city_name = request.POST.get('city')
+        cabinet.city = City.objects.filter(city_name=city_name).first() if city_name else None
+        zone_name = request.POST.get('zone')
+        cabinet.zone = Zone.objects.filter(zone_name=zone_name).first() if zone_name else None
+        cabinet.street = request.POST.get('street') or ''
+        cabinet.extra_inf = request.POST.get('extra_inf') or ''
+        cabinet.device_vendor = request.POST.get('vendor') or ''
+        cabinet.qr = request.POST.get('qr') or ''
+        cabinet.n_inventar = request.POST.get('n_inventar') or ''
+        cabinet.capacity = request.POST.get('capacity') or None
+        cabinet.buffer = request.POST.get('buffer') or ''
+        cabinet.energy_counter_sn = request.POST.get('energy_counter_sn') or ''
+        cabinet.device_id = request.POST.get('iot_imei_rpi') or ''
+        cabinet.mobile_n_rpi = request.POST.get('mobile_n_rpi') or ''
+        cabinet.iot_imei_locker = request.POST.get('iot_imei_locker') or ''
+        cabinet.mobile_n_locker = request.POST.get('mobile_n_locker') or ''
+        cabinet.readable_name = request.POST.get('readable_name') or ''
+
+        with transaction.atomic():
+            cabinet.save()
+
+            new_values = {f: to_str(getattr(cabinet, f, None)) for f in old_values.keys()}
+
+            changes = [
+                f"{key}: {old_values[key]} → {new_values[key]}"
+                for key in old_values if normalize(old_values[key]) != normalize(new_values[key])
+            ]
+
+            if changes:
+                action = "; ".join(changes)
+                if len(action) > 250:
+                    action = action[:250] + "…"
+
+                Eventlogger.objects.create(
+                    user=request.user.username if request.user.is_authenticated else "anonymous",
+                    shkaf_id=cabinet.shkaf_id or '',
+                    login=request.user.username if request.user.is_authenticated else '',
+                    action=action,
+                    time=timezone.now(),
+                    door_state_before=old_values.get('door_state') in ('True', 'true', True)
+                )
+
         return JsonResponse({'success': True})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+
+    except Exception as exc:
+        logger.exception("save_cabinet_card failed")
+        return JsonResponse({'success': False, 'error': str(exc)})
+
 
 
 
@@ -302,7 +362,7 @@ def save_cabinet(request):
 def new_eng_telemetry(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
 
-    url = f'http://192.168.1.100:8088/detailed/{cabinet.iot_imei_locker}'
+    url = f'http://192.168.1.16:9000/detailed/{cabinet.iot_imei_locker}'
     try:
         resp = requests.get(
             url,
@@ -725,7 +785,7 @@ def parse_device_status(iot_imei_locker):
         if not iot_imei_locker:
             return 'n/a', None
 
-        url = f'http://192.168.1.16:8080/api/dev/{iot_imei_locker}'
+        url = f'http://192.168.1.16:9001/api/dev/{iot_imei_locker}'
         response = requests.get(url, timeout=2)
         response.raise_for_status()
         data = response.json()
@@ -859,7 +919,7 @@ def region_cabinet_list(request, zone_id):
         # Парсим телеметрию
         power_count, grid_voltage, temperature = '-', '-', '-'
         try:
-            url = f'http://192.168.1.100:8088/detailed/{cabinet.iot_imei_locker}'
+            url = f'http://http://192.168.1.16:9000/detailed/{cabinet.iot_imei_locker}'
             resp = requests.get(
                 url,
                 auth=HTTPBasicAuth(settings.TELEMETRY_USER, settings.TELEMETRY_PASS),
@@ -1099,6 +1159,7 @@ def user_cabinets(request):
             'charging_count': charging_count,
             'empty_count': empty_count,
             'ban_count': ban_count
+
         })
 
     context = {
@@ -1187,6 +1248,26 @@ def cabinet_details(request, shkaf_id):
         'critical_temp': critical_temp,
     }
     return render(request, 'ss_main/scout_v2.html', context)
+
+
+@login_required
+def open_cabinet(request, shkaf_id):
+    if request.method == "POST":
+        cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
+
+        Eventlogger.objects.create(
+            user=request.user.username,
+            shkaf_id=str(cabinet.shkaf_id),
+            login=request.user.username,
+            action="Open attempt",
+            time=timezone.now(),
+            door_state_before=getattr(cabinet, "door_state", None)
+        )
+
+        return JsonResponse({"success": True, "message": "Open attempt"})
+
+    return JsonResponse({"success": False, "message": "Только POST запрос"})
+
 
 
 def export_battery_history(request, shkaf_id):
@@ -1298,6 +1379,7 @@ def user_cabinets_api(request):
         ban_count = cells.filter(status='BAN').count()
         cabinet_statuses.append({
             'shkaf_id': cabinet.shkaf_id,
+            "readable_name": cabinet.readable_name,
             'ready_count': ready_count,
             'charging_count': charging_count,
             'empty_count': empty_count,
@@ -1418,6 +1500,78 @@ def reset_selection(request):
         if 'select_all' in request.session:
             del request.session['select_all']
     return redirect('report')
+
+
+
+
+
+
+
+from django.http import HttpResponse
+from django.shortcuts import render
+from .models import Eventlogger
+from django.utils.dateparse import parse_date
+
+def report_page(request):
+    """Отображение страницы с формой выбора параметров отчёта"""
+    # Собираем список шкафов для выбора
+    cabinets = Eventlogger.objects.values_list("shkaf_id", flat=True).distinct()
+    return render(request, "ss_main/logreports.html", {"cabinets": cabinets})
+
+
+def download_report(request):
+    # Параметры из GET
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+    shkaf_id = request.GET.get("shkaf_id")
+    report_type = request.GET.get("report_type")
+
+    # Парсим даты
+    start_date = parse_date(start_date) if start_date else None
+    end_date = parse_date(end_date) if end_date else None
+
+    # Базовый queryset
+    qs = Eventlogger.objects.all()
+
+    if start_date:
+        qs = qs.filter(time__date__gte=start_date)
+    if end_date:
+        qs = qs.filter(time__date__lte=end_date)
+    if shkaf_id:
+        qs = qs.filter(shkaf_id=shkaf_id)
+
+    # пока поддерживаем только "events"
+    if report_type == "events":
+        qs = qs.order_by("time")
+
+    # --- Формируем Excel ---
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Report"
+
+    # Заголовки
+    headers = ["Время", "Шкаф", "Readable name", "Пользователь", "Login", "Действие", "Door state before"]
+    ws.append(headers)
+
+    # Данные
+    for row in qs:
+        ws.append([
+            row.time.strftime("%Y-%m-%d %H:%M:%S") if row.time else "",
+            row.shkaf_id,
+            row.readable_name,
+            row.user,
+            row.login,
+            row.action,
+            "Открыта" if row.door_state_before else "Закрыта"
+        ])
+
+    # Ответ
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response["Content-Disposition"] = 'attachment; filename=report.xlsx'
+    wb.save(response)
+    return response
+
+
 
 
 # Авторизация

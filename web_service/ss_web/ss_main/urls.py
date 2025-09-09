@@ -47,6 +47,8 @@ urlpatterns = [
     path('save_cabinet/', views.save_cabinet, name='save_cabinet'),
     path('cabinet_card/<str:shkaf_id>/', views.cabinet_card, name='cabinet_card'),
     path('save_cabinet_card/', views.save_cabinet_card, name='save_cabinet_card'),
+    path("logreports/", views.report_page, name="report_page"),
+    path("download_logreport/", views.download_report, name="download_report"),
 
     # Карта
     path('map/', map_view, name='map_view'),
@@ -60,6 +62,8 @@ urlpatterns = [
     path('api/cities', views.cities),
     path('api/zones', views.zones),
     path('api/my-cabinets/', views.user_cabinets_api, name='user_cabinets_api'),
+    path("cabinet/<int:shkaf_id>/open/", views.open_cabinet, name="open_cabinet"),
+
 
     # Репорты
     path('reports/', report, name='report'),

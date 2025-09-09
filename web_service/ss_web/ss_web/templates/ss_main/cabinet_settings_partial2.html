@@ -4,7 +4,7 @@
 
 <form id="cabinet-settings-form" method="POST" action="{% url 'cabinet_settings' shkaf_id=cabinet.shkaf_id %}">
     {% csrf_token %}
-    <h>Box №{{ cabinet.shkaf_id }}</h>
+    <h>Box №{{ cabinet.readable_name }}</h>
     <hr>
 
     <div class="bms-section">

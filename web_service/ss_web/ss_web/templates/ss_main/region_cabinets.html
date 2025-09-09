@@ -276,9 +276,9 @@
     <header class="info-header">
   <<div class="info-header">
   <div>
-    <p>Boxes in Zone {{ zone.zone_name }}</p>
+    <p>Cabinets in {{ zone.zone_name }}</p>
     <p>Charging Capacity: {{ total_cells_count }}</p>
-    <p>Online boxes: {{ cabinets_count }}</p>
+    <p>Cabinets Online: {{ cabinets_count }}</p>
   </div>
   <div class="menu-buttons">
     <button class="menu-btn map-btn" onclick="toggleMap()">📍</button>
@@ -338,7 +338,7 @@
                     <tr>
                         <td data-label="">
                               <div class="cabinet-header">
-                                <span>№ {{ cabinet.shkaf_id }}</span>
+                                <span>{{ cabinet.readable_name }}</span>
                                 <span>Cap:{{ cabinet.capacity|default:"-" }}</span>
                                 <span>Buf:{{ cabinet.buffer|default:"-" }}</span>
                                 <span>{{ rssi_signal|default:"-" }}</span>

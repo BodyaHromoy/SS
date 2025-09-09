@@ -57,7 +57,7 @@ class City(models.Model):
     country = models.CharField(max_length=255, null=False)
     vendor = models.ForeignKey(to=Vendor, on_delete=models.CASCADE, null=False, to_field='vendor_name')
     users = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='citys')
-
+    abbreviation = models.CharField(max_length=255, null=True)
 
     def __str__(self):
         return self.city_name
@@ -79,6 +79,19 @@ class Zone(models.Model):
         empty = Cell.objects.filter(cabinet_id__in=cabinets, status='empty').count()
         Inactive = Cell.objects.filter(cabinet_id__in=cabinets, status='Inactive').count()
         return {'ready': ready, 'charging': charging, 'empty': empty, 'Inactive': Inactive}
+
+
+class Eventlogger(models.Model):
+    user = models.CharField(null=False, max_length=255)
+    shkaf_id = models.CharField(null=False, max_length=255)
+    readable_name = models.CharField(null=False, max_length=255)
+    login = models.CharField(null=False, max_length=255)
+    action = models.CharField(null=False, max_length=255)
+    time = models.DateTimeField(null=True, verbose_name='time')
+    door_state_before = models.BooleanField(null=True)
+
+    def __str__(self):
+        return f"[{self.time}] {self.user} - {self.action}"
 
 
 class Cabinet(models.Model):
@@ -112,6 +125,7 @@ class Cabinet(models.Model):
     grid_voltage = models.TextField(null=True)
     temperature1 = models.TextField(null=True)
     temperature2 = models.TextField(null=True)
+    readable_name = models.TextField(null=True)
 
 
     def __str__(self):

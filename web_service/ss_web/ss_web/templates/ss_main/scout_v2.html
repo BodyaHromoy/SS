@@ -205,7 +205,7 @@
 
 <div class="header">
     <div class="info">
-        <p><strong>Шкаф №:</strong> {{ cabinet.shkaf_id|default:"-" }}</p>
+        <p><strong>Шкаф :</strong> {{ cabinet.readable_name|default:"-" }}</p>
     </div>
     <button id="mapButton" onclick="showMap()" class="map-icon">🗺️</button>
     <button class="menu-btn" id="menu-btn">☰</button>
@@ -223,6 +223,7 @@
             <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('lock-id')">Копировать</button>
         </p>
         <p><strong>Состояние двери:</strong> Не назначено</p>
+        <button class="btn btn-warning w-100 mt-2" onclick="openCabinet()">Открыть шкаф</button>
         <p><strong>1-я половина дня:</strong> <span id="first-half">{{ first_half_count }}</span></p>
         <p><strong>2-я половина дня:</strong> <span id="second-half">{{ second_half_count }}</span></p>
         <p><strong>За последние сутки (09:00 - 09:00):</strong> <span id="full-day">{{ full_day_count }}</span></p>
@@ -232,6 +233,7 @@
     <input type="date" id="start_date" name="start_date" class="form-control" required>
     <input type="date" id="end_date" name="end_date" class="form-control" required>
     <button type="submit" class="btn btn-success">Выгрузить</button>
+
   </form>
 </div>
         <button class="modal-close" id="modal-close">Закрыть</button>
@@ -453,6 +455,21 @@ function updateData() {
         updateTable(statusSlots);
 
     });
+
+    function openCabinet() {
+    fetch("{% url 'open_cabinet' cabinet.shkaf_id %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "X-Requested-With": "XMLHttpRequest",
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+    })
+    .catch(err => console.error("Ошибка открытия шкафа:", err));
+}
 
     updateData()
     setInterval(() => {
