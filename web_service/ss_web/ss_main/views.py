@@ -931,6 +931,7 @@ def region_cabinet_list(request, zone_id):
             gen, tel, em = soup.find_all('div', class_='panel')
 
             # Power Count
+
             try:
                 h2_tag = em.find('h2')
                 if h2_tag and ':' in h2_tag.text:
