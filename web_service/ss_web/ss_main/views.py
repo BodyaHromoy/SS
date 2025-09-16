@@ -600,7 +600,7 @@ def main(request):
     return render(request, 'ss_main/index.html', {'cities': cities})
 
 
-# Регистрация нового курьера
+# Создание нового курьера
 @login_required
 @user_passes_test(is_logistician)
 def create_courier(request):
@@ -919,7 +919,7 @@ def region_cabinet_list(request, zone_id):
         # Парсим телеметрию
         power_count, grid_voltage, temperature = '-', '-', '-'
         try:
-            url = f'http://http://192.168.1.16:9000/detailed/{cabinet.iot_imei_locker}'
+            url = f'http://192.168.1.16:9000/detailed/{cabinet.iot_imei_locker}'
             resp = requests.get(
                 url,
                 auth=HTTPBasicAuth(settings.TELEMETRY_USER, settings.TELEMETRY_PASS),
