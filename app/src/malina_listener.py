@@ -380,6 +380,9 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
     if status_data.get("SW_VER") == "1.6.4.9":
         existing_entry.sw_name = "S90L"
 
+    if status_data.get("SW_VER") == "1.6.5.4":
+        existing_entry.sw_name = "S90L"
+
     if status_data.get("SW_VER") == "1.6.5.2":
         existing_entry.sw_name = "S90L"
 

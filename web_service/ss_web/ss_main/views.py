@@ -158,7 +158,7 @@ def new_eng(request):
     for cabinet in cabinets:
         if cabinet.iot_imei_locker:
             rssi, door_state = parse_device_status(cabinet.iot_imei_locker)
-            cabinet.rssi = rssi  # динамически добавляем атрибут
+            cabinet.rssi = rssi
             cabinet.door_state = door_state
         else:
             cabinet.rssi = '-'
@@ -168,7 +168,9 @@ def new_eng(request):
         "cabinets": cabinets,
         "cities": City.objects.all(),
         "zones": Zone.objects.all(),
+        "vendors": Vendor.objects.all(),
     })
+
 
 
 @user_passes_test(is_engineer)
@@ -185,8 +187,8 @@ def new_eng_cabinet_detail(request, shkaf_id):
 def cabinet_card(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
     data = {
-        "city": cabinet.city.city_name,
-        "zone": cabinet.zone.zone_name,
+        "city": cabinet.city.city_name if cabinet.city else "",
+        "zone": cabinet.zone.zone_name if cabinet.zone else "",
         "street": cabinet.street,
         "extra_inf": cabinet.extra_inf,
         "vendor": cabinet.device_vendor,
@@ -202,6 +204,8 @@ def cabinet_card(request, shkaf_id):
         "mobile_n_locker": cabinet.mobile_n_locker,
         "readable_name": cabinet.readable_name,
     }
+    data["all_cities"] = list(City.objects.values_list("city_name", flat=True).order_by("city_name"))
+    data["all_zones"] = list(Zone.objects.values_list("zone_name", flat=True).order_by("zone_name"))
     return JsonResponse(data)
 
 

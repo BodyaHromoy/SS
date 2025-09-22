@@ -193,6 +193,11 @@
             transform: rotate(45deg);
         }
 
+        #cabinetForm .form-row .form-group.hidden-field {
+            display: none !important;
+        }
+
+
         .fixed-header {
             position: fixed;
             top: 0;
@@ -367,7 +372,9 @@
                     <table class="table table-striped">
                           <thead>
                             <tr>
-                              <th>Cabinet ID</th>
+
+                              <th>ID</th>
+                              <th>Cabinet Name</th>
                               <th>City</th>
                               <th>Zone</th>
                               <th>Capacity</th>
@@ -384,6 +391,7 @@
                           <tbody id="cabinet-list">
                             {% for cabinet in cabinets %}
                             <tr>
+                              <td>{{ cabinet.shkaf_id|default:"-" }}</td>
                               <td>{{ cabinet.readable_name|default:"-" }}</td>
                               <td>{{ cabinet.city.city_name|default:"-" }}</td>
                               <td>{{ cabinet.zone.zone_name|default:"-" }}</td>
@@ -547,11 +555,29 @@
           <button type="button" class="close" data-dismiss="modal">&times;</button>
         </div>
         <div class="modal-body">
+
           <!-- Row 1 -->
           <div class="form-row">
-            <div class="form-group col-md-4">
+            <div class="form-group col-md-6">
               <label for="shkafId">Cabinet ID</label>
               <input type="text" class="form-control" id="shkafId" name="shkaf_id" required>
+            </div>
+            <div class="form-group col-md-6">
+              <label for="readable_name">Readable Name</label>
+              <input type="text" class="form-control" id="readable_name" name="readable_name">
+            </div>
+          </div>
+
+          <!-- Row 2 -->
+          <div class="form-row">
+            <div class="form-group col-md-4">
+              <label for="vendor">Company</label>
+              <select class="form-control" id="vendor" name="vendor" required>
+                <option value="">– Select –</option>
+                {% for v in vendors %}
+                  <option value="{{ v.vendor_name }}">{{ v.vendor_name }}</option>
+                {% endfor %}
+              </select>
             </div>
             <div class="form-group col-md-4">
               <label for="city">City</label>
@@ -572,70 +598,66 @@
               </select>
             </div>
           </div>
-          <!-- Row 2 -->
+
+          <!-- СТАРЫЕ ПОЛЯ, СКРЫТЫ -->
           <div class="form-row">
-            <div class="form-group col-md-4">
-              <label for="vendor">Vendor</label>
-              <select class="form-control" id="vendor" name="vendor" required>
-                <option value="">– Select –</option>
-                {% for v in vendors %}
-                  <option value="{{ v.vendor_name }}">{{ v.vendor_name }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="form-group col-md-4">
+            <div class="form-group col-md-4 hidden-field">
               <label for="street">Street</label>
               <input type="text" class="form-control" id="street" name="street">
             </div>
-            <div class="form-group col-md-4">
+            <div class="form-group col-md-4 hidden-field">
               <label for="location">Additional Info</label>
               <input type="text" class="form-control" id="location" name="location">
             </div>
-          </div>
-          <!-- Row 3 -->
-          <div class="form-row">
-            <div class="form-group col-md-3">
+            <div class="form-group col-md-4 hidden-field">
               <label for="latitude">Latitude</label>
               <input type="number" step="any" class="form-control" id="latitude" name="latitude">
             </div>
-            <div class="form-group col-md-3">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-md-4 hidden-field">
               <label for="longitude">Longitude</label>
               <input type="number" step="any" class="form-control" id="longitude" name="longitude">
             </div>
-            <div class="form-group col-md-3">
+            <div class="form-group col-md-4 hidden-field">
               <label for="device_id">Device ID</label>
               <input type="text" class="form-control" id="device_id" name="device_id">
             </div>
-            <div class="form-group col-md-3">
+            <div class="form-group col-md-4 hidden-field">
               <label for="capacity">Capacity</label>
               <input type="text" class="form-control" id="capacity" name="capacity">
             </div>
           </div>
-          <!-- Row 4 -->
+
           <div class="form-row">
-            <div class="form-group col-md-3">
+            <div class="form-group col-md-4 hidden-field">
               <label for="buffer">Buffer</label>
               <input type="text" class="form-control" id="buffer" name="buffer">
             </div>
-            <div class="form-group col-md-3">
+            <div class="form-group col-md-4 hidden-field">
               <label for="sense">Sense</label>
               <input type="text" class="form-control" id="sense" name="sense">
             </div>
-            <div class="form-group col-md-3">
+            <div class="form-group col-md-4 hidden-field">
               <label for="rssi">RSSI</label>
               <input type="text" class="form-control" id="rssi" name="rssi">
             </div>
-            <div class="form-group col-md-3 d-flex align-items-center">
-              <div>
-                <label class="mr-2">Fire Alert</label>
-                <input type="checkbox" id="fire_allert" name="fire_allert">
+          </div>
+
+          <div class="form-row hidden-field">
+            <div class="form-group col-md-6">
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="fire_allert" name="fire_allert">
+                <label class="form-check-label" for="fire_allert">Fire Alert</label>
               </div>
-              <div class="ml-4">
-                <label class="mr-2">Door State</label>
-                <input type="checkbox" id="door_state" name="door_state">
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="door_state" name="door_state">
+                <label class="form-check-label" for="door_state">Door State</label>
               </div>
             </div>
           </div>
+
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -646,16 +668,24 @@
   </div>
 </div>
 
+<style>
+/* Скрываем старые поля, но не удаляем их */
+#cabinetForm .hidden-field {
+  display: none !important;
+}
+</style>
+
+
 
 <div id="loading-indicator"></div>
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script>
-
+/* Cabinet Settings */
 function loadCabinetSettings(cabinetId) {
     $.ajax({
-        url: `/cabinet_settings/${cabinetId}/`,  // Ensure this URL correctly includes the cabinetId
+        url: `/cabinet_settings/${cabinetId}/`,
         method: 'GET',
         success: function (data) {
             $('#cabinet-settings-content').html(data);
@@ -671,203 +701,175 @@ function getCSRFToken() {
 }
 
 function saveCabinetSettings() {
-    var formDataArray = $('#cabinet-settings-form').serializeArray();
-    var formData = {};
+    const formDataArray = $('#cabinet-settings-form').serializeArray();
+    const formData = {};
 
-    // Преобразуем значения полей, которые должны быть числами
     formDataArray.forEach(function (item) {
         if (item.name === 'max_cycle_times' || item.name === 'year_of_manufacture') {
-            formData[item.name] = item.value;  // Преобразуем в целое число
-        } else if (item.name === 'sn_error' || item.name === 'allow_vendor' || item.name === 'allow_sw_ver') {
-            // Учитываем значение чекбоксов: если есть в массиве, значит true
+            formData[item.name] = item.value;
+        } else if (['sn_error', 'allow_vendor', 'allow_sw_ver'].includes(item.name)) {
             formData[item.name] = true;
         } else {
             formData[item.name] = item.value;
         }
     });
 
-    // Добавляем значения для неотмеченных чекбоксов (они не отправляются по умолчанию)
     $('input[type="checkbox"]:not(:checked)').each(function () {
-        formData[this.name] = false;  // Если чекбокс не выбран, сохраняем как false
+        formData[this.name] = false;
     });
-
-    var csrfToken = getCSRFToken();
 
     $.ajax({
         url: $('#cabinet-settings-form').attr('action'),
         method: 'POST',
         data: formData,
-        headers: {
-            'X-CSRFToken': csrfToken  // Добавляем CSRF токен в заголовок
-        },
+        headers: { 'X-CSRFToken': getCSRFToken() },
         success: function(response) {
-            console.log(response);  // Лог ответа для отладки
             if (response.success) {
                 alert('Settings saved successfully!');
                 $('#cabinetSettingsModal').modal('hide');
             } else {
-                console.log(response.errors);  // Лог ошибок для отладки
                 alert('Error saving settings: ' + JSON.stringify(response.errors));
             }
         },
-        error: function(xhr, status, error) {
-            console.log(xhr.responseText);  // Лог ошибок для отладки
+        error: function(xhr) {
             alert('Error saving settings');
+            console.log(xhr.responseText);
         }
     });
 }
 
+/* Filter save */
+function saveFilter(filterId, value) {
+    localStorage.setItem(filterId, value);
+}
 
-    function sendCommand(endpoint_id, cabinet_id) {
-    const cmd_number = prompt("Введите номер команды :");
-    if (!cmd_number) {
-        alert("Команда не введена!");
-        return;
+function applyAllFilters() {
+    // Поиск
+    const savedSearch = localStorage.getItem("search-input");
+    if (savedSearch) {
+        $("#search-input").val(savedSearch);
+        $("#cabinet-list tr").filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(savedSearch.toLowerCase()) > -1);
+        });
     }
 
-    $.ajax({
-        url: "{% url 'send_command' %}",
-        type: "POST",
-        data: {
-            'cabinet_id': cabinet_id,
-            'endpoint_id': endpoint_id,
-            'cmd_number': cmd_number,
-            'csrfmiddlewaretoken': '{{ csrf_token }}'
-        },
-        success: function(response) {
-            alert(response.message);
-        },
-        error: function() {
-            alert("Ошибка при отправке команды.");
-        }
-    });
-}
+    // City
+    const cityVal = localStorage.getItem("city-filter");
+    if (cityVal) {
+        $("#city-filter").val(cityVal);
+    }
 
+    $("#cabinet-list tr").each(function() {
+        const city = $(this).children("td:nth-child(3)").text().trim();
+        const matchesCity = !cityVal || city === cityVal;
 
-    function refreshData() {
-        const isDetailsViewVisible = $('#details-view').is(':visible');
-        $('#loading-indicator').show();
-
-        if (isDetailsViewVisible) {
-            const currentCabinetId = $("#cabinet-id-hidden").val();
-            if (currentCabinetId) {
-                $.get("/new_eng_cabinet/" + currentCabinetId + "/", function(data) {
-                    $("#cabinet-details").html($(data).find("#cabinet-details").html());
-                    $("#cell-list").html($(data).find("#cell-list").html());
-                    updateStatusFilter();
-                    updateSwVerFilter();
-                    updateMarkedFilter();
-                    restoreFilters();
-                }).fail(function() {
-                    console.error("Ошибка при загрузке данных.");
-                }).always(function() {
-                    $('#loading-indicator').hide();
-                });
-            } else {
-                console.error("Ошибка: ID шкафа не найден.");
-                $('#loading-indicator').hide();
-            }
+        if (city.toLowerCase() === "archive" && cityVal !== "archive") {
+            $(this).hide();
         } else {
-            $.get("{% url 'new_eng' %}", function(data) {
-                $("#cabinet-list").html($(data).find("#cabinet-list").html());
-            }).fail(function() {
-                console.error("Ошибка при загрузке данных.");
-            }).always(function() {
-                $('#loading-indicator').hide();
-            });
+            $(this).toggle(matchesCity);
         }
+    });
+
+    const zoneVal = localStorage.getItem("zone-filter");
+    if (zoneVal) {
+        $("#zone-filter").val(zoneVal);
+        $("#cabinet-list tr:visible").filter(function() {
+            $(this).toggle($(this).children("td:nth-child(4)").text() === zoneVal);
+        });
     }
 
-    function showCabinetDetails(shkaf_id) {
+    // Детали
+    applyStatusFilter();
+    applySwVerFilter();
+    applyMarkedFilter();
+}
+
+
+/* Data update */
+function refreshData() {
+    const isDetailsViewVisible = $('#details-view').is(':visible');
     $('#loading-indicator').show();
 
+    if (isDetailsViewVisible) {
+        const currentCabinetId = $("#cabinet-id-hidden").val();
+        if (currentCabinetId) {
+            $.get("/new_eng_cabinet/" + currentCabinetId + "/", function(data) {
+                $("#cabinet-details").html($(data).find("#cabinet-details").html());
+                $("#cell-list").html($(data).find("#cell-list").html());
+                updateStatusFilter();
+                updateSwVerFilter();
+                updateMarkedFilter();
+                applyAllFilters();
+            }).always(() => $('#loading-indicator').hide());
+        } else {
+            $('#loading-indicator').hide();
+        }
+    } else {
+        $.get("{% url 'new_eng' %}", function(data) {
+            $("#cabinet-list").html($(data).find("#cabinet-list").html());
+            applyAllFilters();
+        }).always(() => $('#loading-indicator').hide());
+    }
+}
+
+/* Details */
+function showCabinetDetails(shkaf_id) {
+    $('#loading-indicator').show();
     $.get("/new_eng_cabinet/" + shkaf_id + "/", function(data) {
         $("#cabinet-details").html($(data).find("#cabinet-details").html());
         $("#cell-list").html($(data).find("#cell-list").html());
         $("#cabinet-id-hidden").val(shkaf_id);
-        $("#cabinet-number").text(shkaf_id);  // Set the cabinet number
+        $("#cabinet-number").text(shkaf_id);
         $("#main-view").hide();
         $("#details-view").show();
         updateStatusFilter();
         updateSwVerFilter();
         updateMarkedFilter();
-        restoreFilters();
-    }).fail(function() {
-        console.error("Ошибка при загрузке данных.");
-    }).always(function() {
-        $('#loading-indicator').hide();
+        applyAllFilters();
+    }).always(() => $('#loading-indicator').hide());
+}
+
+function showMainView() {
+    $("#details-view").hide();
+    $("#main-view").show();
+}
+
+/* Table Filters */
+function updateStatusFilter() {
+    const statuses = new Set();
+    $("#cell-list tr").each(function() {
+        statuses.add($(this).find("td:nth-child(2)").text().trim());
+    });
+    const $statusFilter = $("#status-filter");
+    $statusFilter.find('option:not(:first)').remove();
+    statuses.forEach(status => $statusFilter.append(`<option value="${status}">${status}</option>`));
+}
+
+function applyStatusFilter() {
+    const selectedStatus = $("#status-filter").val();
+    saveFilter("status-filter", selectedStatus);
+    $("#cell-list tr").filter(function() {
+        $(this).toggle(!selectedStatus || $(this).children("td:nth-child(2)").text() === selectedStatus);
     });
 }
 
-    function showMainView() {
-        $("#details-view").hide();
-        $("#main-view").show();
-    }
-
-    function updateStatusFilter() {
-        const statuses = new Set();
-        $("#cell-list tr").each(function() {
-            const status = $(this).find("td:nth-child(2)").text().trim();
-            statuses.add(status);
-        });
-        const $statusFilter = $("#status-filter");
-        $statusFilter.find('option:not(:first)').remove();
-        statuses.forEach(status => {
-            $statusFilter.append(`<option value="${status}">${status}</option>`);
-        });
-    }
-
-    function applyStatusFilter() {
-        const selectedStatus = $("#status-filter").val();
-        saveFilter("status-filter", selectedStatus);
-        $("#cell-list tr").filter(function() {
-            $(this).toggle(!selectedStatus || $(this).children("td:nth-child(2)").text() === selectedStatus);
-        });
-    }
-
-    $("#search-input").on("input", function() {
-        var value = $(this).val().toLowerCase();
-        $("#cabinet-list tr").filter(function() {
-            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-        });
+function updateSwVerFilter() {
+    const swVers = new Set();
+    $("#cell-list tr").each(function() {
+        swVers.add($(this).find("td:nth-child(5)").text().trim());
     });
+    const $swVerFilter = $("#swver-filter");
+    $swVerFilter.find('option:not(:first)').remove();
+    swVers.forEach(swVer => $swVerFilter.append(`<option value="${swVer}">${swVer}</option>`));
+}
 
-    $("#city-filter").on("change", function() {
-        var value = $(this).val();
-        saveFilter("city-filter", value);
-        $("#cabinet-list tr").filter(function() {
-            $(this).toggle(!value || $(this).children("td:nth-child(2)").text() === value)
-        });
+function applySwVerFilter() {
+    const selectedSwVer = $("#swver-filter").val();
+    saveFilter("swver-filter", selectedSwVer);
+    $("#cell-list tr").filter(function() {
+        $(this).toggle(!selectedSwVer || $(this).children("td:nth-child(5)").text() === selectedSwVer);
     });
-
-    $("#zone-filter").on("change", function() {
-        var value = $(this).val();
-        saveFilter("zone-filter", value);
-        $("#cabinet-list tr").filter(function() {
-            $(this).toggle(!value || $(this).children("td:nth-child(3)").text() === value)
-        });
-    });
-
-    function updateSwVerFilter() {
-        const swVers = new Set();
-        $("#cell-list tr").each(function() {
-            const swVer = $(this).find("td:nth-child(5)").text().trim();
-            swVers.add(swVer);
-        });
-        const $swVerFilter = $("#swver-filter");
-        $swVerFilter.find('option:not(:first)').remove();
-        swVers.forEach(swVer => {
-            $swVerFilter.append(`<option value="${swVer}">${swVer}</option>`);
-        });
-    }
-
-    function applySwVerFilter() {
-        const selectedSwVer = $("#swver-filter").val();
-        saveFilter("swver-filter", selectedSwVer);
-        $("#cell-list tr").filter(function() {
-            $(this).toggle(!selectedSwVer || $(this).children("td:nth-child(5)").text() === selectedSwVer);
-        });
-    }
+}
 
 function updateMarkedFilter() {
     const markedValues = new Set();
@@ -890,61 +892,47 @@ function applyMarkedFilter() {
         $(this).toggle(!selectedMarked || isChecked === selectedMarked);
     });
 }
-    $("#status-filter").on("change", function() {
-        applyStatusFilter();
+
+/* searhc (save) */
+$("#search-input").on("input", function() {
+    const value = $(this).val().toLowerCase();
+    localStorage.setItem("search-input", value);
+    $("#cabinet-list tr").filter(function() {
+        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
     });
+});
 
-    $("#swver-filter").on("change", function() {
-        applySwVerFilter();
+$("#city-filter").on("change", function() {
+    saveFilter("city-filter", $(this).val());
+    applyAllFilters();
+});
+$("#zone-filter").on("change", function() {
+    saveFilter("zone-filter", $(this).val());
+    applyAllFilters();
+});
+
+$("#status-filter").on("change", applyStatusFilter);
+$("#swver-filter").on("change", applySwVerFilter);
+$("#marked-filter").on("change", applyMarkedFilter);
+
+/* Telemetry */
+function showTelemetry(shkaf_id) {
+    $('#telemetryModalBody').html('<p>Loading telemetry…</p>');
+    $.get(`/new_eng_telemetry/${shkaf_id}/`, function(data) {
+        $('#telemetryModalBody').html(data);
+        $('#telemetryModal').modal('show');
+    }).fail(function() {
+        $('#telemetryModalBody').html('<p class="text-danger">Error loading telemetry.</p>');
     });
-
-    $("#marked-filter").on("change", function() {
-        applyMarkedFilter();
-    });
-
-    function saveFilter(filterId, value) {
-        localStorage.setItem(filterId, value);
-    }
-
-    function restoreFilters() {
-        const filters = ["status-filter", "swver-filter", "marked-filter", "city-filter", "zone-filter"];
-        filters.forEach(function(filterId) {
-            const savedValue = localStorage.getItem(filterId);
-            if (savedValue) {
-                $(`#${filterId}`).val(savedValue).trigger("change");
-            }
-        });
-    }
-
-    $(document).ready(function() {
-        restoreFilters();
-        setInterval(refreshData, 15000)
-    });
-
-
-    function showTelemetry(shkaf_id) {
-  // Сразу показываем «заглушку» внутри модалки
-  $('#telemetryModalBody').html('<p>Loading telemetry…</p>');
-  // Подгружаем partial по AJAX
-  $.get(`/new_eng_telemetry/${shkaf_id}/`, function(data) {
-    // Вставляем полученный HTML
-    $('#telemetryModalBody').html(data);
-    // И открываем само окно
-    $('#telemetryModal').modal('show');
-  }).fail(function() {
-    $('#telemetryModalBody').html('<p class="text-danger">Error loading telemetry.</p>');
-  });
 }
 
 
-    function openCabinetForm(cabinetData = null) {
-    // Сброс формы
+function openCabinetForm(cabinetData = null) {
     $('#cabinetForm')[0].reset();
     $('#editCabinetModalLabel').text(cabinetData ? 'Edit Cabinet' : 'Create Cabinet');
 
-    // Если это редактирование — заполняем поля
     if (cabinetData) {
-        $('#shkafId').val(cabinetData.shkaf_id).prop('readonly', true);  // ID нельзя менять при редактировании
+        $('#shkafId').val(cabinetData.shkaf_id).prop('readonly', true);
         $('#city').val(cabinetData.city);
         $('#zone').val(cabinetData.zone);
         $('#vendor').val(cabinetData.vendor);
@@ -961,9 +949,8 @@ function applyMarkedFilter() {
         $('#sticker').val(cabinetData.sticker);
         $('#fire_allert').prop('checked', cabinetData.fire_allert);
         $('#door_state').prop('checked', cabinetData.door_state);
-
     } else {
-        $('#shkafId').prop('readonly', false);  // Разрешаем редактировать ID при создании
+        $('#shkafId').prop('readonly', false);
     }
 
     $('#editCabinetModal').modal('show');
@@ -971,15 +958,8 @@ function applyMarkedFilter() {
 
 $('#cabinetForm').on('submit', function (e) {
     e.preventDefault();
-
     const formData = {};
-    const dataArray = $(this).serializeArray();
-
-    dataArray.forEach(({ name, value }) => {
-        formData[name] = value;
-    });
-
-    // Чекбоксы отдельно (так как неотмеченные не отправляются)
+    $(this).serializeArray().forEach(({ name, value }) => formData[name] = value);
     $('#cabinetForm input[type="checkbox"]').each(function () {
         formData[this.name] = $(this).is(':checked') ? 'true' : 'false';
     });
@@ -988,9 +968,7 @@ $('#cabinetForm').on('submit', function (e) {
         url: "{% url 'save_cabinet' %}",
         method: 'POST',
         data: formData,
-        headers: {
-            'X-CSRFToken': getCSRFToken()
-        },
+        headers: { 'X-CSRFToken': getCSRFToken() },
         success: function (response) {
             if (response.success) {
                 $('#editCabinetModal').modal('hide');
@@ -1006,95 +984,111 @@ $('#cabinetForm').on('submit', function (e) {
     });
 });
 
-function getCSRFToken() {
-    return document.querySelector('[name=csrfmiddlewaretoken]').value;
-}
 
+/* Card Modal */
 function showCard(shkaf_id) {
-  $('#cardModalBody').html('<p>Loading...</p>');
+    $('#cardModalBody').html('<p>Loading...</p>');
 
-  $.get(`/cabinet_card/${shkaf_id}/`, function(data) {
-   function row(label, value, name) {
-  return `
-    <div class="form-group d-flex align-items-center mb-2">
-      <label class="form-label custom-label mb-0">
-        ${label}
-      </label>
-      <input type="text" class="form-control form-control-sm custom-input" name="${name}" value="${value || ''}">
-    </div>
-  `;
-}
+    $.get(`/cabinet_card/${shkaf_id}/`, function(data) {
 
+        function row(label, value, name) {
+            return `
+              <div class="form-group d-flex align-items-center mb-2">
+                <label class="form-label custom-label mb-0">${label}</label>
+                <input type="text" class="form-control form-control-sm custom-input"
+                       name="${name}" value="${value || ''}">
+              </div>`;
+        }
 
-    const leftColumn = [
-      row("City", data.city, "city"),
-      row("Zone", data.zone, "zone"),
-      row("Address", data.street, "street"),
-      row("Additional Info", data.extra_inf, "extra_inf"),
-      row("Vendor", data.vendor, "vendor"),
-      row("QR", data.qr, "qr"),
-      row("N inventar", data.n_inventar, "n_inventar"),
-      row("readable_name", data.readable_name, "readable_name"),
+        function selectRow(label, name, value, options) {
+            const opts = options.map(opt =>
+                `<option value="${opt}" ${opt === value ? 'selected' : ''}>${opt}</option>`
+            ).join('');
+            return `
+              <div class="form-group d-flex align-items-center mb-2">
+                <label class="form-label custom-label mb-0">${label}</label>
+                <select class="form-control form-control-sm custom-input" name="${name}">
+                  ${opts}
+                </select>
+              </div>`;
+        }
 
-    ].join('');
+        const leftColumn = [
+          selectRow("City", "city", data.city, data.all_cities),
+          selectRow("Zone", "zone", data.zone, data.all_zones),
+          row("Address", data.street, "street"),
+          row("Additional Info", data.extra_inf, "extra_inf"),
+          row("Vendor", data.vendor, "vendor"),
+          row("QR", data.qr, "qr"),
+          row("N inventar", data.n_inventar, "n_inventar"),
+          row("Cabinet Name", data.readable_name, "readable_name"),
+        ].join('');
 
-    const rightColumn = [
-      row("Capacity charge", data.capacity, "capacity"),
-      row("Capacity buffer", data.buffer, "buffer"),
-      row("Energy counter SN", data.energy_counter_sn, "energy_counter_sn"),
-      row("IoT IMEI for RPi", data.iot_imei_rpi, "iot_imei_rpi"),
-      row("Mobile N for RPi", data.mobile_n_rpi, "mobile_n_rpi"),
-      row("IoT IMEI for Locker", data.iot_imei_locker, "iot_imei_locker"),
-      row("Mobile N for Locker", data.mobile_n_locker, "mobile_n_locker"),
-      row("N in System", data.shkaf_id, "shkaf_id"),
-    ].join('');
+        const rightColumn = [
+          row("Capacity charge", data.capacity, "capacity"),
+          row("Capacity buffer", data.buffer, "buffer"),
+          row("Energy counter SN", data.energy_counter_sn, "energy_counter_sn"),
+          row("IoT IMEI for RPi", data.iot_imei_rpi, "iot_imei_rpi"),
+          row("Mobile N for RPi", data.mobile_n_rpi, "mobile_n_rpi"),
+          row("IoT IMEI for Locker", data.iot_imei_locker, "iot_imei_locker"),
+          row("Mobile N for Locker", data.mobile_n_locker, "mobile_n_locker"),
+          row("N in System", data.shkaf_id, "shkaf_id"),
+        ].join('');
 
-    $('#cardModalBody').html(`
-      <form id="cardForm">
-        <div class="container-fluid" style="background-color: #00aaff; padding: 20px;">
-              <div class="row">
-                <div class="col-md-6 pr-3">${leftColumn}</div>
-                <div class="col-md-6 pl-3">${rightColumn}</div>
-              </div>
+        $('#cardModalLabel').html(
+            `Charging Cabinet <span class="text-light">Card</span>
+             <strong>${data.readable_name || '-'}</strong>
+             <small class="text-light">(${data.shkaf_id || '-'})</small>`
+        );
+
+        $('#cardModalBody').html(`
+          <form id="cardForm">
+            <div class="container-fluid" style="background-color: #00aaff; padding: 20px;">
+                <div class="row">
+                  <div class="col-md-6 pr-3">${leftColumn}</div>
+                  <div class="col-md-6 pl-3">${rightColumn}</div>
+                </div>
             </div>
-      </form>
-    `);
+          </form>`);
 
-    $('#cardModal').modal('show');
-  }).fail(function() {
-    $('#cardModalBody').html('<p class="text-danger">Error loading card data.</p>');
-  });
-}
-
-function saveCard() {
-  const formData = {};
-  $('#cardForm')
-    .serializeArray()
-    .forEach(({ name, value }) => {
-      formData[name] = value;
+        $('#cardModal').modal('show');
+    }).fail(() => {
+        $('#cardModalBody').html('<p class="text-danger">Error loading card data.</p>');
     });
+}
 
-    console.log("Form data to save:", formData);
+/* Save Card */
+function saveCard() {
+    const formData = {};
+    $('#cardForm').serializeArray().forEach(({ name, value }) => formData[name] = value);
 
-  $.ajax({
-    url: '/save_cabinet_card/',  // этот endpoint добавим ниже
-    method: 'POST',
-    data: {
-      ...formData,
-      csrfmiddlewaretoken: getCSRFToken()
-    },
-    success: function (response) {
-      alert(response.success ? "Saved successfully!" : "Save failed");
-      if (response.success) $('#cardModal').modal('hide');
-    },
-    error: function () {
-      alert("Error saving");
-    }
-  });
+    $.ajax({
+        url: '/save_cabinet_card/',
+        method: 'POST',
+        data: { ...formData, csrfmiddlewaretoken: getCSRFToken() },
+        success: function (response) {
+            if (response.success) {
+                alert("Saved successfully!");
+                $('#cardModal').modal('hide');
+            } else {
+                alert("Save failed: " + (response.error || 'Unknown error'));
+            }
+        },
+        error: function (xhr) {
+            console.error(xhr.responseText);
+            alert("Server error while saving");
+        }
+    });
 }
 
 
 
+/* init */
+$(document).ready(function() {
+    applyAllFilters();
+    setInterval(refreshData, 15000);
+});
 </script>
+
 </body>
 </html>
