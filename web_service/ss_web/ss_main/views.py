@@ -857,15 +857,18 @@ def parse_device_status(iot_imei_locker, devices_cache=None):
         # --- Door state + OUT1 ---
         door_state = None
         out1_val = ''
+
         if "is_door_locked" in target and isinstance(target["is_door_locked"], list):
             locked = target["is_door_locked"][0]
-            door_state = locked
-            out1_val = "LOCKED" if locked else "OPEN"
+            # Инвертируем значение
+            door_state = not locked
+            out1_val = "LOCKED" if door_state else "OPEN"
         else:
             digital_in1 = target.get("DigitalIn1")
             if digital_in1 is not None:
                 exhaust_bit = (digital_in1 // 2) % 2
-                door_state = exhaust_bit == 0
+                # Инвертируем значение
+                door_state = not (exhaust_bit == 0)
                 out1_val = "LOCKED" if door_state else "OPEN"
 
         # --- Temperature ---
@@ -954,14 +957,14 @@ def region_cabinet_list(request, zone_id):
     cabinets_status_counts = []
 
     for cabinet in cabinets:
-        # Суммируем capacity
+        # 📌 Суммируем capacity
         try:
             capacity_value = int(cabinet.capacity) if cabinet.capacity else 0
             total_capacity += capacity_value
         except (ValueError, TypeError):
             pass
 
-        # Получаем связанные ячейки
+        # 📌 Получаем связанные ячейки
         cells = Cell.objects.filter(cabinet_id=cabinet)
         status_counts = {
             'ready': cells.filter(status='ready').count(),
@@ -971,8 +974,8 @@ def region_cabinet_list(request, zone_id):
             'ban': cells.filter(status='BAN').count(),
         }
 
-        # Парсим RSSI и состояние двери
-        rssi_signal, door_state, _, _ = parse_device_status(cabinet.iot_imei_locker)
+        # 📌 Парсим RSSI, состояние двери и температуру из кэша (parse_device_status)
+        rssi_signal, door_state, temperatures, _ = parse_device_status(cabinet.iot_imei_locker)
         updated_fields = []
 
         if cabinet.rssi != rssi_signal:
@@ -983,48 +986,54 @@ def region_cabinet_list(request, zone_id):
             cabinet.door_state = door_state
             updated_fields.append('door_state')
 
-        power_count, grid_voltage, temperature = '-', '-', '-'
+        # 📌 Температура из кэша
+        temperature = '-'
+        if temperatures and len(temperatures) > 0:
+            temperature = str(temperatures[0])
+            if cabinet.temperature1 != temperature:
+                cabinet.temperature1 = temperature
+                updated_fields.append('temperature1')
+
+        # 📌 Power Count и Grid Voltage — по старому HTML способу
+        power_count, grid_voltage = '-', '-'
         try:
-            url = f'http://172.17.0.1:9000/detailed/{cabinet.iot_imei_locker}'
-            resp = requests.get(
-                url,
-                auth=HTTPBasicAuth(settings.TELEMETRY_USER, settings.TELEMETRY_PASS),
-                timeout=3
-            )
-            resp.raise_for_status()
-            soup = BeautifulSoup(resp.content, 'html.parser')
+            if cabinet.iot_imei_locker:
+                url = f'http://172.17.0.1:9000/detailed/{cabinet.iot_imei_locker}'
+                resp = requests.get(
+                    url,
+                    auth=HTTPBasicAuth(settings.TELEMETRY_USER, settings.TELEMETRY_PASS),
+                    timeout=3
+                )
+                resp.raise_for_status()
+                soup = BeautifulSoup(resp.content, 'html.parser')
 
-            gen, tel, em = soup.find_all('div', class_='panel')
+                gen, tel, em = soup.find_all('div', class_='panel')
 
+                # Power Count
+                try:
+                    h2_tag = em.find('h2')
+                    if h2_tag and ':' in h2_tag.text:
+                        power_count = h2_tag.text.split(':', 1)[1].strip()
+                except Exception:
+                    power_count = '-'
 
-            try:
-                h2_tag = em.find('h2')
-                if h2_tag and ':' in h2_tag.text:
-                    power_count = h2_tag.text.split(':', 1)[1].strip()
-            except Exception:
-                power_count = '-'
+                # Grid Voltage
+                def extract_num(s: str) -> str:
+                    m = re.search(r'-?\d+(?:\.\d+)?', s)
+                    return m.group(0) if m else '0'
 
-            # Grid Voltage
-            def extract_num(s: str) -> str:
-                m = re.search(r'-?\d+(?:\.\d+)?', s)
-                return m.group(0) if m else '0'
-
-            table = em.find('table')
-            volt_vals = []
-            if table:
-                cell = table.find('td', text=re.compile(r'^Напряжение$'))
-                if cell:
-                    volt_vals = [extract_num(td.get_text(strip=True)) for td in cell.find_next_siblings('td')]
-            grid_voltage = '/ '.join(volt_vals) if volt_vals else '-'
-
-            # Temperature (Температура(1))
-            temp_tag = tel.find('p', string=re.compile(r'Температура\(1\)'))
-            if temp_tag and ':' in temp_tag.text:
-                temperature = temp_tag.text.split(':', 1)[1].strip()
+                table = em.find('table')
+                volt_vals = []
+                if table:
+                    cell = table.find('td', text=re.compile(r'^Напряжение$'))
+                    if cell:
+                        volt_vals = [extract_num(td.get_text(strip=True)) for td in cell.find_next_siblings('td')]
+                grid_voltage = '/ '.join(volt_vals) if volt_vals else '-'
 
         except Exception as e:
             print(f"[ERROR] Cabinet {cabinet.shkaf_id}: {e}")
 
+        # 📌 Сохраняем обновлённые поля
         if power_count != '-' and cabinet.power_count != power_count:
             cabinet.power_count = power_count
             updated_fields.append('power_count')
@@ -1033,14 +1042,12 @@ def region_cabinet_list(request, zone_id):
             cabinet.grid_voltage = grid_voltage
             updated_fields.append('grid_voltage')
 
-        if temperature != '-' and cabinet.temperature1 != temperature:
-            cabinet.temperature1 = temperature
-            updated_fields.append('temperature1')
-
         if updated_fields:
             cabinet.save(update_fields=updated_fields)
 
-        cabinets_status_counts.append((cabinet, status_counts, rssi_signal, power_count, grid_voltage, temperature))
+        cabinets_status_counts.append(
+            (cabinet, status_counts, rssi_signal, power_count, grid_voltage, temperature)
+        )
 
     cabinets_with_coords = list(cabinets.values('shkaf_id', 'street', 'latitude', 'longitude'))
 
