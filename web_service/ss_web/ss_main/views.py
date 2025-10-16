@@ -1333,7 +1333,7 @@ def open_cabinet(request, shkaf_id):
         return JsonResponse({"success": False, "message": "IMEI не задан"}, status=400)
 
     # Отправляем команду открытия
-    url = f"http://185.22.67.4:9001/api/dev/{imei}/out?lineno=1&state=1"
+    url = f"http://172.17.0.1:9001/api/dev/{imei}/out?lineno=1&state=1"
     try:
         resp = requests.get(url, timeout=5)
         if resp.status_code == 200:
