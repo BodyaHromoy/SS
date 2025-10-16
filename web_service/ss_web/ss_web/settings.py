@@ -95,7 +95,7 @@ DATABASES = {
         'NAME': 'test1',
         'USER': 'postgres',
         'PASSWORD': '1337',
-        'HOST': '192.168.1.98',
+        'HOST': '10.8.0.1',
         'PORT': '5432',
     },
     'new_db': {
@@ -103,7 +103,7 @@ DATABASES = {
         'NAME': 'test2',
         'USER': 'postgres',
         'PASSWORD': '1337',
-        'HOST': '192.168.1.98',
+        'HOST': '10.8.0.1',
         'PORT': '5432',
     }
 }
@@ -143,8 +143,8 @@ USE_I18N = True
 
 USE_TZ = True
 
-TELEMETRY_USER = 'anton'
-TELEMETRY_PASS = 'jet'
+TELEMETRY_USER = 'bogdanafter'
+TELEMETRY_PASS = '1337'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.mail.ru'

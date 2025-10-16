@@ -34,9 +34,8 @@ from requests.auth import HTTPBasicAuth
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.shortcuts import get_object_or_404, render
-
 from .models import Cabinet
-
+from django.utils.dateparse import parse_date
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +156,7 @@ def new_eng(request):
 
     for cabinet in cabinets:
         if cabinet.iot_imei_locker:
-            rssi, door_state = parse_device_status(cabinet.iot_imei_locker)
+            rssi, door_state, _ , _= parse_device_status(cabinet.iot_imei_locker)
             cabinet.rssi = rssi
             cabinet.door_state = door_state
         else:
@@ -365,159 +364,196 @@ def save_cabinet(request):
 
 def new_eng_telemetry(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
-
-    url = f'http://192.168.1.16:9000/detailed/{cabinet.iot_imei_locker}'
-    try:
-        resp = requests.get(
-            url,
-            auth=HTTPBasicAuth(settings.TELEMETRY_USER, settings.TELEMETRY_PASS),
-            timeout=5,
-        )
-        resp.raise_for_status()
-    except requests.RequestException as e:
-        return render(request, 'ss_main/telemetry_partial.html', {
-            'box_number': cabinet.shkaf_id,
-            'error': f'Не удалось загрузить данные: {e}',
-        })
-
-    soup = BeautifulSoup(resp.content, 'html.parser')
-    try:
-        gen, tel, em = soup.find_all('div', class_='panel')
-    except ValueError:
-        return render(request, 'ss_main/telemetry_partial.html', {
-            'box_number': cabinet.shkaf_id,
-            'error': 'Ошибка структуры данных: ожидалось 3 блока .panel',
-        })
-
     qr_code = cabinet.qr
 
-    try:
-        imei_text = gen.find('p').get_text(strip=True)
+    # =========================
+    # 1️⃣ Новый способ через parse_device_status
+    # =========================
+    t1 = t2 = t3 = t4 = ''
+    out1_val = ''
+
+    if cabinet.iot_imei_locker:
+        rssi, door_state, temperatures, out1_val = parse_device_status(cabinet.iot_imei_locker)
+        if temperatures:
+            if len(temperatures) > 0:
+                t1 = str(temperatures[0])
+            if len(temperatures) > 1:
+                t2 = str(temperatures[1])
+
+    # =========================
+    # 2️⃣ Старый HTML парсер (fallback), если температур нет
+    # =========================
+    if not t1 and not t2:
+        url = f'http://172.17.0.1:9000/detailed/{cabinet.iot_imei_locker}'
+        try:
+            resp = requests.get(
+                url,
+                auth=HTTPBasicAuth(settings.TELEMETRY_USER, settings.TELEMETRY_PASS),
+                timeout=5,
+            )
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            return render(request, 'ss_main/telemetry_partial.html', {
+                'box_number': cabinet.shkaf_id,
+                'error': f'Не удалось загрузить данные: {e}',
+            })
+
+        soup = BeautifulSoup(resp.content, 'html.parser')
+        try:
+            gen, tel, em = soup.find_all('div', class_='panel')
+        except ValueError:
+            return render(request, 'ss_main/telemetry_partial.html', {
+                'box_number': cabinet.shkaf_id,
+                'error': 'Ошибка структуры данных: ожидалось 3 блока .panel',
+            })
+
+        # --- Температуры как раньше ---
+        temps = {}
+        for tag in tel.find_all('p'):
+            m = re.search(r'Температура\((\d)\).+?:\s*([\d.]+)', tag.get_text(strip=True))
+            if m:
+                temps[f't{m.group(1)}'] = m.group(2)
+
+        t1 = temps.get('t1', '')
+        t2 = temps.get('t2', '')
+        t3 = temps.get('t3', '')
+        t4 = temps.get('t4', '')
+
+        # --- Остальные данные ---
+        imei_text = gen.find('p').get_text(strip=True) if gen.find('p') else ''
         imei = imei_text.split(':', 1)[1].strip() if ':' in imei_text else 'n/a'
-    except Exception:
-        imei = 'n/a'
 
-    iccid_a = gen.find('a', href=re.compile(r'/command/.*/iccid'))
-    iccid = iccid_a['href'] if iccid_a else '-'
+        iccid_a = gen.find('a', href=re.compile(r'/command/.*/iccid'))
+        iccid = iccid_a['href'] if iccid_a else '-'
 
-    def safe_split(p_tags, index):
+        def safe_split(p_tags, index):
+            try:
+                text = p_tags[index].get_text(strip=True)
+                return text.split(':', 1)[1].strip() if ':' in text else 'n/a'
+            except (IndexError, AttributeError):
+                return 'n/a'
+
+        p_tags = tel.find_all('p')
+        last_update = safe_split(p_tags, 0)
+        power_voltage = safe_split(p_tags, 2)
+        reserv_voltage = power_voltage
+
+        in_vals = {}
+        for i in (1, 2, 3):
+            tag = tel.find('p', text=re.compile(fr'Вход {i}:'))
+            in_vals[f'in{i}'] = tag.get_text(strip=True).split(':', 1)[1].strip() if tag and ':' in tag.get_text() else ''
+
+        coord_a = tel.find('a', href=re.compile(r'https?://'))
         try:
-            text = p_tags[index].get_text(strip=True)
-            return text.split(':', 1)[1].strip() if ':' in text else 'n/a'
-        except (IndexError, AttributeError):
-            return 'n/a'
-
-    p_tags = tel.find_all('p')
-    last_update = safe_split(p_tags, 0)
-    power_voltage = safe_split(p_tags, 2)
-    reserv_voltage = power_voltage
-
-    in_vals = {}
-    for i in (1, 2, 3):
-        tag = tel.find('p', text=re.compile(fr'Вход {i}:'))
-        in_vals[f'in{i}'] = tag.get_text(strip=True).split(':', 1)[1].strip() if tag and ':' in tag.get_text() else ''
-
-    temps = {}
-    for tag in tel.find_all('p'):
-        m = re.search(r'Температура\((\d)\).+?:\s*([\d.]+)', tag.get_text(strip=True))
-        if m:
-            temps[f't{m.group(1)}'] = m.group(2)
-    t1 = temps.get('t1', '')
-    t2 = temps.get('t2', '')
-    t3 = temps.get('t3', '')
-    t4 = temps.get('t4', '')
-
-    coord_a = tel.find('a', href=re.compile(r'https?://'))
-    try:
-        coordinates = coord_a.get_text(strip=True).split(':', 1)[1].strip() if coord_a and ':' in coord_a.get_text() else ''
-    except Exception:
-        coordinates = ''
-
-    gps_parts = [a.get_text(strip=True) for a in tel.find_all('a')
-                 if 'GPS:' in a.get_text() or 'спутников' in a.get_text()]
-    gps_info = ' '.join(gps_parts)
-
-    # --- Энергомодуль ---
-    h2_tag = em.find('h2')
-    meter_reading = h2_tag.get_text(strip=True).split(':', 1)[1].strip() if h2_tag and ':' in h2_tag.get_text() else 'n/a'
-
-    mp = em.find_all('p')
-    meter_update = safe_split(mp, 0)
-    meter_temp = safe_split(mp, 1)
-    frequency = safe_split(mp, 2)
-
-    # --- Таблица ---
-    table = em.find('table')
-    phases = []
-    if table:
-        try:
-            header_row = table.select('tr:first-of-type th')
-            phases = [th.get_text(strip=True) for th in header_row[1:]]
+            coordinates = coord_a.get_text(strip=True).split(':', 1)[1].strip() if coord_a and ':' in coord_a.get_text() else ''
         except Exception:
-            phases = []
+            coordinates = ''
 
-    def get_metric_values(metric_name):
-        if not table or not phases:
-            return ['0'] * len(phases)
-        cell = table.find('td', text=re.compile(fr'^{re.escape(metric_name)}$'))
-        if not cell:
-            return ['0'] * len(phases)
-        return [sib.get_text(strip=True) for sib in cell.find_next_siblings('td')]
+        gps_parts = [a.get_text(strip=True) for a in tel.find_all('a')
+                     if 'GPS:' in a.get_text() or 'спутников' in a.get_text()]
+        gps_info = ' '.join(gps_parts)
 
-    volt_vals = get_metric_values('Напряжение')
-    curr_vals = get_metric_values('Ток')
-    cos_vals = get_metric_values('Косинус φ')
+        h2_tag = em.find('h2')
+        meter_reading = h2_tag.get_text(strip=True).split(':', 1)[1].strip() if h2_tag and ':' in h2_tag.get_text() else 'n/a'
 
-    raw_power_vals = get_metric_values('Активная мощность')
-    if all(v in ('0', '') for v in raw_power_vals):
-        power_vals = get_metric_values('Активная мощность(расчёт)')
-    else:
-        power_vals = raw_power_vals
+        mp = em.find_all('p')
+        meter_update = safe_split(mp, 0)
+        meter_temp = safe_split(mp, 1)
+        frequency = safe_split(mp, 2)
 
-    def extract_num(s: str) -> str:
-        m = re.search(r'-?\d+(?:\.\d+)?', s)
-        return m.group(0) if m else '0'
+        table = em.find('table')
+        phases = []
+        if table:
+            try:
+                header_row = table.select('tr:first-of-type th')
+                phases = [th.get_text(strip=True) for th in header_row[1:]]
+            except Exception:
+                phases = []
 
-    lines = []
-    for idx, phase in enumerate(phases):
-        v = extract_num(volt_vals[idx]) if idx < len(volt_vals) else '0'
-        a = extract_num(curr_vals[idx]) if idx < len(curr_vals) else '0'
-        cos = extract_num(cos_vals[idx]) if idx < len(cos_vals) else '0'
-        p = extract_num(power_vals[idx]) if idx < len(power_vals) else '0'
-        lines.append({
-            'name': f'Line {phase}',
-            'V': v,
-            'A': a,
-            'cos': cos,
-            'P': p,
-        })
+        def get_metric_values(metric_name):
+            if not table or not phases:
+                return ['0'] * len(phases)
+            cell = table.find('td', text=re.compile(fr'^{re.escape(metric_name)}$'))
+            if not cell:
+                return ['0'] * len(phases)
+            return [sib.get_text(strip=True) for sib in cell.find_next_siblings('td')]
 
+        volt_vals = get_metric_values('Напряжение')
+        curr_vals = get_metric_values('Ток')
+        cos_vals = get_metric_values('Косинус φ')
+        raw_power_vals = get_metric_values('Активная мощность')
+        power_vals = get_metric_values('Активная мощность(расчёт)') if all(v in ('0', '') for v in raw_power_vals) else raw_power_vals
+
+        def extract_num(s: str) -> str:
+            m = re.search(r'-?\d+(?:\.\d+)?', s)
+            return m.group(0) if m else '0'
+
+        lines = []
+        for idx, phase in enumerate(phases):
+            v = extract_num(volt_vals[idx]) if idx < len(volt_vals) else '0'
+            a = extract_num(curr_vals[idx]) if idx < len(curr_vals) else '0'
+            cos = extract_num(cos_vals[idx]) if idx < len(cos_vals) else '0'
+            p = extract_num(power_vals[idx]) if idx < len(power_vals) else '0'
+            lines.append({
+                'name': f'Line {phase}',
+                'V': v,
+                'A': a,
+                'cos': cos,
+                'P': p,
+            })
+
+        context = {
+            'box_number':    cabinet.shkaf_id,
+            'qr_code':       qr_code,
+            'imei':          imei,
+            'iccid':         cabinet.iot_imei_locker,
+            'last_update':    last_update,
+            'reserv_voltage': reserv_voltage,
+            'power_voltage':  power_voltage,
+            **in_vals,
+            'out1':           out1_val,
+            'out2':           '',
+            't1':             t1,
+            't2':             t2,
+            't3':             t3,
+            't4':             t4,
+            'coordinates':    coordinates,
+            'gps_info':       gps_info,
+            'power_count':   meter_reading,
+            'meter_update':  meter_update,
+            'meter_temp':    meter_temp,
+            'frequency':     frequency,
+            'lines':         lines,
+            'sticker':       getattr(cabinet, 'sticker', ''),
+        }
+        return render(request, 'ss_main/telemetry_partial.html', context)
+
+    # =========================
+    # 3️⃣ Если данные успешно получены из parse_device_status
+    # =========================
     context = {
-        'box_number':    cabinet.shkaf_id,
-        'qr_code':       qr_code,
-        'imei':          imei,
-        'iccid':         cabinet.iot_imei_locker,
-
-        'last_update':    last_update,
-        'reserv_voltage': reserv_voltage,
-        'power_voltage':  power_voltage,
-        **in_vals,
-        'out1':           '',
-        'out2':           '',
-        't1':             t1,
-        't2':             t2,
-        't3':             t3,
-        't4':             t4,
-        'coordinates':    coordinates,
-        'gps_info':       gps_info,
-
-        'power_count':   meter_reading,
-        'meter_update':  meter_update,
-        'meter_temp':    meter_temp,
-        'frequency':     frequency,
-
-        'lines':         lines,
-        'sticker':       getattr(cabinet, 'sticker', ''),
+        'box_number': cabinet.shkaf_id,
+        'qr_code': qr_code,
+        'imei': cabinet.iot_imei_locker or 'n/a',
+        'iccid': cabinet.iot_imei_locker or 'n/a',
+        't1': t1,
+        't2': t2,
+        't3': t3,
+        't4': t4,
+        'out1': out1_val,
+        'out2': '',
+        'last_update': 'n/a',
+        'reserv_voltage': 'n/a',
+        'power_voltage': 'n/a',
+        'in1': '', 'in2': '', 'in3': '',
+        'coordinates': '',
+        'gps_info': '',
+        'power_count': '',
+        'meter_update': '',
+        'meter_temp': '',
+        'frequency': '',
+        'lines': [],
+        'sticker': getattr(cabinet, 'sticker', ''),
     }
     return render(request, 'ss_main/telemetry_partial.html', context)
 
@@ -547,7 +583,6 @@ def cabinet_settings(request, shkaf_id):
             form.save()
             settings_for_form.save()
 
-            # Обновляем статусы ячеек
             Cell.objects.filter(cabinet_id=cabinet).update(is_error=False, message=None)
 
             return JsonResponse({'success': True})
@@ -570,8 +605,6 @@ def cabinet_settings2(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
     settings, _ = Cabinet_settings_for_auto_marking.objects.get_or_create(cabinet_id=cabinet)
     settings_for_settings = Settings_for_settings.objects.filter(settings_for=settings).first()
-
-
 
     if request.method == 'POST':
         form = CabinetSettingsForm(request.POST, instance=settings)
@@ -604,7 +637,6 @@ def main(request):
     return render(request, 'ss_main/index.html', {'cities': cities})
 
 
-# Создание нового курьера
 @login_required
 @user_passes_test(is_logistician)
 def create_courier(request):
@@ -621,16 +653,15 @@ def create_courier(request):
             for city in current_user_citys:
                 user.citys.add(city)
 
-            # Отправка письма и дубляж на почту нового скаута
             send_mail(
                 'Scout Registration Info',
                 f'Username: {user.username}\nPassword: {password}\nEmail: {user.email}\nFull Name: {user.first_name} {user.last_name}',
                 'bhromenko@mail.ru',
-                [request.user.email, user.email],  # Добавили email нового скаута
+                [request.user.email, user.email],
                 fail_silently=False,
             )
             messages.success(request, f"Скаут '{user.username}' успешно зарегистрирован (проверьте свою почту).")
-            return redirect('create_courier')  # Редирект для очистки формы
+            return redirect('create_courier')
         else:
             messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
     else:
@@ -702,7 +733,6 @@ def delete_courier(request, courier_id):
     return JsonResponse({'status': 'success'})
 
 
-# Назначение зоны логисту
 @login_required
 @user_passes_test(is_regional_manager)
 def assign_zone_to_logic(request):
@@ -784,18 +814,33 @@ def zone_detail(request, zone_id):
     return render(request, 'ss_main/zone_detail.html', {'zone': zone, 'couriers': couriers})
 
 
-def parse_device_status(iot_imei_locker):
+
+# переехать до конца на это
+def parse_device_status(iot_imei_locker, devices_cache=None):
+    """
+    Возвращает:
+        rssi_signal: str
+        door_state: bool | None
+        temperatures: list[float] | None
+        out1_val: str ("LOCKED"/"OPEN"/"")
+    """
     try:
         if not iot_imei_locker:
-            return 'n/a', None
+            return 'n/a', None, None, ''
 
-        url = f'http://192.168.1.16:9001/api/dev/{iot_imei_locker}'
-        response = requests.get(url, timeout=2)
-        response.raise_for_status()
-        data = response.json()
+        # если кэш не передан — грузим сами (fallback)
+        if devices_cache is None:
+            response = requests.get("http://185.22.67.4:9001/api/cache", timeout=3)
+            response.raise_for_status()
+            devices_cache = response.json()
 
-        # --- Parse GSMStatus to RSSI ---
-        gsm = data.get("GSMStatus")
+        # --- Ищем устройство по IMEI ---
+        target = next((dev for dev in devices_cache if str(dev.get("IMEI")) == str(iot_imei_locker)), None)
+        if not target:
+            return 'нет данных', None, None, ''
+
+        # --- RSSI ---
+        gsm = target.get("GSMStatus")
         if gsm is None:
             rssi_signal = 'n/a'
         elif gsm == 31:
@@ -809,21 +854,40 @@ def parse_device_status(iot_imei_locker):
         else:
             rssi_signal = 'ошибка'
 
-        # --- Parse DigitalIn1 to door_state ---
-        digital_in1 = data.get("DigitalIn1")
+        # --- Door state + OUT1 ---
         door_state = None
-        if digital_in1 is not None:
-            # JS: ((digitalIn1 / 2) % 2) → в Python:
-            exhaust_bit = (digital_in1 // 2) % 2
-            door_state = exhaust_bit == 0  # 0 → дверь закрыта
+        out1_val = ''
+        if "is_door_locked" in target and isinstance(target["is_door_locked"], list):
+            locked = target["is_door_locked"][0]
+            door_state = locked
+            out1_val = "LOCKED" if locked else "OPEN"
+        else:
+            digital_in1 = target.get("DigitalIn1")
+            if digital_in1 is not None:
+                exhaust_bit = (digital_in1 // 2) % 2
+                door_state = exhaust_bit == 0
+                out1_val = "LOCKED" if door_state else "OPEN"
 
-        return rssi_signal, door_state
+        # --- Temperature ---
+        temp1 = target.get("Temperature1_1wire")
+        temp2 = target.get("Temperature2_1wire")
+
+        temperatures = []
+        for t in (temp1, temp2):
+            if t is not None and t != -128:
+                temperatures.append(t)
+
+        if not temperatures:
+            temperatures = None
+
+        return rssi_signal, door_state, temperatures, out1_val
 
     except Exception:
-        return 'ошибка', None
+        return 'ошибка', None, None, ''
 
 
-# Список шкафов в зоне(у логиста)
+
+
 @login_required
 @user_passes_test(is_logistician)
 def cabinet_list(request, zone_id):
@@ -841,7 +905,7 @@ def cabinet_list(request, zone_id):
             capacity_value = int(cabinet.capacity) if cabinet.capacity is not None else 0
             total_capacity += capacity_value
         except (ValueError, TypeError):
-            pass  # Пропускаем если значение не число
+            pass
 
         # Получаем связанные ячейки
         cells = Cell.objects.filter(cabinet_id=cabinet)
@@ -854,8 +918,7 @@ def cabinet_list(request, zone_id):
             'ban': cells.filter(status='BAN').count(),
         }
 
-        # Получаем RSSI и состояние двери
-        rssi_signal, door_state = parse_device_status(cabinet.iot_imei_locker)
+        rssi_signal, door_state, _, _ = parse_device_status(cabinet.iot_imei_locker)
 
         updated_fields = []
         if cabinet.rssi != rssi_signal:
@@ -909,7 +972,7 @@ def region_cabinet_list(request, zone_id):
         }
 
         # Парсим RSSI и состояние двери
-        rssi_signal, door_state = parse_device_status(cabinet.iot_imei_locker)
+        rssi_signal, door_state, _, _ = parse_device_status(cabinet.iot_imei_locker)
         updated_fields = []
 
         if cabinet.rssi != rssi_signal:
@@ -920,10 +983,9 @@ def region_cabinet_list(request, zone_id):
             cabinet.door_state = door_state
             updated_fields.append('door_state')
 
-        # Парсим телеметрию
         power_count, grid_voltage, temperature = '-', '-', '-'
         try:
-            url = f'http://192.168.1.16:9000/detailed/{cabinet.iot_imei_locker}'
+            url = f'http://172.17.0.1:9000/detailed/{cabinet.iot_imei_locker}'
             resp = requests.get(
                 url,
                 auth=HTTPBasicAuth(settings.TELEMETRY_USER, settings.TELEMETRY_PASS),
@@ -934,7 +996,6 @@ def region_cabinet_list(request, zone_id):
 
             gen, tel, em = soup.find_all('div', class_='panel')
 
-            # Power Count
 
             try:
                 h2_tag = em.find('h2')
@@ -964,7 +1025,6 @@ def region_cabinet_list(request, zone_id):
         except Exception as e:
             print(f"[ERROR] Cabinet {cabinet.shkaf_id}: {e}")
 
-        # Обновление данных в Cabinet, если что-то изменилось
         if power_count != '-' and cabinet.power_count != power_count:
             cabinet.power_count = power_count
             updated_fields.append('power_count')
@@ -993,8 +1053,6 @@ def region_cabinet_list(request, zone_id):
     })
 
 
-
-# Обновление деталий шкафа
 def cabinet_details_api(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
     cells = Cell.objects.filter(cabinet_id=cabinet)
@@ -1015,7 +1073,6 @@ def cabinet_details_api(request, shkaf_id):
     return JsonResponse(cabinet_data)
 
 
-# Основная страница регионального менеджера
 @login_required
 @user_passes_test(is_regional_manager)
 def main_region(request):
@@ -1053,8 +1110,6 @@ def main_region(request):
     })
 
 
-
-# Список зон в городе(региональный менеджер)
 @login_required
 @user_passes_test(is_regional_manager)
 def region_zones(request, city_id):
@@ -1175,6 +1230,7 @@ def user_cabinets(request):
     return render(request, 'ss_main/user_cabinets.html', context)
 
 
+
 @login_required
 def cabinet_details(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
@@ -1257,21 +1313,40 @@ def cabinet_details(request, shkaf_id):
 
 @login_required
 def open_cabinet(request, shkaf_id):
-    if request.method == "POST":
-        cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
+    if request.method != "POST":
+        return JsonResponse({"success": False, "message": "Только POST запрос"}, status=405)
 
-        Eventlogger.objects.create(
-            user=request.user.username,
-            shkaf_id=str(cabinet.shkaf_id),
-            login=request.user.username,
-            action="Open attempt",
-            time=timezone.now(),
-            door_state_before=getattr(cabinet, "door_state", None)
-        )
+    cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
 
-        return JsonResponse({"success": True, "message": "Open attempt"})
+    Eventlogger.objects.create(
+        user=request.user.username,
+        shkaf_id=str(cabinet.shkaf_id),
+        login=request.user.username,
+        action=f"Open attempt for cabinet {cabinet.shkaf_id}",
+        time=timezone.now(),
+        door_state_before=getattr(cabinet, "door_state", None)
+    )
 
-    return JsonResponse({"success": False, "message": "Только POST запрос"})
+    # Проверяем IMEI
+    imei = cabinet.iot_imei_locker
+    if not imei:
+        return JsonResponse({"success": False, "message": "IMEI не задан"}, status=400)
+
+    # Отправляем команду открытия
+    url = f"http://185.22.67.4:9001/api/dev/{imei}/out?lineno=1&state=1"
+    try:
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            return JsonResponse({"success": True, "message": "Команда на открытие отправлена ✅"})
+        else:
+            return JsonResponse({
+                "success": False,
+                "message": f"Ошибка от API: {resp.status_code}",
+                "details": resp.text
+            }, status=resp.status_code)
+    except requests.RequestException as e:
+        return JsonResponse({"success": False, "message": f"Ошибка соединения: {e}"}, status=500)
+
 
 
 
@@ -1279,7 +1354,6 @@ def export_battery_history(request, shkaf_id):
     start_date_str = request.GET.get("start_date")
     end_date_str = request.GET.get("end_date")
 
-    # Проверка наличия дат
     if not start_date_str or not end_date_str:
         return HttpResponse("Обе даты обязательны", status=400)
 
@@ -1327,7 +1401,7 @@ def export_battery_history(request, shkaf_id):
     wb.save(response)
     return response
 
-# Обновление деталей шкафа
+
 def update_cabinet_data(request, shkaf_id):
     logger.debug(f"Headers: {request.headers}")
     logger.debug(f"Method: {request.method}")
@@ -1368,7 +1442,7 @@ def update_cabinet_data(request, shkaf_id):
         return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
-# API для получения информации о статусах ячеек в шкафах
+
 @login_required
 def user_cabinets_api(request):
     user = request.user
@@ -1394,7 +1468,7 @@ def user_cabinets_api(request):
     return JsonResponse(cabinet_statuses, safe=False)
 
 
-# API для получения информации о статусах ячеек в шкафе
+
 def station_ids(request):
     query = request.GET.get('query', '')
     data = Report.objects.using('new_db').filter(stationid__icontains=query)
@@ -1402,7 +1476,6 @@ def station_ids(request):
     return JsonResponse(suggestions, safe=False)
 
 
-# API для получения информации о городах
 def cities(request):
     query = request.GET.get('query', '')
     data = Report.objects.using('new_db').filter(city__icontains=query)
@@ -1410,7 +1483,7 @@ def cities(request):
     return JsonResponse(suggestions, safe=False)
 
 
-# API для получения информации о зонах
+
 def zones(request):
     query = request.GET.get('query', '')
     data = Report.objects.using('new_db').filter(zone__icontains=query)
@@ -1418,7 +1491,6 @@ def zones(request):
     return JsonResponse(suggestions, safe=False)
 
 
-# Генерация отчета(моя гордость)
 @staff_required
 def report(request):
     if request.method == 'POST':
@@ -1430,7 +1502,6 @@ def report(request):
             time_from = form.cleaned_data.get('time_from')
             time_to = form.cleaned_data.get('time_to')
 
-            # Проверяем, выбраны ли все фильтры
             if not all([station_id, city, zone, time_from, time_to]):
                 return HttpResponse("Пожалуйста, выберитpе все фильтры.")
 
@@ -1507,35 +1578,20 @@ def reset_selection(request):
     return redirect('report')
 
 
-
-
-
-
-
-from django.http import HttpResponse
-from django.shortcuts import render
-from .models import Eventlogger
-from django.utils.dateparse import parse_date
-
 def report_page(request):
-    """Отображение страницы с формой выбора параметров отчёта"""
-    # Собираем список шкафов для выбора
     cabinets = Eventlogger.objects.values_list("shkaf_id", flat=True).distinct()
     return render(request, "ss_main/logreports.html", {"cabinets": cabinets})
 
 
 def download_report(request):
-    # Параметры из GET
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
     shkaf_id = request.GET.get("shkaf_id")
     report_type = request.GET.get("report_type")
 
-    # Парсим даты
     start_date = parse_date(start_date) if start_date else None
     end_date = parse_date(end_date) if end_date else None
 
-    # Базовый queryset
     qs = Eventlogger.objects.all()
 
     if start_date:
@@ -1545,20 +1601,16 @@ def download_report(request):
     if shkaf_id:
         qs = qs.filter(shkaf_id=shkaf_id)
 
-    # пока поддерживаем только "events"
     if report_type == "events":
         qs = qs.order_by("time")
 
-    # --- Формируем Excel ---
     wb = Workbook()
     ws = wb.active
     ws.title = "Report"
 
-    # Заголовки
     headers = ["Время", "Шкаф", "Readable name", "Пользователь", "Login", "Действие", "Door state before"]
     ws.append(headers)
 
-    # Данные
     for row in qs:
         ws.append([
             row.time.strftime("%Y-%m-%d %H:%M:%S") if row.time else "",
@@ -1570,16 +1622,12 @@ def download_report(request):
             "Открыта" if row.door_state_before else "Закрыта"
         ])
 
-    # Ответ
     response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     response["Content-Disposition"] = 'attachment; filename=report.xlsx'
     wb.save(response)
     return response
 
 
-
-
-# Авторизация
 class CustomLoginView(LoginView):
     form_class = CustomAuthenticationForm
     template_name = 'ss_main/login.html'

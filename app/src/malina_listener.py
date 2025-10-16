@@ -760,15 +760,33 @@ def on_publish(mosq, obj, mid, is_error_status):
     pass
 
 
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print("[MQTT] ДА")
+    else:
+        print(f"[MQTT] НЕТ {rc}")
+
+
+HOST = "185.22.67.4"
+PORT = 8883
+USER = "jet"
+PASS = "rf8kVJ"
+CLUCH = "brokerkeys/mosquitto.crt"
+
 async def start_mqtt_client():
     client = Client()
+    client.username_pw_set(USER, PASS)
+    client.tls_set(ca_certs=CLUCH)
+    client.tls_insecure_set(True)
     client.on_message = on_message
     client.on_publish = on_publish
-    client.connect("192.168.1.98", 1883, 60)
+    client.connect(HOST, PORT, 60)
+    client.loop_start()
+    await asyncio.sleep(2)
     client.subscribe("test", 0)
     client.subscribe("test/back", 0)
     client.subscribe("test1", 0)
-    client.loop_start()
+    client.on_connect = on_connect
 
 
 async def check_inactive_endpoints():

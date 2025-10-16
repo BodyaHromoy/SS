@@ -57,6 +57,8 @@ urlpatterns = [
     # старая инженерка
     path('123/', main, name='main'),
 
+
+
     # API
     path('api/station_ids', views.station_ids),
     path('api/cities', views.cities),
