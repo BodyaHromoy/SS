@@ -830,7 +830,7 @@ def parse_device_status(iot_imei_locker, devices_cache=None):
 
         # если кэш не передан — грузим сами (fallback)
         if devices_cache is None:
-            response = requests.get("http://185.22.67.4:9001/api/cache", timeout=3)
+            response = requests.get("http://172.17.0.1:9001/api/cache", timeout=3)
             response.raise_for_status()
             devices_cache = response.json()
 
