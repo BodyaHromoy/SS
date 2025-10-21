@@ -156,7 +156,7 @@ def new_eng(request):
 
     for cabinet in cabinets:
         if cabinet.iot_imei_locker:
-            rssi, door_state, _ , _= parse_device_status(cabinet.iot_imei_locker)
+            rssi, door_state, _ , _, _= parse_device_status(cabinet.iot_imei_locker)
             cabinet.rssi = rssi
             cabinet.door_state = door_state
         else:
@@ -361,176 +361,39 @@ def save_cabinet(request):
         return JsonResponse({'success': False, 'message': str(e)})
 
 
+@login_required
+def get_iccid(request, imei):
+    url = f"http://172.17.0.1:9000/command/{imei}/iccid"
+    try:
+        auth = HTTPBasicAuth(settings.TELEMETRY_USER, settings.TELEMETRY_PASS)
+        resp = requests.get(url, auth=auth, timeout=5)
+        resp.raise_for_status()
+        return JsonResponse({"success": True, "iccid": resp.text.strip().strip('"')})
+    except requests.exceptions.Timeout:
+        return JsonResponse({"success": False, "error": "Таймаут при подключении"})
+    except requests.exceptions.RequestException as e:
+        return JsonResponse({"success": False, "error": f"Ошибка запроса: {e}"})
+
+
 
 def new_eng_telemetry(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
     qr_code = cabinet.qr
 
-    # =========================
-    # 1️⃣ Новый способ через parse_device_status
-    # =========================
     t1 = t2 = t3 = t4 = ''
     out1_val = ''
+    reserv_voltage = 'n/a'
 
     if cabinet.iot_imei_locker:
-        rssi, door_state, temperatures, out1_val = parse_device_status(cabinet.iot_imei_locker)
+        rssi, door_state, temperatures, out1_val, voltage_main = parse_device_status(cabinet.iot_imei_locker)
         if temperatures:
             if len(temperatures) > 0:
                 t1 = str(temperatures[0])
             if len(temperatures) > 1:
                 t2 = str(temperatures[1])
+        if voltage_main:
+            reserv_voltage = f"{voltage_main:.2f} В"
 
-    # =========================
-    # 2️⃣ Старый HTML парсер (fallback), если температур нет
-    # =========================
-    if not t1 and not t2:
-        url = f'http://172.17.0.1:9000/detailed/{cabinet.iot_imei_locker}'
-        try:
-            resp = requests.get(
-                url,
-                auth=HTTPBasicAuth(settings.TELEMETRY_USER, settings.TELEMETRY_PASS),
-                timeout=5,
-            )
-            resp.raise_for_status()
-        except requests.RequestException as e:
-            return render(request, 'ss_main/telemetry_partial.html', {
-                'box_number': cabinet.shkaf_id,
-                'error': f'Не удалось загрузить данные: {e}',
-            })
-
-        soup = BeautifulSoup(resp.content, 'html.parser')
-        try:
-            gen, tel, em = soup.find_all('div', class_='panel')
-        except ValueError:
-            return render(request, 'ss_main/telemetry_partial.html', {
-                'box_number': cabinet.shkaf_id,
-                'error': 'Ошибка структуры данных: ожидалось 3 блока .panel',
-            })
-
-        # --- Температуры как раньше ---
-        temps = {}
-        for tag in tel.find_all('p'):
-            m = re.search(r'Температура\((\d)\).+?:\s*([\d.]+)', tag.get_text(strip=True))
-            if m:
-                temps[f't{m.group(1)}'] = m.group(2)
-
-        t1 = temps.get('t1', '')
-        t2 = temps.get('t2', '')
-        t3 = temps.get('t3', '')
-        t4 = temps.get('t4', '')
-
-        # --- Остальные данные ---
-        imei_text = gen.find('p').get_text(strip=True) if gen.find('p') else ''
-        imei = imei_text.split(':', 1)[1].strip() if ':' in imei_text else 'n/a'
-
-        iccid_a = gen.find('a', href=re.compile(r'/command/.*/iccid'))
-        iccid = iccid_a['href'] if iccid_a else '-'
-
-        def safe_split(p_tags, index):
-            try:
-                text = p_tags[index].get_text(strip=True)
-                return text.split(':', 1)[1].strip() if ':' in text else 'n/a'
-            except (IndexError, AttributeError):
-                return 'n/a'
-
-        p_tags = tel.find_all('p')
-        last_update = safe_split(p_tags, 0)
-        power_voltage = safe_split(p_tags, 2)
-        reserv_voltage = power_voltage
-
-        in_vals = {}
-        for i in (1, 2, 3):
-            tag = tel.find('p', text=re.compile(fr'Вход {i}:'))
-            in_vals[f'in{i}'] = tag.get_text(strip=True).split(':', 1)[1].strip() if tag and ':' in tag.get_text() else ''
-
-        coord_a = tel.find('a', href=re.compile(r'https?://'))
-        try:
-            coordinates = coord_a.get_text(strip=True).split(':', 1)[1].strip() if coord_a and ':' in coord_a.get_text() else ''
-        except Exception:
-            coordinates = ''
-
-        gps_parts = [a.get_text(strip=True) for a in tel.find_all('a')
-                     if 'GPS:' in a.get_text() or 'спутников' in a.get_text()]
-        gps_info = ' '.join(gps_parts)
-
-        h2_tag = em.find('h2')
-        meter_reading = h2_tag.get_text(strip=True).split(':', 1)[1].strip() if h2_tag and ':' in h2_tag.get_text() else 'n/a'
-
-        mp = em.find_all('p')
-        meter_update = safe_split(mp, 0)
-        meter_temp = safe_split(mp, 1)
-        frequency = safe_split(mp, 2)
-
-        table = em.find('table')
-        phases = []
-        if table:
-            try:
-                header_row = table.select('tr:first-of-type th')
-                phases = [th.get_text(strip=True) for th in header_row[1:]]
-            except Exception:
-                phases = []
-
-        def get_metric_values(metric_name):
-            if not table or not phases:
-                return ['0'] * len(phases)
-            cell = table.find('td', text=re.compile(fr'^{re.escape(metric_name)}$'))
-            if not cell:
-                return ['0'] * len(phases)
-            return [sib.get_text(strip=True) for sib in cell.find_next_siblings('td')]
-
-        volt_vals = get_metric_values('Напряжение')
-        curr_vals = get_metric_values('Ток')
-        cos_vals = get_metric_values('Косинус φ')
-        raw_power_vals = get_metric_values('Активная мощность')
-        power_vals = get_metric_values('Активная мощность(расчёт)') if all(v in ('0', '') for v in raw_power_vals) else raw_power_vals
-
-        def extract_num(s: str) -> str:
-            m = re.search(r'-?\d+(?:\.\d+)?', s)
-            return m.group(0) if m else '0'
-
-        lines = []
-        for idx, phase in enumerate(phases):
-            v = extract_num(volt_vals[idx]) if idx < len(volt_vals) else '0'
-            a = extract_num(curr_vals[idx]) if idx < len(curr_vals) else '0'
-            cos = extract_num(cos_vals[idx]) if idx < len(cos_vals) else '0'
-            p = extract_num(power_vals[idx]) if idx < len(power_vals) else '0'
-            lines.append({
-                'name': f'Line {phase}',
-                'V': v,
-                'A': a,
-                'cos': cos,
-                'P': p,
-            })
-
-        context = {
-            'box_number':    cabinet.shkaf_id,
-            'qr_code':       qr_code,
-            'imei':          imei,
-            'iccid':         cabinet.iot_imei_locker,
-            'last_update':    last_update,
-            'reserv_voltage': reserv_voltage,
-            'power_voltage':  power_voltage,
-            **in_vals,
-            'out1':           out1_val,
-            'out2':           '',
-            't1':             t1,
-            't2':             t2,
-            't3':             t3,
-            't4':             t4,
-            'coordinates':    coordinates,
-            'gps_info':       gps_info,
-            'power_count':   meter_reading,
-            'meter_update':  meter_update,
-            'meter_temp':    meter_temp,
-            'frequency':     frequency,
-            'lines':         lines,
-            'sticker':       getattr(cabinet, 'sticker', ''),
-        }
-        return render(request, 'ss_main/telemetry_partial.html', context)
-
-    # =========================
-    # 3️⃣ Если данные успешно получены из parse_device_status
-    # =========================
     context = {
         'box_number': cabinet.shkaf_id,
         'qr_code': qr_code,
@@ -543,7 +406,7 @@ def new_eng_telemetry(request, shkaf_id):
         'out1': '',
         'out2': '',
         'last_update': 'n/a',
-        'reserv_voltage': 'n/a',
+        'reserv_voltage': reserv_voltage,  # 👈 новое значение из JSON
         'power_voltage': 'n/a',
         'in1': out1_val,
         'in2': '', 'in3': '',
@@ -557,6 +420,7 @@ def new_eng_telemetry(request, shkaf_id):
         'sticker': getattr(cabinet, 'sticker', ''),
     }
     return render(request, 'ss_main/telemetry_partial.html', context)
+
 
 
 
@@ -824,21 +688,20 @@ def parse_device_status(iot_imei_locker, devices_cache=None):
         door_state: bool | None
         temperatures: list[float] | None
         out1_val: str ("LOCKED"/"OPEN"/"")
+        voltage_main: float | None
     """
     try:
         if not iot_imei_locker:
-            return 'n/a', None, None, ''
+            return 'n/a', None, None, '', None
 
-        # если кэш не передан — грузим сами (fallback)
         if devices_cache is None:
             response = requests.get("http://172.17.0.1:9001/api/cache", timeout=3)
             response.raise_for_status()
             devices_cache = response.json()
 
-        # --- Ищем устройство по IMEI ---
         target = next((dev for dev in devices_cache if str(dev.get("IMEI")) == str(iot_imei_locker)), None)
         if not target:
-            return 'нет данных', None, None, ''
+            return 'нет данных', None, None, '', None
 
         # --- RSSI ---
         gsm = target.get("GSMStatus")
@@ -858,38 +721,30 @@ def parse_device_status(iot_imei_locker, devices_cache=None):
         # --- Door state + OUT1 ---
         door_state = None
         out1_val = ''
-
         if "is_door_locked" in target and isinstance(target["is_door_locked"], list):
             locked = target["is_door_locked"][0]
-            # Инвертируем значение
             door_state = not locked
             out1_val = "LOCKED" if door_state else "OPEN"
         else:
             digital_in1 = target.get("DigitalIn1")
             if digital_in1 is not None:
                 exhaust_bit = (digital_in1 // 2) % 2
-                # Инвертируем значение
                 door_state = not (exhaust_bit == 0)
                 out1_val = "LOCKED" if door_state else "OPEN"
 
         # --- Temperature ---
         temp1 = target.get("Temperature1_1wire")
         temp2 = target.get("Temperature2_1wire")
+        temperatures = [t for t in (temp1, temp2) if t is not None and t != -128] or None
 
-        temperatures = []
-        for t in (temp1, temp2):
-            if t is not None and t != -128:
-                temperatures.append(t)
+        # --- VoltageMain ---
+        voltage_main_raw = target.get("VoltageMain")
+        voltage_main = round(voltage_main_raw / 1000, 2) if voltage_main_raw else None  # Преобразуем в вольты
 
-        if not temperatures:
-            temperatures = None
-
-        return rssi_signal, door_state, temperatures, out1_val
+        return rssi_signal, door_state, temperatures, out1_val, voltage_main
 
     except Exception:
-        return 'ошибка', None, None, ''
-
-
+        return 'ошибка', None, None, '', None
 
 
 @login_required
@@ -922,7 +777,7 @@ def cabinet_list(request, zone_id):
             'ban': cells.filter(status='BAN').count(),
         }
 
-        rssi_signal, door_state, _, _ = parse_device_status(cabinet.iot_imei_locker)
+        rssi_signal, door_state, _, _, _ = parse_device_status(cabinet.iot_imei_locker)
 
         updated_fields = []
         if cabinet.rssi != rssi_signal:
@@ -976,7 +831,7 @@ def region_cabinet_list(request, zone_id):
         }
 
         # 📌 Парсим RSSI, состояние двери и температуру из кэша (parse_device_status)
-        rssi_signal, door_state, temperatures, _ = parse_device_status(cabinet.iot_imei_locker)
+        rssi_signal, door_state, temperatures, _, _ = parse_device_status(cabinet.iot_imei_locker)
         updated_fields = []
 
         if cabinet.rssi != rssi_signal:

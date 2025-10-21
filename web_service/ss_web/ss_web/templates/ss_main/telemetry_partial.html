@@ -110,15 +110,16 @@
     </div>
     <div class="col-md-3 mb-2">
   <label class="small font-weight-bold">
-    <a href="#" id="loadIccid" class="text-primary">ICCID</a>
-  </label>
-  <input
-    type="text"
-    id="iccidField"
-    readonly
-    class="form-control form-control-sm form-control-plaintext"
-    value=""
-  >
+  <a href="#" id="loadIccid" data-imei="{{ imei }}" class="text-primary">ICCID</a>
+</label>
+<input
+  type="text"
+  id="iccidField"
+  readonly
+  class="form-control form-control-sm form-control-plaintext"
+  value=""
+>
+
 </div>
   </div>
 
@@ -148,7 +149,7 @@
 
   <div class="d-flex flex-wrap mb-3">
     <div class="status-card">
-      <div class="font-weight-bold small">Reserv Voltage</div>
+      <div class="font-weight-bold small">Reserve Voltage</div>
       <div>{{ reserv_voltage }}</div>
     </div>
     <div class="status-card">
@@ -258,114 +259,99 @@
     </div>
 </div>
 <script>
-  function refreshTelemetry() {
-    const container = document.querySelector('.telemetry-container');
+/* ============================================================
+   Обновление телеметрии
+============================================================ */
+function refreshTelemetry() {
+  const container = document.querySelector('.telemetry-container');
+  container.classList.add('refreshing');
 
-    // включаем «режим обновления»
-    container.classList.add('refreshing');
+  const url = "{% url 'new_eng_telemetry' box_number %}";
 
-    // берём URL из Django-тега
-    const url = "{% url 'new_eng_telemetry' box_number %}";
+  fetch(url, { credentials: 'same-origin' })
+    .then(res => {
+      if (!res.ok) throw new Error(res.statusText);
+      return res.text();
+    })
+    .then(html => {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const newInner = doc.querySelector('.telemetry-container').innerHTML;
+      container.innerHTML = newInner;
 
-    fetch(url, { credentials: 'same-origin' })
-      .then(res => {
-        if (!res.ok) throw new Error(res.statusText);
-        return res.text();
-      })
-      .then(html => {
-        // парсим ответ, достаём новую обёртку
-        const doc       = new DOMParser().parseFromString(html, 'text/html');
-        const newInner  = doc.querySelector('.telemetry-container').innerHTML;
-
-        // подменяем содержимое (не контейнер, чтобы CSS остался)
-        container.innerHTML = newInner;
-        initIccidLoader();
-
-        // выключаем «режим обновления» через небольшой таймаут,
-        // чтобы успел отработать transition
-        setTimeout(() => {
-          container.classList.remove('refreshing');
-        }, 50);
-      })
-      .catch(err => {
-        console.error(err);
-        alert("Не удалось обновить телеметрию: " + err.message);
-        container.classList.remove('refreshing');
-      });
-  }
-
-
-
-  function loadCabinetSettings(cabinetId) {
-    $('#cabinetSettingsModal').modal('show');
-
-    // AJAX на нужный URL с cabinetId
-    $.ajax({
-        url: `/cabinet_settings2/${cabinetId}/`,
-        method: 'GET',
-        success(data) {
-            $('#cabinet-settings-content').html(data);
-        },
-        error() {
-            $('#cabinet-settings-content').html('<p>Error loading settings</p>');
-        }
+      // ✅ initIccidLoader больше не нужен — убрали вызов
+      setTimeout(() => container.classList.remove('refreshing'), 50);
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Не удалось обновить телеметрию: " + err.message);
+      container.classList.remove('refreshing');
     });
+}
+
+/* ============================================================
+  Cabinet Settings
+============================================================ */
+function loadCabinetSettings(cabinetId) {
+  $('#cabinetSettingsModal').modal('show');
+  $.ajax({
+    url: `/cabinet_settings2/${cabinetId}/`,
+    method: 'GET',
+    success(data) {
+      $('#cabinet-settings-content').html(data);
+    },
+    error() {
+      $('#cabinet-settings-content').html('<p>Error loading settings</p>');
+    }
+  });
 }
 
 function getCSRFToken() {
-    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+  const el = document.querySelector('[name=csrfmiddlewaretoken]');
+  return el ? el.value : '';
 }
 
 function saveCabinetSettings() {
-    var formDataArray = $('#cabinet-settings-form').serializeArray();
-    var formData = {};
+  const formDataArray = $('#cabinet-settings-form').serializeArray();
+  const formData = {};
 
-    // Преобразуем значения полей, которые должны быть числами
-    formDataArray.forEach(function (item) {
-        if (item.name === 'max_cycle_times' || item.name === 'year_of_manufacture') {
-            formData[item.name] = item.value;  // Преобразуем в целое число
-        } else if (item.name === 'sn_error' || item.name === 'allow_vendor' || item.name === 'allow_sw_ver') {
-            // Учитываем значение чекбоксов: если есть в массиве, значит true
-            formData[item.name] = true;
-        } else {
-            formData[item.name] = item.value;
-        }
-    });
+  formDataArray.forEach(item => {
+    if (['max_cycle_times', 'year_of_manufacture'].includes(item.name))
+      formData[item.name] = item.value;
+    else if (['sn_error', 'allow_vendor', 'allow_sw_ver'].includes(item.name))
+      formData[item.name] = true;
+    else
+      formData[item.name] = item.value;
+  });
 
-    // Добавляем значения для неотмеченных чекбоксов (они не отправляются по умолчанию)
-    $('input[type="checkbox"]:not(:checked)').each(function () {
-        formData[this.name] = false;  // Если чекбокс не выбран, сохраняем как false
-    });
+  $('input[type="checkbox"]:not(:checked)').each(function () {
+    formData[this.name] = false;
+  });
 
-    var csrfToken = getCSRFToken();
-
-    $.ajax({
-        url: $('#cabinet-settings-form').attr('action'),
-        method: 'POST',
-        data: formData,
-        headers: {
-            'X-CSRFToken': csrfToken  // Добавляем CSRF токен в заголовок
-        },
-        success: function(response) {
-            console.log(response);  // Лог ответа для отладки
-            if (response.success) {
-                alert('Settings saved successfully!');
-                $('#cabinetSettingsModal').modal('hide');
-            } else {
-                console.log(response.errors);  // Лог ошибок для отладки
-                alert('Error saving settings: ' + JSON.stringify(response.errors));
-            }
-        },
-        error: function(xhr, status, error) {
-            console.log(xhr.responseText);  // Лог ошибок для отладки
-            alert('Error saving settings');
-        }
-    });
+  $.ajax({
+    url: $('#cabinet-settings-form').attr('action'),
+    method: 'POST',
+    data: formData,
+    headers: { 'X-CSRFToken': getCSRFToken() },
+    success(response) {
+      if (response.success) {
+        alert('Settings saved successfully!');
+        $('#cabinetSettingsModal').modal('hide');
+      } else {
+        alert('Error saving settings: ' + JSON.stringify(response.errors));
+      }
+    },
+    error(xhr) {
+      console.log(xhr.responseText);
+      alert('Error saving settings');
+    }
+  });
 }
-</script>
-<script>
-  // Убедитесь, что функция getCSRFToken() уже определена в вашем шаблоне
-  document.querySelector('.sticker-area button').addEventListener('click', function() {
+
+/* ============================================================
+   Sticker
+============================================================ */
+document.addEventListener('click', e => {
+  if (e.target.matches('.sticker-area button')) {
     const input = document.querySelector('.sticker-area input');
     const stickerValue = input.value;
     fetch("{% url 'update_sticker' box_number %}", {
@@ -376,10 +362,9 @@ function saveCabinetSettings() {
       },
       body: new URLSearchParams({ sticker: stickerValue })
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
       if (data.success) {
-        // можно обновить поле, показать уведомление и т.д.
         alert('Sticker обновлён: ' + data.sticker);
       } else {
         alert('Ошибка при сохранении.');
@@ -389,50 +374,54 @@ function saveCabinetSettings() {
       console.error(err);
       alert('Сетевая ошибка при сохранении.');
     });
-  });
+  }
+});
 
+/* ============================================================
+    ICCID
+============================================================ */
+document.addEventListener('click', async (e) => {
+  const link = e.target.closest('#loadIccid');
+  if (!link) return;
 
- function initIccidLoader() {
-  const loadBtn = document.getElementById('loadIccid');
+  e.preventDefault();
+
+  const imei = link.dataset.imei || '';
   const iccidField = document.getElementById('iccidField');
 
-  if (!loadBtn || !iccidField) {
-    console.warn("⚠️ ICCID элементы не найдены");
+  if (!imei) {
+    console.warn('IMEI отсутствует в data-imei');
+    if (iccidField) iccidField.value = 'IMEI не найден';
+    return;
+  }
+  if (!iccidField) {
+    console.warn('Поле iccidField не найдено');
     return;
   }
 
-  // очищаем старые обработчики (если вызываем повторно)
-  loadBtn.replaceWith(loadBtn.cloneNode(true));
-  const newBtn = document.getElementById('loadIccid');
+  // индикатор загрузки
+  const oldText = link.textContent;
+  link.textContent = 'ICCID ⏳';
+  iccidField.value = 'loading...';
 
-  newBtn.addEventListener('click', function (e) {
-    e.preventDefault();
-    const imei = document.querySelector('input[readonly][value^="8620"]').value;
-    const url = `http://79.143.21.106:9000/command/${imei}/iccid`;
+  try {
+    const res = await fetch(`/iccid/${encodeURIComponent(imei)}/`, {
+      credentials: 'same-origin'
+    });
+    const data = await res.json();
 
-    console.log("⏳ Fetch ICCID from", url);
-    iccidField.value = 'Загрузка...';
-
-    fetch(url)
-      .then(r => r.text())
-      .then(data => {
-        console.log("✅ ICCID получен:", data);
-        iccidField.value = data.trim();
-      })
-      .catch(err => {
-        console.error("❌ Ошибка ICCID:", err);
-        iccidField.value = 'Ошибка загрузки';
-      });
-  });
-}
-
+    if (data && data.success) {
+      iccidField.value = (data.iccid || '').toString().trim();
+    } else {
+      iccidField.value = 'error: ' + (data && data.error ? data.error : 'нет данных');
+    }
+  } catch (err) {
+    console.error('ICCID fetch error:', err);
+    iccidField.value = 'Ошибка сети';
+  } finally {
+    link.textContent = oldText;
+  }
+});
 </script>
 
-
-<script>
-  $('#cabinetTelemetryModal').on('shown.bs.modal', function () {
-    console.log("📦 Модалка телеметрии показана, инициализируем ICCID");
-    initIccidLoader();
-  });
-</script>
 

@@ -49,6 +49,8 @@ urlpatterns = [
     path('save_cabinet_card/', views.save_cabinet_card, name='save_cabinet_card'),
     path("logreports/", views.report_page, name="report_page"),
     path("download_logreport/", views.download_report, name="download_report"),
+    path("iccid/<str:imei>/", views.get_iccid, name="get_iccid"),
+
 
     # Карта
     path('map/', map_view, name='map_view'),
