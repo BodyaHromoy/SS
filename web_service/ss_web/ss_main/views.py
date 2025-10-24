@@ -1068,29 +1068,43 @@ def user_cabinets(request):
     user = request.user
     zones = user.zones.all()
     cabinets = Cabinet.objects.filter(zone__in=zones)
+    cabinets_count = cabinets.count()
+    cabinets_with_coords = list(cabinets.values('shkaf_id', 'street', 'latitude', 'longitude'))
 
-    cabinet_statuses = []
+    total_capacity = 0
+    cabinets_status_counts = []
+
     for cabinet in cabinets:
-        cells = cabinet.cell_set.all()
-        ready_count = cells.filter(status='ready').count()
-        charging_count = cells.filter(status='charging').count()
-        empty_count = cells.filter(status='empty').count()
-        ban_count = cells.filter(status='BAN').count()
-        cabinet_statuses.append({
-            'cabinet': cabinet,
-            'ready_count': ready_count,
-            'charging_count': charging_count,
-            'empty_count': empty_count,
-            'ban_count': ban_count
+        # Суммируем capacity
+        try:
+            capacity_value = int(cabinet.capacity) if cabinet.capacity is not None else 0
+            total_capacity += capacity_value
+        except (ValueError, TypeError):
+            pass
 
-        })
+        # Получаем связанные ячейки
+        cells = Cell.objects.filter(cabinet_id=cabinet)
+        status_counts = {
+            'ready': cells.filter(status='ready').count(),
+            'charging': cells.filter(status='charging').count(),
+            'empty': cells.filter(status='empty').count(),
+            'Inactive': cells.filter(status='Inactive').count(),
+            'ban': cells.filter(status='BAN').count(),
+        }
+
+        rssi_signal = getattr(cabinet, 'rssi', '-')
+        cabinets_status_counts.append((cabinet, status_counts, rssi_signal))
 
     context = {
-        'cabinet_statuses': cabinet_statuses,
         'user': user,
         'zones': zones,
+        'cabinets_count': cabinets_count,
+        'total_cells_count': total_capacity,
+        'cabinets_status_counts': cabinets_status_counts,
+        'cabinets_with_coords': cabinets_with_coords,
     }
     return render(request, 'ss_main/user_cabinets.html', context)
+
 
 
 

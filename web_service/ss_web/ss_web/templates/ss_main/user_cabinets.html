@@ -1,228 +1,109 @@
 <!DOCTYPE html>
 {% load static %}
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Мои шкафы</title>
     <link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <style>
-    body {
-        background-color: #f0f0f0;
-        font-family: Arial, sans-serif;
-        padding: 1em;
-        margin: 0;
-        font-size: 18px;
-        box-sizing: border-box;
-    }
-
-
-    .info-header {
-    background-color: #0056B3;
-    color: white;
-    padding: 0.5em 1em; /* уменьшили отступы */
-    position: fixed;
-    width: 100%;
-    top: 0;
-    left: 0;
-    z-index: 1000;
-    text-align: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.95em; /* уменьшили шрифт */
-    line-height: 1.2;
-}
-
-.info-header p {
-    margin: 0;
-    font-size: 0.95em;
-}
-
-.info-header .user-info p {
-    margin-right: 0.5em;
-}
-
-.zones-list p {
-    margin: 0 0 0.2em 0;
-    font-weight: bold;
-    font-size: 0.95em;
-}
-
-.zones-list ul {
-    margin: 0;
-}
-
-.zones-list li {
-    font-size: 0.9em;
-}
-
-    .main-content {
-        padding-top: 4em;
-        padding-bottom: 5em;
-    }
-
-    h2 {
-        color: #333;
-        text-align: center;
-        font-size: 1.5em;
-        margin-bottom: 1em;
-    }
-
-    .table-container {
-        margin-bottom: 1em;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        background: #fff;
-        border: 1px solid #CCC;
-        border-radius: 1em;
-        overflow: hidden;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        font-size: 0.9em;
-    }
-
-    th, td {
-        padding: 0.5em;
-        text-align: left;
-        border-bottom: 1px solid #CCC;
-        box-sizing: border-box;
-    }
-
-    tr {
-        border-top: 1px solid #CCC;
-    }
-
-    th {
-        background-color: #f9f9f9;
-    }
-
-            .footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    background-color: #f0f0f0;
-    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
-    padding: 0.5em 1em;
-    display: flex;
-    justify-content: center;
-    align-items: center; /* Ensures both buttons are vertically centered */
-    gap: 1em;
-    z-index: 1000;
-}
-
-.footer a, .footer button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.75em 1.5em;
-    font-size: 1em;
-    text-align: center;
-}
-
-.footer button {
-    border: none;
-    cursor: pointer;
-}
-
-.footer button:hover {
-    background-color: #0056b3; /* Darker blue on hover */
-}
-
-.footer a {
-    text-decoration: none;
-    color: white;
-    background-color: #6c757d; /* Color for the back button */
-    border-radius: 0.3em;
-}
-
-.footer a:hover {
-    background-color: #5a6268; /* Darker color on hover */
-}
-
-
-    @media (max-width: 768px) {
-        table {
-            border-collapse: separate;
-        }
-
-        table tr td:first-child {
-            background-color: #c6c6c6; /* Light gray color */
-        }
-
-        thead {
-            display: none;
-        }
-
-        th, td {
-            display: block;
-            width: 100%;
-            text-align: right;
-        }
-
-        th {
-            text-align: left;
-        }
-
-        tr {
-            display: block;
-            margin-bottom: 1em;
-            background: #fff;
-            padding: 0.5em;
-            border-radius: 0.5em;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        td:before {
-            content: attr(data-label);
-            float: left;
-            font-weight: bold;
-        }
-
-        .btn-container {
-            flex-direction: column;
-        }
-
-        .btn-container a {
-            margin-top: 0.5em;
-        }
-
-        .btn-sm {
-            width: 100%;
+        body {
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
             padding: 1em;
+            margin: 0;
+            font-size: 18px;
             box-sizing: border-box;
         }
-
-        td:last-child {
-            padding: 0;
+        .info-header {
+            background-color: #0056B3;
+            color: white;
+            padding: 0.5em;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            text-align: left;
+            font-size: 0.85em;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
         }
-    }
+        .info-header p {
+            margin: 0.2em 0;
+        }
+        .zones-list {
+            text-align: right;
+        }
+        .zones-list p {
+            margin: 0;
+            font-weight: bold;
+        }
+        .zones-list ul {
+            margin: 0;
+            padding-left: 1.2em;
+        }
+        .zones-list li {
+            list-style: disc;
+            font-size: 0.9em;
+        }
+        .main-content {
+            padding-top: 7em;
+            padding-bottom: 5em;
+        }
+        .table-container {
+            margin-bottom: 1em;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 1em;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            font-size: 0.9em;
+            background-color: white;
+        }
+        th, td {
+            padding: 0.5em;
+            text-align: left;
+            box-sizing: border-box;
+            background-color: white;
+        }
+        th {
+            background-color: #f9f9f9;
+        }
+        .cabinet-header {
+            display: flex;
+            justify-content: space-between;
+            background-color: #d0d0d0;
+            padding: 0.3em 0.5em;
+            border-radius: 0.3em;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .cabinet-header span {
+            flex: 1;
+            text-align: center;
+            white-space: nowrap;
+            font-size: 0.75em;
+        }
+        .label-ready { color: green; }
+        .label-charging { color: blue; }
+        .label-empty { color: goldenrod; }
+        .label-inactive, .label-ban { color: red; }
 
-    .loader {
-        border: 16px solid #f3f3f3;
-        border-radius: 50%;
-        border-top: 16px solid #3498db;
-        width: 120px;
-        height: 120px;
-        animation: spin 2s linear infinite;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 2000;
-        display: none;
-    }
-    .footer {
+        .footer {
             position: fixed;
             bottom: 0;
+            left: 0;
+            right: 0;
             width: 100%;
-            background-color: white;
+            background-color: #f0f0f0;
             box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
             padding: 0.5em 1em;
             display: flex;
@@ -233,117 +114,175 @@
         }
 
         .footer button {
-            font-size: 1em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 0.75em 1.5em;
-        }
-    @keyframes spin {
-        0% { transform: translate(-50%, -50%) rotate(0deg); }
-        100% { transform: translate(-50%, -50%) rotate(360deg); }
-    }
-</style>
-</head>
-<body>
-    <div class="info-header">
-        <div class="user-info">
-            <p><strong>Логин:</strong> <span id="user-name">{{ user.username }}</span></p>
-        </div>
-        <div class="zones-list">
-            <p><strong>Зоны:</strong></p>
-            <ul>
-                {% for zone in zones %}
-                    <li>{{ zone.zone_name }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
-
-    <div class="main-content">
-        <h2></h2>
-        <div class="table-container">
-            <div class="table-responsive">
-                <table class="table table-striped table-bordered table-hover">
-                    <thead class="thead-dark">
-                        <tr>
-                            <th>Шкаф</th>
-                            <th>Готово</th>
-                            <th>Зарядка</th>
-                            <th>Пусто</th>
-                            <th>BAN</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="cabinet-table-body">
-                        {% for cabinet_status in cabinet_statuses %}
-                        <tr>
-                            <td data-label="Шкаф">{{ cabinet_status.cabinet.readable_name }}</td>
-                            <td data-label="Готово">{{ cabinet_status.ready_count }}</td>
-                            <td data-label="Зарядка">{{ cabinet_status.charging_count }}</td>
-                            <td data-label="Пусто">{{ cabinet_status.empty_count }}</td>
-                            <td data-label="BAN">{{ cabinet_status.ban_count }}</td>
-                            <td data-label=""><a href="{% url 'cabinet_details' cabinet_status.cabinet.shkaf_id %}" class="btn btn-primary btn-sm">Детали</a></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <div class="footer">
-    <form method="post" action="{% url 'logout' %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-secondary">Выход</button>
-    </form>
-    <button class="btn btn-primary" onclick="updateData()">Обновить</button>
-</div>
-
-    <div id="loader" class="loader"></div>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script>
-        function goBack() {
-            window.history.back();
+            font-size: 1em;
+            text-align: center;
+            border: none;
+            cursor: pointer;
+            border-radius: 0.3em;
+            transition: background-color 0.2s ease-in-out;
         }
 
-        async function updateData() {
-            const loader = document.getElementById('loader');
-            loader.style.display = 'block';
+        /* Серая кнопка "Выход" */
+        .footer .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
 
-            try {
-                const response = await fetch("{% url 'user_cabinets_api' %}");
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
+        .footer .btn-secondary:hover {
+            background-color: #5a6268;
+        }
 
-                const data = await response.json();
-                const tableBody = document.getElementById('cabinet-table-body');
-                tableBody.innerHTML = '';
+        /* Синяя кнопка "Обновить" */
+        .footer .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
 
-                data.forEach(cabinet_status => {
-                    const row = document.createElement('tr');
+        .footer .btn-primary:hover {
+            background-color: #0056b3;
+        }
 
-                    row.innerHTML = `
-                        <td data-label="Шкаф">${cabinet_status.readable_name}</td>
-                        <td data-label="Готово">${cabinet_status.ready_count}</td>
-                        <td data-label="Зарядка">${cabinet_status.charging_count}</td>
-                        <td data-label="Пусто">${cabinet_status.empty_count}</td>
-                        <td data-label="BAN">${cabinet_status.ban_count}</td>
-                        <td data-label=""><a href="/cabinet/${cabinet_status.shkaf_id}/" class="btn btn-primary btn-sm">Детали</a></td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-            } catch (error) {
-                console.error('Error:', error);
-            } finally {
-                loader.style.display = 'none';
+        @media (max-width: 768px) {
+            thead {
+                display: none;
+            }
+            table tr td:first-child {
+                background-color: #c6c6c6;
+            }
+            th, td {
+                display: block;
+                width: 100%;
+                text-align: right;
+            }
+            th { text-align: left; }
+            tr {
+                display: block;
+                margin-bottom: 1em;
+                background: #fff;
+                padding: 0.5em;
+                border-radius: 0.5em;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            }
+            td:before {
+                content: attr(data-label);
+                float: left;
+                font-weight: bold;
+            }
+            .btn-sm {
+                width: 100%;
+                padding: 1em;
+                box-sizing: border-box;
             }
         }
 
-        updateData()
-        setInterval(() => {
-        updateData();
-        }, 10000);
-    </script>
+.zones-list {
+    text-align: right;
+    padding-right: 0.8em; /* отступ справа */
+}
+.zones-list p {
+    margin: 0;
+    font-weight: bold;
+}
+.zones-list ul {
+    margin: 0;
+    padding-left: 1.2em;
+    max-height: 100px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #ccc #004a9f;
+}
+.zones-list ul::-webkit-scrollbar {
+    width: 6px;
+}
+.zones-list ul::-webkit-scrollbar-track {
+    background: #004a9f;
+}
+.zones-list ul::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 3px;
+}
+
+
+    </style>
+</head>
+
+<body>
+<header class="info-header">
+    <div>
+        <p><strong>Пользователь:</strong> {{ user.username }}</p>
+        <p><strong>Шкафов:</strong> {{ cabinets_count }}</p>
+        <p><strong>Ёмкость:</strong> {{ total_cells_count }}</p>
+    </div>
+    <div class="zones-list">
+        <p>Зоны:</p>
+        <ul>
+            {% for zone in zones %}
+                <li>{{ zone.zone_name }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</header>
+
+<main class="main-content">
+    <div class="table-container">
+        <table class="table table-striped table-bordered table-hover">
+            <thead class="thead-dark">
+                <tr>
+                    <th></th>
+                    <th class="label-ready">☑ - Ready</th>
+                    <th class="label-charging">↯ - Charging</th>
+                    <th class="label-empty">◯ - Empty</th>
+                    <th class="label-inactive">! - Inactive</th>
+                    <th class="label-ban">BAN</th>
+                    <th>Door state</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cabinet, status_counts, rssi_signal in cabinets_status_counts %}
+                <tr>
+                    <td>
+                        <div class="cabinet-header">
+                            <span>{{ cabinet.readable_name }}</span>
+                            <span>Cap:{{ cabinet.capacity|default:"-" }}</span>
+                            <span>Buf:{{ cabinet.buffer|default:"-" }}</span>
+                            <span>{{ rssi_signal|default:"-" }}</span>
+                        </div>
+                    </td>
+                    <td data-label="☑ - Ready" class="label-ready">{{ status_counts.ready }}</td>
+                    <td data-label="↯ - Charging" class="label-charging">{{ status_counts.charging }}</td>
+                    <td data-label="◯ - Empty" class="label-empty">{{ status_counts.empty }}</td>
+                    <td data-label="! - Inactive" class="label-inactive">{{ status_counts.Inactive }}</td>
+                    <td data-label="BAN" class="label-ban">{{ status_counts.ban }}</td>
+                    <td data-label="Door state">{{ cabinet.door_state|yesno:"Locked,Open" }}</td>
+                    <td data-label="">
+                        <a href="{% url 'cabinet_details' cabinet.shkaf_id %}" class="btn btn-primary btn-sm">Details</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<footer class="footer">
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-secondary">Выход</button>
+    </form>
+    <button class="btn-primary" onclick="updateData()">Обновить</button>
+</footer>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    function updateData() {
+        location.reload();
+    }
+</script>
+
 </body>
 </html>
