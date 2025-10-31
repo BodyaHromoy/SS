@@ -222,7 +222,13 @@
             <span id="lock-id">{{ cabinet.qr|default:"-" }}</span>
             <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('lock-id')">Копировать</button>
         </p>
-        <p><strong>Состояние двери:</strong> Не назначено</p>
+        <p>
+  <strong>Состояние двери:</strong>
+  <span id="door-state">
+    {{ door_state }}
+  </span>
+</p>
+
         <button class="btn btn-warning w-100 mt-2" onclick="openCabinet()">Открыть шкаф</button>
         <p><strong>1-я половина дня:</strong> <span id="first-half">{{ first_half_count }}</span></p>
         <p><strong>2-я половина дня:</strong> <span id="second-half">{{ second_half_count }}</span></p>

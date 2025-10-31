@@ -7,13 +7,13 @@ from paho.mqtt.client import Client
 from peewee import *
 
 try:
-    db = PostgresqlDatabase('test1', user='postgres', password='1337', host='192.168.1.98', port=5432)
+    db = PostgresqlDatabase('test1', user='postgres', password='1337', host='10.8.0.1', port=5432)
     print(":)")
 except:
     print(":(")
 
 try:
-    db2 = PostgresqlDatabase('test2', user='postgres', password='1337', host='192.168.1.98', port=5432)
+    db2 = PostgresqlDatabase('test2', user='postgres', password='1337', host='10.8.0.1', port=5432)
     print(":)")
 except:
     print(":(")
@@ -503,7 +503,7 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
             "CMD": int(1),
             "SN": sanitize(status_data.get("SN"))
         }
-        publish.single("test/back", json.dumps(json_data), hostname="192.168.1.98")
+        publish.single("test/back", json.dumps(json_data), hostname="185.22.67.4")
     elif en_error == True and existing_entry.is_error == False:
         print("слот тру я фолс")
         json_data = {
@@ -513,7 +513,7 @@ def update_entry(existing_entry, stat_id, status_data, en_error, end_id):
             "CMD": int(0),
             "SN": sanitize(status_data.get("SN"))
         }
-        publish.single("test/back", json.dumps(json_data), hostname="192.168.1.98")
+        publish.single("test/back", json.dumps(json_data), hostname="185.22.67.4")
     else:
         print("ну хз выключи компьютер")
 
@@ -768,16 +768,16 @@ def on_connect(client, userdata, flags, rc):
 
 
 HOST = "185.22.67.4"
-PORT = 8883
+PORT = 1883
 USER = "jet"
 PASS = "rf8kVJ"
 CLUCH = "brokerkeys/mosquitto.crt"
 
 async def start_mqtt_client():
     client = Client()
-    client.username_pw_set(USER, PASS)
-    client.tls_set(ca_certs=CLUCH)
-    client.tls_insecure_set(True)
+    #client.username_pw_set(USER, PASS)
+    #client.tls_set(ca_certs=CLUCH)
+    #client.tls_insecure_set(True)
     client.on_message = on_message
     client.on_publish = on_publish
     client.connect(HOST, PORT, 60)

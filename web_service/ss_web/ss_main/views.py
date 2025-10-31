@@ -1107,13 +1107,16 @@ def user_cabinets(request):
 
 
 
-
 @login_required
 def cabinet_details(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id, zone__users=request.user)
     cells = Cell.objects.filter(cabinet_id=cabinet)
     cabinet_setting = Cabinet_settings_for_auto_marking.objects.filter(cabinet_id=cabinet.shkaf_id).first()
     critical_temp = cabinet_setting.critical_temp if cabinet_setting else None
+
+    # 👇 вызываем парсер
+    rssi_signal, door_state, temperatures, out1_val, voltage_main = parse_device_status(cabinet.iot_imei_locker)
+
     status_counts = cells.values('status').annotate(count=Count('status')).order_by('status')
     status_slots = {}
 
@@ -1125,7 +1128,12 @@ def cabinet_details(request, shkaf_id):
         cap_percent = cell.cap_percent or "N/A"
         if status not in status_slots:
             status_slots[status] = []
-        status_slots[status].append({'endpointid': endpointid, 'charge': cap_percent, 'sw_name': sw_name, 'temp_cur1': temp_cur1,})
+        status_slots[status].append({
+            'endpointid': endpointid,
+            'charge': cap_percent,
+            'sw_name': sw_name,
+            'temp_cur1': temp_cur1,
+        })
 
     average_charge = cells.annotate(cap_percent_as_float=Cast('cap_percent', FloatField())).aggregate(
         average_charge=Avg('cap_percent_as_float'))['average_charge']
@@ -1139,39 +1147,37 @@ def cabinet_details(request, shkaf_id):
     today_9 = now.replace(hour=9, minute=0, second=0, microsecond=0)
     today_21 = now.replace(hour=21, minute=0, second=0, microsecond=0)
 
-    # По какому интервалу показывать first_half / second_half
     if now < today_9:
-        # Сейчас ночь: показать итог с 21:00 вчера до 09:00 сегодня
         target_date = (now - datetime.timedelta(days=1)).date()
         period = "night"
     elif now < today_21:
-        # Сейчас день: показать итог с 09:00 до 21:00 сегодня
         target_date = now.date()
         period = "day"
     else:
-        # Сейчас ночь: показать итог с 21:00 до 09:00 завтра
         target_date = now.date()
         period = "night"
 
-    # Получаем нужную запись истории
     history_entry = Cabinet_history.objects.filter(history_for=cabinet, date=target_date).first()
 
-    # Определяем, какие данные использовать
     if period == "day":
         first_half_count = history_entry.first_half if history_entry else 0
-        second_half_count = 0  # предыдущая ночь нас не интересует
+        second_half_count = 0
     else:
         first_half_count = history_entry.second_half if history_entry else 0
-        second_half_count = 0  # предыдущий день не нужен
+        second_half_count = 0
 
-    # Получаем "last full day" — интервал 09:00 до 09:00
-    # Берем вчерашнюю дату
     full_day_date = (now - datetime.timedelta(days=1)).date()
     full_day_entry = Cabinet_history.objects.filter(history_for=cabinet, date=full_day_date).first()
-    full_day_count = 0
-    if full_day_entry:
-        full_day_count = (full_day_entry.first_half or 0) + (full_day_entry.second_half or 0)
+    full_day_count = (full_day_entry.first_half or 0) + (full_day_entry.second_half or 0) if full_day_entry else 0
 
+    if door_state is True:
+        door_state_str = "Закрыта"
+    elif door_state is False:
+        door_state_str = "Открыта"
+    else:
+        door_state_str = "Неизвестно"
+
+    # --- 👇 добавляем door_state и RSSI в контекст ---
     context = {
         'cabinet': cabinet,
         'status_counts': json.dumps(list(status_counts)),
@@ -1184,8 +1190,13 @@ def cabinet_details(request, shkaf_id):
         'latitude': cabinet.latitude,
         'longitude': cabinet.longitude,
         'critical_temp': critical_temp,
+        'door_state': door_state_str,
+        'rssi_signal': rssi_signal,
+        'voltage_main': voltage_main,
     }
+
     return render(request, 'ss_main/scout_v2.html', context)
+
 
 
 @login_required
