@@ -418,8 +418,6 @@ def parse_device_status_power(iot_imei_locker, devices_cache=None):
         return None, None, None, []
 
 
-
-
 def new_eng_telemetry(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
     qr_code = cabinet.qr
