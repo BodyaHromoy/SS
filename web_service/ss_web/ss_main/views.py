@@ -375,6 +375,50 @@ def get_iccid(request, imei):
         return JsonResponse({"success": False, "error": f"Ошибка запроса: {e}"})
 
 
+def parse_device_status_power(iot_imei_locker, devices_cache=None):
+
+    try:
+        if not iot_imei_locker:
+            return None, None, None, []
+
+        # Загружаем кэш, если не передан
+        if devices_cache is None:
+            response = requests.get("http://79.143.21.106:9009/api/cache", timeout=3)
+            response.raise_for_status()
+            devices_cache = response.json()
+
+        target = next((dev for dev in devices_cache if str(dev.get("IMEI")) == str(iot_imei_locker)), None)
+        if not target:
+            return None, None, None, []
+
+        total_energy = round(target.get("TotalEnergy", 0) / 1000, 2) if target.get("TotalEnergy") else None
+        temperature = target.get("Temperature")
+        frequency = target.get("Line_frequency")
+
+        lines = []
+        for phase in ["A", "B", "C"]:
+            voltage = target.get(f"Voltage_{phase}")
+            current = target.get(f"Current_{phase}")
+            cos = target.get(f"PowerFactor_{phase}")
+            active_power = target.get(f"ActivePower_{phase}")  # ← используется как Predicted consumption (Вт)
+
+            if voltage is not None and current is not None:
+                lines.append({
+                    "name": phase,
+                    "V": round(voltage, 2),
+                    "A": round(current, 3),
+                    "cos": round(cos, 3) if cos is not None else "n/a",
+                    "P": round(active_power, 2) if active_power is not None else "n/a",
+                })
+
+        return total_energy, temperature, frequency, lines
+
+    except Exception as e:
+        print("parse_device_status_power error:", e)
+        return None, None, None, []
+
+
+
 
 def new_eng_telemetry(request, shkaf_id):
     cabinet = get_object_or_404(Cabinet, shkaf_id=shkaf_id)
@@ -383,6 +427,10 @@ def new_eng_telemetry(request, shkaf_id):
     t1 = t2 = t3 = t4 = ''
     out1_val = ''
     reserv_voltage = 'n/a'
+    power_count = ''
+    meter_temp = ''
+    frequency = ''
+    lines = []
 
     if cabinet.iot_imei_locker:
         rssi, door_state, temperatures, out1_val, voltage_main = parse_device_status(cabinet.iot_imei_locker)
@@ -394,31 +442,36 @@ def new_eng_telemetry(request, shkaf_id):
         if voltage_main:
             reserv_voltage = f"{voltage_main:.2f} В"
 
+        total_energy, temp, freq, lines_data = parse_device_status_power(cabinet.iot_imei_locker)
+        if total_energy:
+            power_count = f"{total_energy:.2f}"
+        if temp:
+            meter_temp = f"{temp:.1f} °C"
+        if freq:
+            frequency = f"{freq:.2f} Гц"
+        lines = lines_data
+
     context = {
         'box_number': cabinet.shkaf_id,
         'qr_code': qr_code,
         'imei': cabinet.iot_imei_locker or 'n/a',
         'iccid': cabinet.iot_imei_locker or 'n/a',
-        't1': t1,
-        't2': t2,
-        't3': t3,
-        't4': t4,
-        'out1': '',
-        'out2': '',
+        't1': t1, 't2': t2, 't3': t3, 't4': t4,
+        'out1': '', 'out2': '',
         'last_update': 'n/a',
-        'reserv_voltage': reserv_voltage,  # 👈 новое значение из JSON
+        'reserv_voltage': reserv_voltage,
         'power_voltage': 'n/a',
-        'in1': out1_val,
-        'in2': '', 'in3': '',
+        'in1': out1_val, 'in2': '', 'in3': '',
         'coordinates': '',
         'gps_info': '',
-        'power_count': '',
+        'power_count': power_count,
         'meter_update': '',
-        'meter_temp': '',
-        'frequency': '',
-        'lines': [],
+        'meter_temp': meter_temp,
+        'frequency': frequency,
+        'lines': lines,
         'sticker': getattr(cabinet, 'sticker', ''),
     }
+
     return render(request, 'ss_main/telemetry_partial.html', context)
 
 
