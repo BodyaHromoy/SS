@@ -5,7 +5,7 @@ import time
 import random
 import string
 
-broker = "192.168.1.98"
+broker = "185.22.67.4"
 port = 1883
 topic = "test1"
 
@@ -50,7 +50,7 @@ def create_status_message():
             "SN": generate_sn(),
             "SW_VER": "TEST",
             "TEMP_CUR1": "27",
-            "TEMP_CUR2": "28",
+            "TEMP_CUR2": "51",
             "TOTAL_CAPACITY": "15300",
             "VID": "JET",
             "VOLTAGE_CUR": "38.1",

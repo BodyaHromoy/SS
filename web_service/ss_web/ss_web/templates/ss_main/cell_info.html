@@ -1,0 +1,165 @@
+<div class="cell-info-container">
+  <h4 class="cell-info-title">Cell Dashboard</h4>
+
+  <table class="cell-info-table">
+    <tbody>
+      <tr><td>Endpoint ID</td><td>{{ cell.endpointid }}</td></tr>
+      <tr><td>Status</td><td>{{ cell.status|default:"-" }}</td></tr>
+      <tr><td>Capacity (%)</td><td>{{ cell.cap_percent|default:"-" }}</td></tr>
+      <tr><td>VID</td><td>{{ cell.vid|default:"-" }}</td></tr>
+      <tr><td>SW Ver</td><td>{{ cell.sw_ver|default:"-" }}</td></tr>
+      <tr><td>SN</td><td>{{ cell.sn|default:"-" }}</td></tr>
+      <tr><td>Cycle Times</td><td>{{ cell.cycle_times|default:"-" }}</td></tr>
+      <tr><td>Total Capacity</td><td>{{ cell.total_capacity|default:"-" }}</td></tr>
+      <tr><td>Remaining Cap</td><td>{{ cell.remaining_cap|default:"-" }}</td></tr>
+      <tr><td>Voltage (V)</td><td>{{ cell.voltage_cur|default:"-" }}</td></tr>
+      <tr><td>Current (A)</td><td>{{ cell.current_cur|default:"-" }}</td></tr>
+      <tr><td>Temp 1 (°C)</td><td>{{ cell.temp_cur1|default:"-" }}</td></tr>
+      <tr><td>Temp 2 (°C)</td><td>{{ cell.temp_cur2|default:"-" }}</td></tr>
+      <tr><td>Health</td><td>{{ cell.healthy|default:"-" }}</td></tr>
+      <tr><td>Message</td><td>{{ cell.message|default:"-" }}</td></tr>
+    </tbody>
+  </table>
+
+  <h5 class="chart-title">Voltage Cells</h5>
+  <canvas id="voltChart"></canvas>
+
+  <h5 class="chart-title">Temperature Sensors</h5>
+  <canvas id="tempChart"></canvas>
+</div>
+
+<style>
+.cell-info-container {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+.cell-info-title {
+  text-align: center;
+  font-size: 1.3rem;
+  color: #2c3e50;
+  font-weight: 600;
+  border-bottom: 2px solid #3498db;
+  margin-bottom: 15px;
+  padding-bottom: 5px;
+}
+.cell-info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+.cell-info-table td {
+  padding: 8px;
+  border-bottom: 1px solid #e1e8ed;
+  color: #2c3e50;
+}
+.cell-info-table td:nth-child(2) {
+  color: #27ae60;
+  font-weight: 500;
+}
+.chart-title {
+  color: #2c3e50;
+  text-align: center;
+  font-weight: 600;
+  margin: 15px 0 8px;
+}
+canvas {
+  width: 100% !important;
+  max-width: 800px;
+  height: 260px !important;
+  margin: 0 auto 20px;
+  border-radius: 6px;
+  background: #f9fbfd;
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.05);
+}
+</style>
+
+<script>
+function initializeCellCharts() {
+  const voltages = {{ voltages|safe }};
+  const temps = {{ temps|safe }};
+
+  // Убедимся, что Chart.js уже загружен
+  if (typeof Chart === 'undefined') {
+    console.error("Chart.js not loaded.");
+    return;
+  }
+
+  const voltCanvas = document.getElementById('voltChart');
+  const tempCanvas = document.getElementById('tempChart');
+  if (!voltCanvas || !tempCanvas) return;
+
+  // === Voltage chart ===
+  new Chart(voltCanvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: voltages.map((_, i) => `Cell ${i + 1}`),
+      datasets: [{
+        label: 'Voltage (V)',
+        data: voltages,
+        backgroundColor: voltages.map(v =>
+          v < 3.5 ? '#e74c3c' : v < 3.7 ? '#f1c40f' : '#2ecc71'
+        ),
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          min: 3.2,
+          max: 4.3,
+          title: { display: true, text: 'Voltage (V)', color: '#2c3e50' },
+          ticks: { color: '#2c3e50' },
+          grid: { color: '#ecf0f1' }
+        },
+        x: {
+          ticks: { color: '#2c3e50' },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+
+  // === Temperature chart ===
+  new Chart(tempCanvas.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: ['Sensor 1', 'Sensor 2'],
+      datasets: [{
+        label: 'Temperature (°C)',
+        data: temps,
+        borderColor: '#e67e22',
+        backgroundColor: 'rgba(230,126,34,0.15)',
+        fill: true,
+        tension: 0.35,
+        pointRadius: 5,
+        pointBackgroundColor: '#e67e22'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          min: 0,
+          max: 60,
+          title: { display: true, text: 'Temperature (°C)', color: '#2c3e50' },
+          ticks: { color: '#2c3e50' },
+          grid: { color: '#ecf0f1' }
+        },
+        x: {
+          ticks: { color: '#2c3e50' },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+// Вызываем инициализацию после того, как HTML вставлен в DOM
+setTimeout(initializeCellCharts, 100);
+</script>

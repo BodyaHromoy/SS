@@ -42,8 +42,18 @@
             <td><input type="checkbox" class="checkbox-custom" {% if cell.is_error %}checked{% endif %} disabled></td>
             <td>{{ cell.message|default:"-" }}</td>
             <td>
-                <button class="btn btn-primary btn-sm" onclick="sendCommand('{{ cell.endpointid }}', '{{ cell.cabinet_id.shkaf_id }}')">Send command</button>
-            </td>
+    <div class="d-flex">
+        <button class="btn btn-primary btn-sm mr-1"
+                onclick="sendCommand('{{ cell.cabinet_id.shkaf_id }}', '{{ cell.endpointid }}')">
+            Send command
+        </button>
+        <button class="btn btn-info btn-sm"
+                onclick="showCellInfo('{{ cell.id }}')">
+            More info
+        </button>
+    </div>
+</td>
+
         </tr>
         {% endfor %}
     </tbody>

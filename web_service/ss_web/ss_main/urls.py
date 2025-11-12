@@ -50,6 +50,8 @@ urlpatterns = [
     path("logreports/", views.report_page, name="report_page"),
     path("download_logreport/", views.download_report, name="download_report"),
     path("iccid/<str:imei>/", views.get_iccid, name="get_iccid"),
+    path('cell_info/<int:cell_id>/', views.cell_info, name='cell_info'),
+
 
 
     # Карта

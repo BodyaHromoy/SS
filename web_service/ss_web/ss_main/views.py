@@ -112,14 +112,19 @@ def send_command(request):
         cmd_number = request.POST.get('cmd_number')
 
         try:
-            if cmd_number == "del":
-                deleted_count, _ = Cell.objects.filter(cabinet_id__shkaf_id=cabinet_id, endpointid=endpoint_id).delete()
-                if deleted_count > 0:
-                    return JsonResponse({"success": True, "message": "Запись успешно удалена!"})
-                else:
-                    return JsonResponse({"success": False, "message": "Запись не найдена для удаления."})
+            cabinet = Cabinet.objects.filter(shkaf_id=str(cabinet_id).strip()).first()
+            if not cabinet:
+                return JsonResponse({"success": False, "message": "Шкаф не найден."})
 
-            record = Cell.objects.get(cabinet_id__shkaf_id=cabinet_id, endpointid=endpoint_id)
+            if cmd_number == "del":
+                deleted_count, _ = Cell.objects.filter(cabinet_id=cabinet, endpointid=int(endpoint_id)).delete()
+                if deleted_count:
+                    return JsonResponse({"success": True, "message": "Запись успешно удалена!"})
+                return JsonResponse({"success": False, "message": "Запись не найдена для удаления."})
+
+            record = Cell.objects.filter(cabinet_id=cabinet, endpointid=int(endpoint_id)).first()
+            if not record:
+                return JsonResponse({"success": False, "message": "Ячейка не найдена."})
 
             if cmd_number == '1':
                 record.is_error = True
@@ -131,23 +136,23 @@ def send_command(request):
 
             json_data = {
                 "Type": "cmd",
-                "StationID": int(record.cabinet_id_id),
+                "StationID": int(cabinet.id),
                 "EndpointID": int(record.endpointid),
                 "CMD": int(cmd_number),
                 "SN": record.sn
             }
 
             client = mqtt.Client()
-            client.connect("192.168.1.98", 1883, 60)
+            client.connect("185.22.67.4", 1883, 60)
             client.publish("test/back", json.dumps(json_data))
             client.disconnect()
 
             return JsonResponse({"success": True, "message": "Команда отправлена успешно!"})
-        except Cell.DoesNotExist:
-            return JsonResponse({"success": False, "message": "Ячейка не найдена."})
         except Exception as e:
             return JsonResponse({"success": False, "message": f"Ошибка при обработке команды: {str(e)}"})
+
     return JsonResponse({"success": False, "message": "Неверный запрос."})
+
 
 
 @user_passes_test(is_engineer)
@@ -180,6 +185,49 @@ def new_eng_cabinet_detail(request, shkaf_id):
         'cabinet': cabinet,
         'cells': cells
     })
+
+
+@user_passes_test(is_engineer)
+def cell_info(request, cell_id):
+    """
+    Возвращает HTML-шаблон с подробной информацией по ячейке (slot),
+    включая таблицу и встроенные графики.
+    """
+    cell = get_object_or_404(Cell, id=cell_id)
+
+    # Попробуем получить список напряжений из core_volt (если есть)
+    voltages = []
+    if cell.core_volt:
+        try:
+            # core_volt может храниться в виде строки вроде "['3.81','3.80',...]"
+            raw = cell.core_volt.strip("[] ").replace("'", "").split(",")
+            voltages = [round(float(v), 3) for v in raw if v and v not in ("-0.001", "0", "None")]
+        except Exception:
+            voltages = []
+
+    # Если список пустой — сгенерируем "фиктивные" значения на основе voltage_cur
+    if not voltages:
+        try:
+            volt_value = float(cell.voltage_cur) / 10 if cell.voltage_cur else 0
+        except ValueError:
+            volt_value = 0.0
+        voltages = [round(volt_value + (i * 0.005 - 0.025), 3) for i in range(10)]
+
+    # Температуры
+    temps = [
+        float(cell.temp_cur1) if cell.temp_cur1 else 0,
+        float(cell.temp_cur2) if cell.temp_cur2 else 0
+    ]
+
+    context = {
+        "cell": cell,
+        "voltages": voltages,
+        "temps": temps,
+    }
+
+    return render(request, "ss_main/cell_info.html", context)
+
+
 
 
 @user_passes_test(is_engineer)
@@ -1165,7 +1213,6 @@ def cabinet_details(request, shkaf_id):
     cabinet_setting = Cabinet_settings_for_auto_marking.objects.filter(cabinet_id=cabinet.shkaf_id).first()
     critical_temp = cabinet_setting.critical_temp if cabinet_setting else None
 
-    # 👇 вызываем парсер
     rssi_signal, door_state, temperatures, out1_val, voltage_main = parse_device_status(cabinet.iot_imei_locker)
 
     status_counts = cells.values('status').annotate(count=Count('status')).order_by('status')

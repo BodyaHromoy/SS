@@ -668,8 +668,28 @@
   </div>
 </div>
 
+<!-- Cell Info Modal -->
+<div class="modal fade" id="cellInfoModal" tabindex="-1" role="dialog" aria-labelledby="cellInfoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title" id="cellInfoModalLabel"></h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span>&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="cellInfoModalBody">
+        <p>Loading...</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <style>
-/* Скрываем старые поля, но не удаляем их */
 #cabinetForm .hidden-field {
   display: none !important;
 }
@@ -681,6 +701,8 @@
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
 /* Cabinet Settings */
 function loadCabinetSettings(cabinetId) {
@@ -1078,6 +1100,119 @@ function saveCard() {
             console.error(xhr.responseText);
             alert("Server error while saving");
         }
+    });
+}
+
+function sendCommand(cabinet_id, endpoint_id) {
+    const cmd_number = prompt("1, 0, del:");
+    if (!cmd_number) return alert("Команда не введена.");
+
+    $.ajax({
+        url: "{% url 'send_command' %}",
+        type: "POST",
+        data: {
+            cabinet_id: cabinet_id,
+            endpoint_id: endpoint_id,
+            cmd_number: cmd_number,
+            csrfmiddlewaretoken: getCSRFToken()
+        },
+        success: function (response) {
+            alert(response.message);
+            if (response.success) refreshData();
+        },
+        error: function (xhr) {
+            alert("Ошибка при отправке команды.");
+            console.error(xhr.responseText);
+        }
+    });
+}
+
+
+function showCellInfo(cell_id) {
+    $('#cellInfoModalBody #cellInfoTableBody').html('<tr><td colspan="2" class="text-center">Loading…</td></tr>');
+    $('#cellInfoModal').modal('show');
+
+    $.get(`/cell_info/${cell_id}/`, function (data) {
+        // Если сервер возвращает HTML-таблицу (как раньше)
+        if (typeof data === "string") {
+            $('#cellInfoModalBody').html(data);
+            return;
+        }
+
+        // Если вернулся JSON, красиво вставляем в таблицу
+        const tableBody = Object.entries(data).map(([key, val]) =>
+            `<tr><td>${key.replace(/_/g, ' ')}</td><td style="color:#27ae60; font-weight:bold;">${val || '-'}</td></tr>`
+        ).join('');
+        $('#cellInfoTableBody').html(tableBody);
+
+        // --- Voltage Chart ---
+        const ctxV = document.getElementById('voltChart').getContext('2d');
+        const voltData = data.voltages || [4.1, 4.05, 4.07, 4.09, 4.08, 4.1, 4.09, 4.07, 4.08, 4.1];
+        new Chart(ctxV, {
+            type: 'bar',
+            data: {
+                labels: voltData.map((_, i) => `Cell ${i + 1}`),
+                datasets: [{
+                    label: 'Voltage (V)',
+                    data: voltData,
+                    backgroundColor: voltData.map(v => v < 3.5 ? '#e74c3c' : v < 3.7 ? '#f1c40f' : '#2ecc71')
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: { label: ctx => `${ctx.raw.toFixed(3)} V` }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 3.2,
+                        max: 4.3,
+                        title: { display: true, text: 'Voltage (V)' }
+                    }
+                }
+            }
+        });
+
+        // --- Temperature Chart ---
+        const ctxT = document.getElementById('tempChart').getContext('2d');
+        const temps = [data.temp_cur1 || 30, data.temp_cur2 || 31];
+        new Chart(ctxT, {
+            type: 'line',
+            data: {
+                labels: ['Sensor 1', 'Sensor 2'],
+                datasets: [{
+                    label: 'Temperature (°C)',
+                    data: temps,
+                    borderColor: '#e67e22',
+                    backgroundColor: 'rgba(230,126,34,0.2)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 60,
+                        title: { display: true, text: 'Temperature (°C)' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: { label: ctx => `${ctx.raw} °C` }
+                    }
+                }
+            }
+        });
+    }).fail(function () {
+        $('#cellInfoTableBody').html('<tr><td colspan="2" class="text-danger text-center">Error loading data.</td></tr>');
     });
 }
 
