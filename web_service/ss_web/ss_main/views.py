@@ -1269,11 +1269,11 @@ def cabinet_details(request, shkaf_id):
     full_day_count = (full_day_entry.first_half or 0) + (full_day_entry.second_half or 0) if full_day_entry else 0
 
     if door_state is True:
-        door_state_str = "Закрыта"
+        door_state_str = "Locked"
     elif door_state is False:
-        door_state_str = "Открыта"
+        door_state_str = "Open"
     else:
-        door_state_str = "Неизвестно"
+        door_state_str = "-"
 
     # --- 👇 добавляем door_state и RSSI в контекст ---
     context = {

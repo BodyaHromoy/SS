@@ -229,28 +229,37 @@
     }
 
     /* === Панель и кнопка === */
-    .control-panel {
-      text-align: center;
-      padding: 1.5em;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      margin-bottom: 1.5em;
-    }
+   .open-btn {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 500;
+  padding: 0.7em 0; /* немного увеличим высоту */
+  border-radius: 8px;
+  background: #ffc107;
+  border: none;         /* без рамки */
+  box-shadow: none;     /* без тени */
+  transition: background 0.2s ease, transform 0.15s ease;
+}
 
-    .open-btn {
-      display: block;
-      margin: 0 auto;
-      font-size: 1.2rem;
-      font-weight: 500;
-      padding: 0.9em 1em;
-      border-radius: 8px;
-      white-space: nowrap;
-      width: 100%;
-      max-width: 480px;
-      border: 1px solid #ccc;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-    }
+.open-btn:hover {
+  background: #ffca2c;
+  transform: scale(1.01);
+}
+
+/* чтобы сам контейнер не ограничивал кнопку */
+.control-panel {
+  padding: 0;           /* убираем внутренние отступы */
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 1.5em;
+  overflow: hidden;     /* чтобы радиус контейнера совпадал с кнопкой */
+}
+
+
 
     #map {
       height: 400px;
@@ -318,17 +327,13 @@
 <div class="x-modal" id="info-modal">
   <div class="x-modal-content">
     <button class="x-close" data-close="#info-modal">X</button>
-    <h5 class="mb-3">Информация о шкафе</h5>
-    <p><strong>Зона:</strong> {{ cabinet.zone.zone_name|default:"-" }}</p>
-    <p><strong>Локация:</strong> {{ cabinet.street|default:"-" }}</p>
-    <p><strong>Дополнительно:</strong> {{ cabinet.extra_inf|default:"-" }}</p>
-    <p><strong>ID Замка:</strong> <span id="lock-id">{{ cabinet.qr|default:"-" }}</span>
-      <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('lock-id')">Копировать</button>
-    </p>
-
+    <h5 class="mb-3">Additional</h5>
+    <p><strong>Zone:</strong> {{ cabinet.zone.zone_name|default:"-" }}</p>
+    <p><strong>Location:</strong> {{ cabinet.street|default:"-" }}</p>
+    <p><strong>Additional:</strong> {{ cabinet.extra_inf|default:"-" }}</p>
     <hr>
 
-    <h6 class="mt-3 mb-2">Выгрузка отчета</h6>
+    <h6 class="mt-3 mb-2">Counter Report</h6>
     <form method="get" action="{% url 'export_battery_history' cabinet.shkaf_id %}"
           class="d-flex justify-content-between align-items-center flex-wrap"
           style="gap:10px;">
@@ -336,7 +341,7 @@
       <input type="date" id="end_date" name="end_date" class="form-control" style="width:150px;">
       <button type="submit" class="btn btn-success" style="white-space:nowrap;">
         <span class="btn-icon">↓</span>
-        <span class="btn-text">Скачать отчет</span>
+        <span class="btn-text">Download</span>
       </button>
     </form>
   </div>
@@ -346,7 +351,7 @@
   <div class="x-modal-content">
     <button class="x-close" data-close="#map-modal">X</button>
     <h5>Локация Шкафа №{{ cabinet.shkaf_id }}</h5>
-    <button class="btn btn-primary mb-2" id="gmaps-btn">Открыть в Google Maps</button>
+    <button class="btn btn-primary mb-2" id="gmaps-btn">Google Maps</button>
     <div id="map"></div>
   </div>
 </div>
@@ -359,7 +364,7 @@
 
   <div class="card control-panel">
     <button type="button" class="btn btn-warning open-btn" onclick="openCabinet()">
-      🚪 Открыть дверь
+      Open Door
     </button>
   </div>
 
@@ -368,10 +373,10 @@
       <table id="statusTable">
         <thead>
           <tr>
-            <th>Слот</th>
-            <th>Статус</th>
-            <th>Заряд</th>
-            <th>Модель</th>
+            <th>Slot</th>
+            <th>Status</th>
+            <th>SoC</th>
+            <th>Model</th>
             <th>t°</th>
           </tr>
         </thead>
