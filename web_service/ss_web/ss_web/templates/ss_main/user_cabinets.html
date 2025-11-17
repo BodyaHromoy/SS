@@ -19,6 +19,9 @@
             font-size: 18px;
             box-sizing: border-box;
         }
+
+        /* ---------------- HEADER ---------------- */
+
         .info-header {
             background-color: #0056B3;
             color: white;
@@ -28,55 +31,80 @@
             top: 0;
             left: 0;
             z-index: 1000;
-            text-align: left;
-            font-size: 0.85em;
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center; /* кнопки выровнены по центру */
+            font-size: 0.9em;
         }
+
         .info-header p {
             margin: 0.2em 0;
         }
-        .zones-list {
-            text-align: right;
+
+        .menu-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4em;
+            height: 100%;
         }
-        .zones-list p {
-            margin: 0;
-            font-weight: bold;
+
+        .menu-btn {
+            background: #004a9f;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 0.3em 0.8em;
+            border-radius: 0.3em;
+            font-size: 1.3em;
         }
-        .zones-list ul {
-            margin: 0;
-            padding-left: 1.2em;
+
+        .menu-btn:hover {
+            background: #003d84;
         }
-        .zones-list li {
-            list-style: disc;
-            font-size: 0.9em;
+
+        .dropdown-menu-custom {
+            position: fixed;
+            top: 4.5em;
+            right: 1em;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 0.5em;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1100;
+            padding: 1em;
+            min-width: 200px;
         }
+
+        .d-none { display: none !important; }
+
+        /* ---------------- MAIN CONTENT ---------------- */
+
         .main-content {
-            padding-top: 7em;
+            padding-top: 7.5em;
             padding-bottom: 5em;
         }
-        .table-container {
-            margin-bottom: 1em;
-        }
+
+        .table-container { margin-bottom: 1em; }
+
         table {
             width: 100%;
             border-collapse: collapse;
             border-radius: 1em;
             overflow: hidden;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            font-size: 0.9em;
             background-color: white;
         }
+
         th, td {
             padding: 0.5em;
             text-align: left;
-            box-sizing: border-box;
-            background-color: white;
         }
+
         th {
             background-color: #f9f9f9;
         }
+
         .cabinet-header {
             display: flex;
             justify-content: space-between;
@@ -86,23 +114,26 @@
             font-weight: bold;
             font-size: 0.9em;
         }
+
         .cabinet-header span {
             flex: 1;
             text-align: center;
             white-space: nowrap;
             font-size: 0.75em;
         }
+
         .label-ready { color: green; }
         .label-charging { color: blue; }
         .label-empty { color: goldenrod; }
         .label-inactive, .label-ban { color: red; }
+
+        /* ---------------- FOOTER ---------------- */
 
         .footer {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            width: 100%;
             background-color: #f0f0f0;
             box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
             padding: 0.5em 1em;
@@ -114,118 +145,128 @@
         }
 
         .footer button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
             padding: 0.75em 1.5em;
             font-size: 1em;
-            text-align: center;
             border: none;
-            cursor: pointer;
             border-radius: 0.3em;
-            transition: background-color 0.2s ease-in-out;
+            cursor: pointer;
         }
 
-        /* Серая кнопка "Выход" */
-        .footer .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-        }
+        .footer .btn-secondary { background-color: #6c757d; color: white; }
+        .footer .btn-secondary:hover { background-color: #5a6268; }
 
-        .footer .btn-secondary:hover {
-            background-color: #5a6268;
-        }
+        .footer .btn-primary { background-color: #007bff; color: white; }
+        .footer .btn-primary:hover { background-color: #0056b3; }
 
-        /* Синяя кнопка "Обновить" */
-        .footer .btn-primary {
-            background-color: #007bff;
-            color: white;
-        }
-
-        .footer .btn-primary:hover {
-            background-color: #0056b3;
-        }
+        /* ---------------- MOBILE ---------------- */
 
         @media (max-width: 768px) {
-            thead {
-                display: none;
-            }
-            table tr td:first-child {
-                background-color: #c6c6c6;
-            }
+            thead { display: none; }
+
             th, td {
                 display: block;
                 width: 100%;
                 text-align: right;
             }
-            th { text-align: left; }
+
             tr {
                 display: block;
                 margin-bottom: 1em;
-                background: #fff;
                 padding: 0.5em;
                 border-radius: 0.5em;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
             }
+
             td:before {
                 content: attr(data-label);
                 float: left;
                 font-weight: bold;
             }
+
             .btn-sm {
                 width: 100%;
                 padding: 1em;
-                box-sizing: border-box;
             }
         }
 
-.zones-list {
-    text-align: right;
-    padding-right: 0.8em; /* отступ справа */
-}
-.zones-list p {
-    margin: 0;
-    font-weight: bold;
-}
-.zones-list ul {
-    margin: 0;
-    padding-left: 1.2em;
-    max-height: 100px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: #ccc #004a9f;
-}
-.zones-list ul::-webkit-scrollbar {
-    width: 6px;
-}
-.zones-list ul::-webkit-scrollbar-track {
-    background: #004a9f;
-}
-.zones-list ul::-webkit-scrollbar-thumb {
-    background-color: #ccc;
-    border-radius: 3px;
-}
+        /* ---------------- MAP MODAL ---------------- */
 
+        #mapModal {
+            position: fixed;
+            top: 5em;
+            left: 5%;
+            width: 90%;
+            height: 80%;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 0.5em;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            z-index: 2000;
+            overflow: hidden;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        .close-map-btn {
+            position: absolute;
+            top: 0.5em;
+            right: 0.5em;
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 0.4em 0.8em;
+            font-size: 1em;
+            border-radius: 0.3em;
+            cursor: pointer;
+            z-index: 2100;
+        }
 
     </style>
 </head>
 
 <body>
+
+<!-- ---------------- HEADER ---------------- -->
+
 <header class="info-header">
     <div>
         <p><strong>Пользователь:</strong> {{ user.username }}</p>
         <p><strong>Шкафов:</strong> {{ cabinets_count }}</p>
-        <p><strong>Ёмкость:</strong> {{ total_cells_count }}</p>
+
+        <p><strong>Город:</strong>
+            {% if user.citys.all %}
+                {% for city in user.citys.all %}
+                    {{ city.city_name }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            {% else %}
+                не указан
+            {% endif %}
+        </p>
     </div>
-    <div class="zones-list">
-        <p>Зоны:</p>
-        <ul>
-            {% for zone in zones %}
-                <li>{{ zone.zone_name }}</li>
-            {% endfor %}
-        </ul>
+
+    <div class="menu-buttons">
+        <button class="menu-btn" onclick="toggleMap()">📍</button>
+        <button class="menu-btn" onclick="toggleMenu()">☰</button>
     </div>
 </header>
+
+<!-- ---------------- MENU ---------------- -->
+
+<div id="dropdownMenu" class="dropdown-menu-custom d-none">
+    <button class="btn btn-primary btn-block" disabled>Меню пока без функционала</button>
+</div>
+
+<!-- ---------------- MAP MODAL ---------------- -->
+
+<div id="mapModal" class="d-none">
+    <div id="map"></div>
+    <button class="close-map-btn" onclick="closeMap()">✖</button>
+</div>
+
+<!-- ---------------- TABLE ---------------- -->
 
 <main class="main-content">
     <div class="table-container">
@@ -253,13 +294,15 @@
                             <span>{{ rssi_signal|default:"-" }}</span>
                         </div>
                     </td>
+
                     <td data-label="☑ - Ready" class="label-ready">{{ status_counts.ready }}</td>
                     <td data-label="↯ - Charging" class="label-charging">{{ status_counts.charging }}</td>
                     <td data-label="◯ - Empty" class="label-empty">{{ status_counts.empty }}</td>
                     <td data-label="! - Inactive" class="label-inactive">{{ status_counts.Inactive }}</td>
                     <td data-label="BAN" class="label-ban">{{ status_counts.ban }}</td>
                     <td data-label="Door state">{{ cabinet.door_state|yesno:"Locked,Open" }}</td>
-                    <td data-label="">
+
+                    <td>
                         <a href="{% url 'cabinet_details' cabinet.shkaf_id %}" class="btn btn-primary btn-sm">Details</a>
                     </td>
                 </tr>
@@ -269,19 +312,67 @@
     </div>
 </main>
 
+<!-- ---------------- FOOTER ---------------- -->
+
 <footer class="footer">
     <form method="post" action="{% url 'logout' %}">
         {% csrf_token %}
         <button type="submit" class="btn-secondary">Выход</button>
     </form>
+
     <button class="btn-primary" onclick="updateData()">Обновить</button>
 </footer>
 
+<!-- ---------------- JS ---------------- -->
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 <script>
     function updateData() {
         location.reload();
     }
+
+    function toggleMenu() {
+        document.getElementById('dropdownMenu').classList.toggle('d-none');
+    }
+
+    function closeMap() {
+        document.getElementById('mapModal').classList.add('d-none');
+    }
+
+    let mapInit = false;
+
+    function toggleMap() {
+        const modal = document.getElementById('mapModal');
+        modal.classList.remove('d-none');
+
+        if (!mapInit) {
+            const map = L.map('map').setView([43.238949, 76.889709], 12);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: 'Map data © OpenStreetMap contributors'
+            }).addTo(map);
+
+            const cabinets = {{ cabinets_with_coords|safe }};
+
+            cabinets.forEach(c => {
+                if (c.latitude && c.longitude) {
+                    L.marker([c.latitude, c.longitude])
+                        .addTo(map)
+                        .bindPopup(`<strong>${c.shkaf_id}</strong><br>${c.street}`);
+                }
+            });
+
+            mapInit = true;
+        }
+    }
+
+    document.addEventListener('click', function (event) {
+        const menu = document.getElementById('dropdownMenu');
+        if (!event.target.closest('.menu-btn') && !menu.contains(event.target)) {
+            menu.classList.add('d-none');
+        }
+    });
 </script>
 
 </body>
