@@ -24,25 +24,21 @@ class CustomUser(AbstractUser):
         ('regional_manager', 'Regional Manager'),
         ('engineer', 'Engineer'),
     )
+
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='courier')
 
-    groups = models.ManyToManyField(
-        'auth.Group',
-        related_name='customuser_set',
+    # 👇 Новое поле для привязки зон
+    assigned_zones = models.ManyToManyField(
+        'Zone',
+        related_name='assigned_users',
         blank=True,
-        help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
-        related_query_name='user',
-    )
-    user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        related_name='customuser_set',
-        blank=True,
-        help_text='Specific permissions for this user.',
-        related_query_name='user',
+        verbose_name='Назначенные зоны'
     )
 
     def __str__(self):
         return f'{self.username} - {self.role}'
+
+
 
 
 class Vendor(models.Model):

@@ -4,265 +4,218 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Courier</title>
-
 </head>
 <body>
-    <a href="javascript:history.back()" class="back-button">
-            <span class="back-icon"></span><style>
-        body {
-            background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 1em;
-            font-size: 16px;
-            line-height: 1.6;
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100vh;
-        }
+<a href="javascript:history.back()" class="back-button">
+    <span class="back-icon"></span>
+    Back
+</a>
 
-        .form-container {
-            max-width: 500px;
-            margin: 4em 0;
-            padding: 2em;
-            background: #fff;
-            border-radius: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border: 1px solid #ddd;
-        }
+<style>
+    body {
+        background-color: #f0f0f0;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 1em;
+        font-size: 16px;
+        line-height: 1.6;
+        color: #333;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100vh;
+    }
 
-        h2 {
-            color: #333;
-            text-align: center;
-            font-size: 2em;
-            margin-bottom: 1em;
-        }
+    .form-container {
+        max-width: 500px;
+        margin: 4em 0;
+        padding: 2em;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: 1px solid #ddd;
+    }
 
-        .form {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          max-width: 350px;
-          background-color: #fff;
-          padding: 10px;
-          border-radius: 10px;
-          position: relative;
-        }
-        .title {
-            font-size: 28px;
-            color: royalblue;
-            font-weight: 600;
-            letter-spacing: -1px;
-            position: relative;
-            display: flex;
-            align-items: center;
-            padding-left: 30px;
-        }
-        .title::before, .title::after {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            border-radius: 50%;
-            left: 0px;
-            background-color: royalblue;
-        }
-        .title::before {
-            width: 18px;
-            height: 18px;
-            background-color: royalblue;
-        }
-        .title::after {
-            width: 18px;
-            height: 18px;
-            animation: pulse 1s linear infinite;
-        }
-        .message {
-            color: rgba(88, 87, 87, 0.822);
-            font-size: 14px;
-        }
-        .flex {
-            display: flex;
-            width: 100%;
-            gap: 6px;
-        }
-        label {
-            position: relative;
-        }
-        .input {
-            width: 100%;
-            padding: 10px 10px 20px 10px;
-            outline: 0;
-            border: 1px solid rgba(105, 105, 105, 0.397);
-            border-radius: 10px;
-        }
-        .input + span {
-            position: absolute;
-            left: 10px;
-            top: 15px;
-            color: grey;
-            font-size: 0.9em;
-            cursor: text;
-            transition: 0.3s ease;
-        }
-        .input:placeholder-shown + span {
-            top: 15px;
-            font-size: 0.9em;
-        }
-        .input:focus + span, .input:valid + span {
-            top: 0px;
-            font-size: 0.7em;
-            font-weight: 600;
-        }
-        .input:valid + span {
-            color: green;
-        }
-        .submit {
-            border: none;
-            outline: none;
-            background-color: royalblue;
-            padding: 10px;
-            border-radius: 10px;
-            color: #fff;
-            font-size: 16px;
-            transform: .3s ease;
-        }
-        .submit:hover {
-            background-color: rgb(56, 90, 194);
-            cursor: pointer;
-        }
+    .form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-width: 350px;
+        background-color: #fff;
+        padding: 10px;
+        border-radius: 10px;
+        position: relative;
+    }
 
-        .back-button {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: none;
-            border: none;
-            color: royalblue;
-            font-size: 16px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            text-decoration: none;
-        }
-        .back-icon {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border: solid royalblue;
-            border-width: 0 2px 2px 0;
-            transform: rotate(135deg);
-            margin-right: 5px;
-        }
+    .title {
+        font-size: 28px;
+        color: royalblue;
+        font-weight: 600;
+        letter-spacing: -1px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        padding-left: 30px;
+    }
 
-        /* Стили для сообщений и ошибок */
-        .alert {
-            padding: 15px;
-            margin-bottom: 20px;
-            border: 1px solid transparent;
-            border-radius: 4px;
-        }
-        .alert-success {
-            color: #3c763d;
-            background-color: #dff0d8;
-            border-color: #d6e9c6;
-        }
-        .alert-error {
-            color: #a94442;
-            background-color: #f2dede;
-            border-color: #ebccd1;
-        }
-        .error-input {
-            border-color: #a94442 !important;
-        }
-        .error-text {
-            color: #a94442 !important;
-            font-size: 0.8em;
-            margin-top: 5px;
-        }
+    .title::before, .title::after {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        border-radius: 50%;
+        left: 0px;
+        background-color: royalblue;
+    }
 
-        @keyframes pulse {
-            from {
-                transform: scale(0.9);
-                opacity: 1;
-            }
-            to {
-                transform: scale(1.8);
-                opacity: 0;
-            }
-        }
-    </style>
-            Back
-    </a>
-    <div class="form-container">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{% if message.tags == 'error' %}error{% else %}success{% endif %}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
+    .title::after {
+        width: 18px;
+        height: 18px;
+        animation: pulse 1s linear infinite;
+    }
 
-        <form method="post" class="form">
-            {% csrf_token %}
-            <p class="title">Create Scout</p>
-            <div class="flex">
-                <label>
-                    <input class="input {% if form.errors.first_name %}error-input{% endif %}"
-                           type="text" name="first_name" required placeholder=""
-                           value="{% if form.first_name.value %}{{ form.first_name.value }}{% endif %}">
-                    <span>First Name</span>
-                    {% if form.errors.first_name %}
-                        <div class="error-text">{{ form.errors.first_name.0 }}</div>
-                    {% endif %}
-                </label>
-                <label>
-                    <input class="input {% if form.errors.last_name %}error-input{% endif %}"
-                           type="text" name="last_name" required placeholder=""
-                           value="{% if form.last_name.value %}{{ form.last_name.value }}{% endif %}">
-                    <span>Last Name</span>
-                    {% if form.errors.last_name %}
-                        <div class="error-text">{{ form.errors.last_name.0 }}</div>
-                    {% endif %}
-                </label>
-            </div>
+    .flex {
+        display: flex;
+        width: 100%;
+        gap: 6px;
+    }
+
+    label {
+        position: relative;
+        width: 100%;
+    }
+
+    .input {
+        width: 100%;
+        padding: 10px 10px 20px 10px;
+        outline: 0;
+        border: 1px solid rgba(105, 105, 105, 0.397);
+        border-radius: 10px;
+    }
+
+    .input + span {
+        position: absolute;
+        left: 10px;
+        top: 15px;
+        color: grey;
+        font-size: 0.9em;
+        transition: 0.3s ease;
+    }
+
+    .input:focus + span,
+    .input:valid + span {
+        top: 0px;
+        font-size: 0.7em;
+        font-weight: 600;
+    }
+
+    .submit {
+        border: none;
+        outline: none;
+        background-color: royalblue;
+        padding: 10px;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .submit:hover {
+        background-color: rgb(56, 90, 194);
+    }
+
+    .back-button {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: none;
+        border: none;
+        color: royalblue;
+        font-size: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+    }
+
+    .back-icon {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border: solid royalblue;
+        border-width: 0 2px 2px 0;
+        transform: rotate(135deg);
+        margin-right: 5px;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(0.9); opacity: 1; }
+        100% { transform: scale(1.8); opacity: 0; }
+    }
+
+    .error-text {
+        color: #a94442;
+        font-size: 0.8em;
+        margin-top: 4px;
+    }
+</style>
+
+<div class="form-container">
+
+    <form method="post" class="form">
+        {% csrf_token %}
+        <p class="title">Create Scout</p>
+
+        <div class="flex">
             <label>
-                <input class="input {% if form.errors.email %}error-input{% endif %}"
-                       type="email" name="email" required placeholder=""
-                       value="{% if form.email.value %}{{ form.email.value }}{% endif %}">
-                <span>Email</span>
-                {% if form.errors.email %}
-                    <div class="error-text">{{ form.errors.email.0 }}</div>
-                {% endif %}
+                <input class="input"
+                       type="text"
+                       name="first_name"
+                       required
+                       placeholder=""
+                       pattern="[A-Za-z]+"
+                       title="Use English letters only"
+                       value="{{ form.first_name.value|default:'' }}">
+                <span>First Name</span>
             </label>
+
             <label>
-                <input type="hidden" name="role" value="courier">
-                <span></span>
+                <input class="input"
+                       type="text"
+                       name="last_name"
+                       required
+                       placeholder=""
+                       pattern="[A-Za-z]+"
+                       title="Use English letters only"
+                       value="{{ form.last_name.value|default:'' }}">
+                <span>Last Name</span>
             </label>
-            <button type="submit" class="submit">Create Scout</button>
-        </form>
-    </div>
+        </div>
+
+        <label>
+            <input class="input"
+                   type="email"
+                   name="email"
+                   required
+                   placeholder=""
+                   value="{{ form.email.value|default:'' }}">
+            <span>Email</span>
+        </label>
+
+        <input type="hidden" name="role" value="courier">
+
+        <button type="submit" class="submit">Create Scout</button>
+    </form>
+</div>
+
+<!-- SIMPLE SUCCESS POPUP -->
 <script>
-    // Автоматическое скрытие сообщений через 5 секунд
-    document.addEventListener('DOMContentLoaded', function() {
-        var alerts = document.querySelectorAll('.alert');
-        alerts.forEach(function(alert) {
-            setTimeout(function() {
-                alert.style.opacity = '0';
-                setTimeout(function() {
-                    alert.style.display = 'none';
-                }, 600);
-            }, 5000);
-        });
-
-        // Очистка формы после успешной отправки
-        {% if form.is_bound and not form.errors %}
-            document.querySelector('form').reset();
-        {% endif %}
-    });
+    {% if messages %}
+        {% for message in messages %}
+            alert("{{ message|escapejs }}");
+        {% endfor %}
+    {% endif %}
 </script>
+
 </body>
 </html>

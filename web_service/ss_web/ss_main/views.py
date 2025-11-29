@@ -1168,8 +1168,8 @@ def user_cabinets(request):
     zones = user.zones.all()
     cabinets = Cabinet.objects.filter(zone__in=zones)
     cabinets_count = cabinets.count()
-    cabinets_with_coords = list(cabinets.values('shkaf_id', 'street', 'latitude', 'longitude'))
-
+    cabinets_with_coords = list(cabinets.values('shkaf_id', 'readable_name', 'latitude', 'longitude'))
+    cabinets_with_coords_json = json.dumps(cabinets_with_coords)
     total_capacity = 0
     cabinets_status_counts = []
 
@@ -1200,7 +1200,7 @@ def user_cabinets(request):
         'cabinets_count': cabinets_count,
         'total_cells_count': total_capacity,
         'cabinets_status_counts': cabinets_status_counts,
-        'cabinets_with_coords': cabinets_with_coords,
+        'cabinets_with_coords_json': cabinets_with_coords_json,
     }
     return render(request, 'ss_main/user_cabinets.html', context)
 

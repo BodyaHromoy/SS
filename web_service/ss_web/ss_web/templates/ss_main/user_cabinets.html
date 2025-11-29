@@ -344,52 +344,100 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
+    // ---------------- Обновление данных ----------------
     function updateData() {
         location.reload();
     }
 
+    // ---------------- Переключение меню ----------------
     function toggleMenu() {
         document.getElementById('dropdownMenu').classList.toggle('d-none');
     }
 
+    // ---------------- Закрытие карты ----------------
     function closeMap() {
         document.getElementById('mapModal').classList.add('d-none');
     }
 
-    let mapInit = false;
+    // ---------------- Инициализация карты ----------------
+    let leafletMap = null;
+    let markersGroup = null;
 
     function toggleMap() {
         const modal = document.getElementById('mapModal');
         modal.classList.remove('d-none');
 
-        if (!mapInit) {
-            const map = L.map('map').setView([43.238949, 76.889709], 12);
+        // JSON с координатами шкафов из context
+        const cabinets = {{ cabinets_with_coords_json|safe }};
+        console.log("JSON с шкафами:", cabinets);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: 'Map data © OpenStreetMap contributors'
-            }).addTo(map);
+        setTimeout(() => {
+            if (!leafletMap) {
+                // Инициализация карты с временным центром
+                leafletMap = L.map('map').setView([43.238949, 76.889709], 12);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(leafletMap);
+            } else {
+                leafletMap.invalidateSize();
+            }
 
-            const cabinets = {{ cabinets_with_coords|safe }};
+            // Удаляем старую группу маркеров
+            if (markersGroup) {
+                markersGroup.clearLayers();
+            }
+
+            const validMarkers = [];
 
             cabinets.forEach(c => {
-                if (c.latitude && c.longitude) {
-                    L.marker([c.latitude, c.longitude])
-                        .addTo(map)
-                        .bindPopup(`<strong>${c.shkaf_id}</strong><br>${c.street}`);
-                }
-            });
+            const lat = parseFloat(c.latitude);
+            const lng = parseFloat(c.longitude);
 
-            mapInit = true;
-        }
+            if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                const marker = L.marker([lat, lng])
+                    .bindPopup(`
+                        <strong>RPI ${c.shkaf_id}</strong><br>
+                        ${c.readable_name || '-'}<br>
+                        <a href="/cabinet/${c.shkaf_id}"
+                           class="btn btn-sm btn-primary"
+                           style="margin-top:5px; display:inline-block; color: white;">
+                           Перейти
+                        </a>
+                    `);
+                validMarkers.push(marker);
+            } else {
+                console.log("Пропущен шкаф с некорректными координатами:", c);
+            }
+        });
+
+
+            if (validMarkers.length > 0) {
+                // Создаем группу маркеров и добавляем на карту
+                markersGroup = L.featureGroup(validMarkers);
+                markersGroup.addTo(leafletMap);
+                leafletMap.fitBounds(markersGroup.getBounds().pad(0.1));
+            } else {
+                // Если нет валидных координат, центрируем на город
+                leafletMap.setView([43.238949, 76.889709], 12);
+            }
+        }, 150);
     }
 
-    document.addEventListener('click', function (event) {
-        const menu = document.getElementById('dropdownMenu');
-        if (!event.target.closest('.menu-btn') && !menu.contains(event.target)) {
-            menu.classList.add('d-none');
-        }
+    // ---------------- События ----------------
+    document.addEventListener('DOMContentLoaded', () => {
+        const closeBtns = document.querySelectorAll('.close-map-btn');
+        closeBtns.forEach(btn => btn.addEventListener('click', closeMap));
+
+        document.addEventListener('click', function (event) {
+            const menu = document.getElementById('dropdownMenu');
+            if (!event.target.closest('.menu-btn') && !menu.contains(event.target)) {
+                menu.classList.add('d-none');
+            }
+        });
     });
 </script>
+
+
 
 </body>
 </html>

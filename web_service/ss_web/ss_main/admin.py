@@ -8,12 +8,19 @@ admin.site.register(Report)
 admin.site.register(Vendor)
 
 
-
 class CustomUserAdmin(UserAdmin):
     list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'role')
+
+    # 👇 Добавляем assigned_zones в горизонтальную фильтрацию
+    filter_horizontal = ("groups", "user_permissions", "assigned_zones")
+
     fieldsets = UserAdmin.fieldsets + (
         (None, {'fields': ('role',)}),
+        ("Зоны пользователя", {
+            "fields": ('assigned_zones',),
+        }),
     )
+
     add_fieldsets = UserAdmin.add_fieldsets + (
         (None, {'fields': ('role',)}),
     )
